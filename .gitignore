@@ -1,0 +1,23 @@
+# Python and Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs and Tools
+.vscode/
+.idea/
+.claude/
+
+# Temporary files and artifacts
+compass_artifact_*.md
+.DS_Store
