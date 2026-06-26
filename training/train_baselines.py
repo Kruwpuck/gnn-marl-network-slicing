@@ -41,10 +41,12 @@ def train_dqn(algo, steps, seed, log_path):
         for step in range(steps):
             if algo == "central-dqn":
                 raw = agent.act(obs_arr.flatten())
-                actions = np.full(n_gnb, int(raw.flat[0]))
-                buf.push(obs_arr.flatten(), actions, 0.0, obs_arr.flatten(), False)  # placeholder
+                central_action = int(raw) if np.isscalar(raw) else int(raw.flat[0])
+                actions = np.full(n_gnb, central_action)
+                buf.push(obs_arr.flatten(), np.array([central_action]), 0.0, obs_arr.flatten(), False)
             else:
-                actions = np.array([int(agent.act(obs_arr[i]).flat[0]) for i in range(n_gnb)])
+                _acts = [agent.act(obs_arr[i]) for i in range(n_gnb)]
+                actions = np.array([int(a) if np.isscalar(a) else int(a.flat[0]) for a in _acts])
                 for i in range(n_gnb):
                     buf.push(obs_arr[i], np.array([actions[i]]), 0.0, obs_arr[i], False)
 
@@ -52,7 +54,7 @@ def train_dqn(algo, steps, seed, log_path):
             done = terminated or truncated
             # overwrite reward in last-pushed items
             if algo == "central-dqn":
-                buf._buf[-1] = (obs_arr.flatten(), actions, reward, next_obs.flatten(), done)
+                buf._buf[-1] = (obs_arr.flatten(), np.array([central_action]), reward, next_obs.flatten(), done)
             else:
                 for i in range(n_gnb):
                     buf._buf[-(n_gnb - i)] = (obs_arr[i], np.array([actions[i]]),

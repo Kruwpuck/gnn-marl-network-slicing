@@ -80,7 +80,7 @@ class DQNAgent(nn.Module):
                 target = target.detach()
 
             q_pred = self.q_values(graph_dict)                               # (N, n_actions)
-            actions_t = torch.as_tensor(actions, dtype=torch.long)
+            actions_t = torch.as_tensor(actions, dtype=torch.long).to(q_pred.device)
             q_taken = q_pred.gather(1, actions_t.unsqueeze(1)).squeeze(1)    # (N,)
             loss = F.huber_loss(q_taken, target)
             losses.append(loss)

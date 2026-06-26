@@ -82,10 +82,11 @@ class PPOAgent(nn.Module):
         Returns loss dict.
         """
         graph_dicts = rollout["graph_dicts"]
-        actions = torch.as_tensor(rollout["actions"], dtype=torch.long)
-        old_log_probs = torch.as_tensor(rollout["old_log_probs"], dtype=torch.float32)
-        advantages = torch.as_tensor(rollout["advantages"], dtype=torch.float32)
-        returns = torch.as_tensor(rollout["returns"], dtype=torch.float32)
+        dev = next(self.parameters()).device
+        actions = torch.as_tensor(rollout["actions"], dtype=torch.long).to(dev)
+        old_log_probs = torch.as_tensor(rollout["old_log_probs"], dtype=torch.float32).to(dev)
+        advantages = torch.as_tensor(rollout["advantages"], dtype=torch.float32).to(dev)
+        returns = torch.as_tensor(rollout["returns"], dtype=torch.float32).to(dev)
 
         # Normalise advantages
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
