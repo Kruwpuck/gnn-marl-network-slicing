@@ -1,0 +1,43 @@
+env:
+  n_gnb: 5
+  n_prb: 50
+  bandwidth_hz: 10_000_000
+  carrier_freq_ghz: 3.5
+  scenario: UMa
+  h_bs: 25.0
+  h_ut: 1.5
+  area_size: 500
+  n_ue_per_gnb: 5
+
+slices:
+  embb:
+    min_throughput_mbps: 4.0
+  urllc:
+    max_delay_ms: 10.0
+    reliability: 0.999
+
+reward:
+  w1: 0.4
+  w2: 0.3
+  w3: 0.2
+  w4: 0.1
+
+traffic:
+  urllc:
+    lambda_arrival: 50.0
+    packet_size_bits: 256
+  embb:
+    lambda_burst: 4.0
+    lambda_idle: 0.5
+    r_burst_to_idle: 0.2
+    r_idle_to_burst: 0.8
+
+training:
+  seed: 42
+  n_steps: 1_000_000
+  episode_length: 200
+
+noise:
+  thermal_dbm_per_hz: -174.0
+  noise_figure_db: 7.0
+  tx_power_dbm: 43.0
