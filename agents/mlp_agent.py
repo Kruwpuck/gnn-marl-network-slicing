@@ -47,12 +47,16 @@ class MLPDQNAgent(nn.Module):
     def forward(self, obs: torch.Tensor) -> torch.Tensor:
         return self.q_values(obs)
 
+    @property
+    def _device(self):
+        return next(self.parameters()).device
+
     def act(self, obs: np.ndarray, greedy: bool = False) -> np.ndarray | int:
         if not greedy and np.random.random() < self.epsilon:
             batch = obs.shape[0] if obs.ndim > 1 else 1
             return np.random.randint(0, self.n_actions, size=batch) if batch > 1 \
                 else int(np.random.randint(0, self.n_actions))
-        obs_t = torch.as_tensor(obs, dtype=torch.float32)
+        obs_t = torch.as_tensor(obs, dtype=torch.float32).to(self._device)
         with torch.no_grad():
             q = self.q_values(obs_t)
         return q.argmax(dim=-1).cpu().numpy()
@@ -61,21 +65,23 @@ class MLPDQNAgent(nn.Module):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
 
     def learn(self, batch: list) -> float:
+        dev = self._device
         losses = []
         for obs, actions, reward, next_obs, done in batch:
-            obs_t = torch.as_tensor(obs, dtype=torch.float32)
-            next_t = torch.as_tensor(next_obs, dtype=torch.float32)
-            actions_t = torch.as_tensor(actions, dtype=torch.long)
+            obs_t = torch.as_tensor(
+                np.asarray(obs, dtype=np.float32).reshape(-1, self.obs_dim)).to(dev)
+            next_t = torch.as_tensor(
+                np.asarray(next_obs, dtype=np.float32).reshape(-1, self.obs_dim)).to(dev)
+            actions_t = torch.as_tensor(
+                np.asarray(actions, dtype=np.int64).flatten()).to(dev)  # (B,)
+            B = obs_t.shape[0]
             with torch.no_grad():
-                q_next = self.q_values(next_t).max(dim=-1).values
-                target = reward + self.gamma * q_next * (1.0 - float(done))
-            q_pred = self.q_values(obs_t)
-            if q_pred.dim() == 1:
-                q_pred = q_pred.unsqueeze(0)
-                actions_t = actions_t.unsqueeze(0)
-                target = target.unsqueeze(0)
-            q_taken = q_pred.gather(1, actions_t.unsqueeze(1)).squeeze(1)
-            losses.append(F.huber_loss(q_taken, target))
+                q_next = self.q_values(next_t).max(dim=-1).values  # (B,)
+                rew_t = torch.full((B,), float(reward), device=dev)
+                target = rew_t + self.gamma * q_next * (1.0 - float(done))
+            q_pred = self.q_values(obs_t)                            # (B, n_actions)
+            q_taken = q_pred.gather(1, actions_t.unsqueeze(1)).squeeze(1)  # (B,)
+            losses.append(F.huber_loss(q_taken, target.detach()))
         loss = torch.stack(losses).mean()
         self.optimizer.zero_grad()
         loss.backward()
@@ -99,6 +105,7 @@ class MLPPPOAgent(nn.Module):
         value_coef: float = 0.5,
     ):
         super().__init__()
+        self.obs_dim = obs_dim
         self.n_actions = n_actions
         self.clip_eps = clip_eps
         self.entropy_coef = entropy_coef
@@ -112,8 +119,12 @@ class MLPPPOAgent(nn.Module):
         )
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
+    @property
+    def _device(self):
+        return next(self.parameters()).device
+
     def act(self, obs: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        obs_t = torch.as_tensor(obs, dtype=torch.float32)
+        obs_t = torch.as_tensor(obs, dtype=torch.float32).to(self._device)
         with torch.no_grad():
             logits = self.actor(obs_t)
             values = self.critic(obs_t).squeeze(-1)

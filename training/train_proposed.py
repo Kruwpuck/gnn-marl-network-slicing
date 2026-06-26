@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+import torch
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -23,6 +24,8 @@ from gnn import BACKBONES
 from agents.dqn_agent import DQNAgent
 from agents.ppo_agent import PPOAgent
 from training.replay_buffer import ReplayBuffer
+
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 from training.rollout_buffer import RolloutBuffer
 
 BATCH_SIZE = 64
@@ -45,7 +48,8 @@ def train_gnn_dqn(backbone_name: str, steps: int, seed: int, log_path: Path) -> 
     env = make_env(seed)
 
     backbone = BACKBONES[backbone_name]()
-    agent = DQNAgent(backbone)
+    agent = DQNAgent(backbone).to(DEVICE)
+    print(f"[gnn-madqn/{backbone_name}] device={DEVICE}")
     buf = ReplayBuffer(capacity=50_000)
 
     obs_arr, info = env.reset(seed=seed)
@@ -87,7 +91,10 @@ def train_gnn_dqn(backbone_name: str, steps: int, seed: int, log_path: Path) -> 
                 ep_reward = 0.0
 
     env.close()
-    print(f"[gnn-madqn/{backbone_name}] Training done → {log_path}")
+    model_path = log_path.with_suffix(".pt")
+    torch.save({"state_dict": agent.state_dict(), "backbone": backbone_name,
+                "algo": "gnn-madqn", "steps": steps, "seed": seed}, model_path)
+    print(f"[gnn-madqn/{backbone_name}] done → {log_path} | model → {model_path}")
 
 
 def train_gnn_ppo(backbone_name: str, steps: int, seed: int, log_path: Path) -> None:
@@ -96,7 +103,8 @@ def train_gnn_ppo(backbone_name: str, steps: int, seed: int, log_path: Path) -> 
     n_gnb = env.n_gnb
 
     backbone = BACKBONES[backbone_name]()
-    agent = PPOAgent(backbone)
+    agent = PPOAgent(backbone).to(DEVICE)
+    print(f"[gnn-mappo/{backbone_name}] device={DEVICE}")
     buf = RolloutBuffer(n_steps=ROLLOUT_STEPS, n_agents=n_gnb)
 
     obs_arr, info = env.reset(seed=seed)
@@ -139,7 +147,10 @@ def train_gnn_ppo(backbone_name: str, steps: int, seed: int, log_path: Path) -> 
                 ep_reward = 0.0
 
     env.close()
-    print(f"[gnn-mappo/{backbone_name}] Training done → {log_path}")
+    model_path = log_path.with_suffix(".pt")
+    torch.save({"state_dict": agent.state_dict(), "backbone": backbone_name,
+                "algo": "gnn-mappo", "steps": steps, "seed": seed}, model_path)
+    print(f"[gnn-mappo/{backbone_name}] done → {log_path} | model → {model_path}")
 
 
 if __name__ == "__main__":

@@ -32,17 +32,18 @@ class GNNBackbone(ABC, nn.Module):
         """
         ...
 
-    @staticmethod
     def to_tensors(
+        self,
         x: np.ndarray | torch.Tensor,
         edge_index: np.ndarray | torch.Tensor,
         edge_attr: np.ndarray | torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Convert numpy arrays from env graph dict to float tensors."""
+        """Convert numpy arrays to tensors and move to model device."""
+        device = next(self.parameters()).device
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x).float()
         if isinstance(edge_index, np.ndarray):
             edge_index = torch.from_numpy(edge_index).long()
         if isinstance(edge_attr, np.ndarray):
             edge_attr = torch.from_numpy(edge_attr).float() / 100.0
-        return x, edge_index, edge_attr
+        return x.to(device), edge_index.to(device), edge_attr.to(device)
