@@ -57,7 +57,7 @@ def train_gnn_dqn(backbone_name: str, steps: int, seed: int, log_path: Path) -> 
     ep_reward = 0.0
     ep_count = 0
 
-    with open(log_path, "w", newline="") as f:
+    with open(log_path, "w", newline="", buffering=1) as f:
         writer = csv.writer(f)
         writer.writerow(["step", "episode", "ep_reward", "epsilon", "loss"])
         t0 = time.time()
@@ -112,7 +112,7 @@ def train_gnn_ppo(backbone_name: str, steps: int, seed: int, log_path: Path) -> 
     ep_reward = 0.0
     ep_count = 0
 
-    with open(log_path, "w", newline="") as f:
+    with open(log_path, "w", newline="", buffering=1) as f:
         writer = csv.writer(f)
         writer.writerow(["step", "episode", "ep_reward", "loss"])
         t0 = time.time()

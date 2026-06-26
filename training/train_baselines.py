@@ -34,7 +34,7 @@ def train_dqn(algo, steps, seed, log_path):
     obs_arr, _ = env.reset(seed=seed)
     ep_reward = ep_step = ep_count = 0
 
-    with open(log_path, "w", newline="") as f:
+    with open(log_path, "w", newline="", buffering=1) as f:
         writer = csv.writer(f)
         writer.writerow(["step", "episode", "ep_reward", "epsilon", "loss"])
         t0 = time.time()
@@ -92,7 +92,7 @@ def train_ppo(algo, steps, seed, log_path):
     obs_arr, _ = env.reset(seed=seed)
     ep_reward = ep_count = 0
 
-    with open(log_path, "w", newline="") as f:
+    with open(log_path, "w", newline="", buffering=1) as f:
         writer = csv.writer(f)
         writer.writerow(["step", "episode", "ep_reward", "loss"])
         t0 = time.time()
