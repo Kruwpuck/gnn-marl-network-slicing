@@ -103,6 +103,7 @@ class MLPPPOAgent(nn.Module):
         clip_eps: float = 0.2,
         entropy_coef: float = 0.01,
         value_coef: float = 0.5,
+        max_grad_norm: float = 0.5,
     ):
         super().__init__()
         self.obs_dim = obs_dim
@@ -110,6 +111,7 @@ class MLPPPOAgent(nn.Module):
         self.clip_eps = clip_eps
         self.entropy_coef = entropy_coef
         self.value_coef = value_coef
+        self.max_grad_norm = max_grad_norm
 
         self.actor = nn.Sequential(
             nn.Linear(obs_dim, hidden), nn.Tanh(), nn.Linear(hidden, n_actions)
@@ -130,7 +132,60 @@ class MLPPPOAgent(nn.Module):
             values = self.critic(obs_t).squeeze(-1)
             dist = Categorical(logits=logits)
             actions = dist.sample()
-        return actions.cpu().numpy(), dist.log_prob(actions).cpu().numpy(), values.cpu().numpy()
+        return (np.atleast_1d(actions.cpu().numpy()),
+                np.atleast_1d(dist.log_prob(actions).cpu().numpy()),
+                np.atleast_1d(values.cpu().numpy()))
 
     def forward(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return self.actor(obs), self.critic(obs).squeeze(-1)
+
+    def evaluate(self, obs: torch.Tensor, actions: torch.Tensor):
+        """obs (B, obs_dim), actions (B,) → (log_probs, values, entropy)."""
+        logits = self.actor(obs)
+        values = self.critic(obs).squeeze(-1)
+        dist = Categorical(logits=logits)
+        return dist.log_prob(actions), values, dist.entropy()
+
+    def learn(self, rollout: dict) -> dict:
+        """
+        rollout keys (from RolloutBuffer.compute_advantages):
+          graph_dicts: list[T] of stored state arrays, each shape (N, obs_dim)
+          actions/old_log_probs/advantages/returns: (T, N)
+        One PPO epoch over the flattened (T*N,) batch. Returns loss dict.
+        """
+        dev = self._device
+        states = rollout["graph_dicts"]                    # list of (N, obs_dim)
+        obs = torch.as_tensor(
+            np.asarray(states, dtype=np.float32), dtype=torch.float32
+        ).reshape(-1, self.obs_dim).to(dev)                # (T*N, obs_dim)
+        actions = torch.as_tensor(rollout["actions"], dtype=torch.long).reshape(-1).to(dev)
+        old_log_probs = torch.as_tensor(
+            rollout["old_log_probs"], dtype=torch.float32).reshape(-1).to(dev)
+        advantages = torch.as_tensor(
+            rollout["advantages"], dtype=torch.float32).reshape(-1).to(dev)
+        returns = torch.as_tensor(
+            rollout["returns"], dtype=torch.float32).reshape(-1).to(dev)
+
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+        log_probs, values, entropy = self.evaluate(obs, actions)
+        entropy = entropy.mean()
+
+        ratio = (log_probs - old_log_probs).exp()
+        surr1 = ratio * advantages
+        surr2 = ratio.clamp(1 - self.clip_eps, 1 + self.clip_eps) * advantages
+        policy_loss = -torch.min(surr1, surr2).mean()
+        value_loss = F.mse_loss(values, returns)
+        loss = policy_loss + self.value_coef * value_loss - self.entropy_coef * entropy
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
+        self.optimizer.step()
+
+        return {
+            "loss": float(loss),
+            "policy_loss": float(policy_loss),
+            "value_loss": float(value_loss),
+            "entropy": float(entropy),
+        }

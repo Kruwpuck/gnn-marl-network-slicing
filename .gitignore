@@ -21,3 +21,8 @@ htmlcov/
 # Temporary files and artifacts
 compass_artifact_*.md
 .DS_Store
+
+# Training artifacts
+results/checkpoints/
+results/logs/stdout/
+results/logs/_pre_fix_backup/  

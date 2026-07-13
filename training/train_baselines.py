@@ -1,6 +1,11 @@
-"""Train baseline agents (B1: centralized-MLP, B2: IDQN/IPPO)."""
+"""Train baseline agents (B1: centralized-MLP, B2: IDQN/IPPO).
+
+Rich CSV logging + resumable checkpoints, mirroring training/train_proposed.py.
+The MLP-PPO baselines (ippo / central-ppo) now actually update (see MLPPPOAgent.learn).
+"""
 from __future__ import annotations
-import argparse, csv, sys, time
+import argparse, sys, time
+from collections import deque
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +17,10 @@ from envs.network_slicing_env import NetworkSlicingEnv
 from agents.mlp_agent import MLPDQNAgent, MLPPPOAgent
 from training.replay_buffer import ReplayBuffer
 from training.rollout_buffer import RolloutBuffer
+from training.metrics_logger import (
+    MetricsLogger, EpisodeNetworkStats, CheckpointManager,
+    capture_rng_state, restore_rng_state,
+)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 64
@@ -23,7 +32,47 @@ def make_env(seed):
     env = NetworkSlicingEnv(); env.reset(seed=seed); return env
 
 
-def train_dqn(algo, steps, seed, log_path):
+def _maybe_resume(ckpt, agent, resume):
+    if not resume:
+        return 0, 0, deque(maxlen=100), 0.0
+    state = ckpt.load_latest()
+    if state is None:
+        return 0, 0, deque(maxlen=100), 0.0
+    agent.load_state_dict(state["model"])
+    agent.optimizer.load_state_dict(state["optimizer"])
+    if "epsilon" in state and hasattr(agent, "epsilon"):
+        agent.epsilon = state["epsilon"]
+    restore_rng_state(state.get("rng", {}))
+    ma = deque(state.get("ma_deque", []), maxlen=100)
+    print(f"[resume] {ckpt.run_name}: from step {state['step']} ep {state['episode']}")
+    return int(state["step"]), int(state["episode"]), ma, float(state.get("elapsed_sec", 0.0))
+
+
+def _save_ckpt(ckpt, agent, step, episode, logger, run_name, **meta):
+    ma = float(np.mean(logger.ma_deque)) if logger.ma_deque else None
+    state = {
+        "model": agent.state_dict(),
+        "optimizer": agent.optimizer.state_dict(),
+        "step": step,
+        "episode": episode,
+        "rng": capture_rng_state(),
+        "ma_deque": list(logger.ma_deque),
+        "elapsed_sec": logger.elapsed(),
+        "run_name": run_name,
+    }
+    if hasattr(agent, "epsilon"):
+        state["epsilon"] = agent.epsilon
+    state.update(meta)
+    ckpt.save(state, ma_reward=ma)
+
+
+def _save_model(log_path, agent, **meta):
+    torch.save({"state_dict": agent.state_dict(), **meta},
+               Path(log_path).with_suffix(".pt"))
+
+
+def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume):
+    run_name = f"{algo}_seed{seed}"
     np.random.seed(seed)
     env = make_env(seed)
     n_gnb = env.n_gnb
@@ -31,104 +80,149 @@ def train_dqn(algo, steps, seed, log_path):
     agent = MLPDQNAgent(obs_dim).to(DEVICE)
     print(f"[{algo}] device={DEVICE}")
     buf = ReplayBuffer(50_000)
-    obs_arr, _ = env.reset(seed=seed)
-    ep_reward = ep_step = ep_count = 0
 
-    with open(log_path, "w", newline="", buffering=1) as f:
-        writer = csv.writer(f)
-        writer.writerow(["step", "episode", "ep_reward", "epsilon", "loss"])
-        t0 = time.time()
-        for step in range(steps):
-            if algo == "central-dqn":
-                raw = agent.act(obs_arr.flatten())
-                central_action = int(raw) if np.isscalar(raw) else int(raw.flat[0])
-                actions = np.full(n_gnb, central_action)
-                buf.push(obs_arr.flatten(), np.array([central_action]), 0.0, obs_arr.flatten(), False)
-            else:
-                _acts = [agent.act(obs_arr[i]) for i in range(n_gnb)]
-                actions = np.array([int(a) if np.isscalar(a) else int(a.flat[0]) for a in _acts])
-                for i in range(n_gnb):
-                    buf.push(obs_arr[i], np.array([actions[i]]), 0.0, obs_arr[i], False)
+    ckpt = CheckpointManager(run_name)
+    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, resume)
+    logger = MetricsLogger(log_path, resume=resume, ma_deque=ma_deque)
+    logger.set_elapsed_offset(elapsed_off)
+    netstats = EpisodeNetworkStats()
 
-            next_obs, reward, terminated, truncated, _ = env.step(actions)
-            done = terminated or truncated
-            # overwrite reward in last-pushed items
-            if algo == "central-dqn":
-                buf._buf[-1] = (obs_arr.flatten(), np.array([central_action]), reward, next_obs.flatten(), done)
-            else:
-                for i in range(n_gnb):
-                    buf._buf[-(n_gnb - i)] = (obs_arr[i], np.array([actions[i]]),
-                                               reward/n_gnb, next_obs[i], done)
+    obs_arr, _ = env.reset(seed=seed + ep_count)
+    ep_reward = 0.0
+    t0 = time.time()
 
-            ep_reward += reward; ep_step += 1; obs_arr = next_obs
-            loss = agent.learn(buf.sample(BATCH_SIZE)) if len(buf) >= REPLAY_START else None
+    for step in range(start_step, steps):
+        if algo == "central-dqn":
+            raw = agent.act(obs_arr.flatten())
+            central_action = int(raw) if np.isscalar(raw) else int(np.asarray(raw).flat[0])
+            actions = np.full(n_gnb, central_action)
+            buf.push(obs_arr.flatten(), np.array([central_action]), 0.0, obs_arr.flatten(), False)
+        else:
+            _acts = [agent.act(obs_arr[i]) for i in range(n_gnb)]
+            actions = np.array([int(a) if np.isscalar(a) else int(np.asarray(a).flat[0]) for a in _acts])
+            for i in range(n_gnb):
+                buf.push(obs_arr[i], np.array([actions[i]]), 0.0, obs_arr[i], False)
 
-            if done:
-                ep_count += 1
-                if step % 1000 == 0:
-                    print(f"[{algo}] step={step:>7} ep={ep_count:>4} rew={ep_reward:+.3f} "
-                          f"eps={agent.epsilon:.3f} loss={f'{loss:.4f}' if loss else 'N/A'} "
-                          f"t={time.time()-t0:.0f}s")
-                writer.writerow([step, ep_count, round(ep_reward,4),
-                                 round(agent.epsilon,4), round(loss,6) if loss else ""])
-                obs_arr, _ = env.reset(seed=seed+ep_count)
-                ep_reward = ep_step = 0
+        next_obs, reward, terminated, truncated, info = env.step(actions)
+        done = terminated or truncated
+        netstats.add(info)
+        # overwrite placeholder reward in the just-pushed items
+        if algo == "central-dqn":
+            buf._buf[-1] = (obs_arr.flatten(), np.array([central_action]), reward, next_obs.flatten(), done)
+        else:
+            for i in range(n_gnb):
+                buf._buf[-(n_gnb - i)] = (obs_arr[i], np.array([actions[i]]),
+                                          reward / n_gnb, next_obs[i], done)
 
+        ep_reward += reward
+        obs_arr = next_obs
+        loss = agent.learn(buf.sample(BATCH_SIZE)) if len(buf) >= REPLAY_START else None
+
+        if done:
+            ep_count += 1
+            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms)
+            ma = logger.log(step, ep_count, ep_reward, loss=loss,
+                            epsilon=agent.epsilon, **net)
+            netstats.reset()
+            if step % 1000 == 0:
+                print(f"[{algo}] step={step:>7} ep={ep_count:>4} rew={ep_reward:+.3f} "
+                      f"ma={ma:+.3f} eps={agent.epsilon:.3f} "
+                      f"loss={f'{loss:.4f}' if loss else 'N/A'} t={time.time()-t0:.0f}s")
+            obs_arr, _ = env.reset(seed=seed + ep_count)
+            ep_reward = 0.0
+
+        if ckpt_interval and step > start_step and step % ckpt_interval == 0:
+            _save_ckpt(ckpt, agent, step, ep_count, logger, run_name,
+                       algo=algo, obs_dim=obs_dim, seed=seed)
+
+    _save_ckpt(ckpt, agent, steps, ep_count, logger, run_name,
+               algo=algo, obs_dim=obs_dim, seed=seed)
+    logger.close()
     env.close()
-    model_path = log_path.with_suffix(".pt")
-    torch.save({"state_dict": agent.state_dict(), "algo": algo,
-                "obs_dim": obs_dim, "steps": steps, "seed": seed}, model_path)
-    print(f"[{algo}] done → {log_path} | model → {model_path}")
+    _save_model(log_path, agent, algo=algo, obs_dim=obs_dim, steps=steps, seed=seed)
+    print(f"[{algo}] done -> {log_path}")
 
 
-def train_ppo(algo, steps, seed, log_path):
+def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume):
+    run_name = f"{algo}_seed{seed}"
     np.random.seed(seed)
     env = make_env(seed)
     n_gnb = env.n_gnb
-    obs_dim = n_gnb * 8 if algo == "central-ppo" else 8
+    is_central = algo == "central-ppo"
+    obs_dim = n_gnb * 8 if is_central else 8
     agent = MLPPPOAgent(obs_dim).to(DEVICE)
     print(f"[{algo}] device={DEVICE}")
-    buf = RolloutBuffer(n_steps=ROLLOUT_STEPS, n_agents=n_gnb)
-    obs_arr, _ = env.reset(seed=seed)
-    ep_reward = ep_count = 0
+    buf = RolloutBuffer(n_steps=ROLLOUT_STEPS, n_agents=1 if is_central else n_gnb)
 
-    with open(log_path, "w", newline="", buffering=1) as f:
-        writer = csv.writer(f)
-        writer.writerow(["step", "episode", "ep_reward", "loss"])
-        t0 = time.time()
-        for step in range(steps):
-            obs_in = obs_arr.flatten() if algo == "central-ppo" else obs_arr
-            actions, log_probs, values = agent.act(obs_in)
-            actions_env = (np.full(n_gnb, int(actions.flat[0]))
-                           if algo == "central-ppo" else actions)
-            next_obs, reward, terminated, truncated, _ = env.step(actions_env)
-            done = terminated or truncated
-            ep_reward += reward
-            buf.add(obs_arr.copy(), actions, log_probs, reward, values, done)
-            obs_arr = next_obs if not done else env.reset(seed=seed+(ep_count:=ep_count+1))[0]
-            if buf.is_full():
-                loss_info = agent.learn(buf.compute_advantages()) if hasattr(agent,"learn") else {}
-                buf.clear()
-                if step % 1000 == 0:
-                    print(f"[{algo}] step={step:>7} ep={ep_count:>4} rew={ep_reward:+.3f} "
-                          f"t={time.time()-t0:.0f}s")
-                writer.writerow([step, ep_count, round(ep_reward,4),
-                                 round(loss_info.get("loss",0),6) if loss_info else ""])
-                ep_reward = 0
+    ckpt = CheckpointManager(run_name)
+    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, resume)
+    logger = MetricsLogger(log_path, resume=resume, ma_deque=ma_deque)
+    logger.set_elapsed_offset(elapsed_off)
+    netstats = EpisodeNetworkStats()
 
+    obs_arr, _ = env.reset(seed=seed + ep_count)
+    ep_reward = 0.0
+    t0 = time.time()
+
+    for step in range(start_step, steps):
+        if is_central:
+            obs_in = obs_arr.flatten()
+            actions, log_probs, values = agent.act(obs_in)   # each (1,)
+            actions_env = np.full(n_gnb, int(actions[0]))
+            stored_state = obs_in.reshape(1, -1)             # (1, obs_dim)
+        else:
+            actions, log_probs, values = agent.act(obs_arr)  # each (N,)
+            actions_env = actions
+            stored_state = obs_arr.copy()                    # (N, 8)
+
+        next_obs, reward, terminated, truncated, info = env.step(actions_env)
+        done = terminated or truncated
+        ep_reward += reward
+        netstats.add(info)
+        buf.add(stored_state, actions, log_probs, reward, values, done)
+
+        if done:
+            ep_count += 1
+            obs_arr, _ = env.reset(seed=seed + ep_count)
+        else:
+            obs_arr = next_obs
+
+        if buf.is_full():
+            loss_info = agent.learn(buf.compute_advantages())
+            buf.clear()
+            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms)
+            ma = logger.log(step, ep_count, ep_reward,
+                            loss=loss_info.get("loss"),
+                            policy_loss=loss_info.get("policy_loss"),
+                            value_loss=loss_info.get("value_loss"),
+                            entropy=loss_info.get("entropy"), **net)
+            netstats.reset()
+            if step % 1000 < ROLLOUT_STEPS:
+                print(f"[{algo}] step={step:>7} ep={ep_count:>4} rew={ep_reward:+.3f} "
+                      f"ma={ma:+.3f} t={time.time()-t0:.0f}s")
+            ep_reward = 0.0
+
+        if ckpt_interval and step > start_step and step % ckpt_interval == 0:
+            _save_ckpt(ckpt, agent, step, ep_count, logger, run_name,
+                       algo=algo, obs_dim=obs_dim, seed=seed)
+
+    _save_ckpt(ckpt, agent, steps, ep_count, logger, run_name,
+               algo=algo, obs_dim=obs_dim, seed=seed)
+    logger.close()
     env.close()
-    model_path = log_path.with_suffix(".pt")
-    torch.save({"state_dict": agent.state_dict(), "algo": algo,
-                "obs_dim": obs_dim, "steps": steps, "seed": seed}, model_path)
-    print(f"[{algo}] done → {log_path} | model → {model_path}")
+    _save_model(log_path, agent, algo=algo, obs_dim=obs_dim, steps=steps, seed=seed)
+    print(f"[{algo}] done -> {log_path}")
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--algo", choices=["idqn","central-dqn","ippo","central-ppo"], default="idqn")
+    p.add_argument("--algo", choices=["idqn", "central-dqn", "ippo", "central-ppo"], default="idqn")
     p.add_argument("--steps", type=int, default=1_000_000)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--ckpt-interval", type=int, default=25_000)
+    p.add_argument("--resume", action="store_true")
     args = p.parse_args()
     log_dir = Path("results/logs"); log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / f"{args.algo}_seed{args.seed}.csv"
-    (train_dqn if "dqn" in args.algo else train_ppo)(args.algo, args.steps, args.seed, log_path)
+    fn = train_dqn if "dqn" in args.algo else train_ppo
+    fn(args.algo, args.steps, args.seed, log_path, args.ckpt_interval, args.resume)
