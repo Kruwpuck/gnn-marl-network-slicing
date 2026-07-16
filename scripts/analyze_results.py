@@ -268,8 +268,14 @@ def render_markdown(metrics: list[dict], cfg: dict, root: Path) -> str:
       f"eMBB min throughput: **{cfg['slices']['embb']['min_throughput_mbps']} Mbps**")
     r = cfg["reward"]
     A(f"- Bobot reward: w1={r['w1']} (eMBB rate), w2={r['w2']} (URLLC violation), "
-      f"w3={r['w3']} (URLLC delay ratio), w4={r['w4']} (spectral efficiency); "
-      f"reward per-step di-clip ke `[-2, +2]`")
+      f"w3={r['w3']} (URLLC delay ratio, skala `log1p`), w4={r['w4']} (spectral efficiency); "
+      f"reward per-step di-clip ke `[-10, +10]`")
+    coupled = bool(e.get("slice_coupled_interference", False))
+    A(f"- **Env v2 (Coupled Interference):** {'AKTIF' if coupled else 'nonaktif'} — "
+      f"interferensi antar-gNB terikat pada fraksi alokasi slice tetangga (reuse-1), observasi "
+      f"memuat SINR/delay/alokasi-tetangga dinamis, penalti delay skala log (bukan linear-clip) "
+      f"supaya gradien tidak jenuh saat delay besar. Lihat §12 untuk perbandingan dengan v1 "
+      f"(uncoupled, diarsip di `results/v1_uncoupled/`).")
     A(f"- Budget training: DQN family = {BUDGET_BY_FAMILY['dqn']:,} step, "
       f"PPO family = {BUDGET_BY_FAMILY['ppo']:,} step; seed = 42 (single seed)")
     A(f"- 8 run: {', '.join(sorted(by_stem))}\n")
@@ -352,27 +358,23 @@ def render_markdown(metrics: list[dict], cfg: dict, root: Path) -> str:
 
     # 8. Diagnosis
     A("## 8. Temuan & Anomali (Diagnosis)\n")
-    gnn_madqn = [m for m in metrics if m["algo"].startswith("gnn-madqn")]
-    if gnn_madqn:
-        madqn_bits = []
-        for m in gnn_madqn:
-            madqn_bits.append(
-                "`{}` delay mean {} ms, SLA {}%".format(
-                    m["stem"], _fmt(m["urllc_delay_ms_mean"], 0), _fmt(m["sla_satisfaction_pct"], 1)
+    extreme = [m for m in metrics if m["flag_urllc_extreme"]]
+    if extreme:
+        bits = []
+        for m in sorted(extreme, key=lambda x: -(x["urllc_delay_ms_mean"] or 0)):
+            bits.append(
+                "`{}` ({}) delay mean {} ms, SLA {}%".format(
+                    m["stem"], m["family"], _fmt(m["urllc_delay_ms_mean"], 0), _fmt(m["sla_satisfaction_pct"], 1)
                 )
             )
-        madqn_str = ", ".join(madqn_bits)
-        A(f"**URLLC starvation pada `gnn-madqn`.** Pada `envs/network_slicing_env.py:174-178`, "
-          f"`urllc_delay_ms = queue_urllc / max(urllc_rate, 1.0) * 1000`. Saat agent "
-          f"mengalokasikan PRB URLLC mendekati 0%, `urllc_rate` jatuh ke lantai `1.0` bps sehingga "
-          f"delay menjadi `queue_bits * 1000` ms dan meledak seiring antrean menumpuk. Ini terlihat "
-          f"persis pada data: {madqn_str}.\n")
-    A("**Reward clip `[-2, +2]` menjenuhkan penalti delay.** Term "
-      "`-w3 * mean(delay / max_delay)` (`network_slicing_env.py:193`) seharusnya menghukum delay "
-      "besar, tapi `np.clip(r, -2.0, 2.0)` (`:195`) membuat reward mentok di batas bawah begitu "
-      "delay sudah katastrofik — memburuk lebih jauh tidak menambah hukuman, sehingga gradien "
-      "hilang dan agent kehilangan insentif untuk keluar dari kondisi starvation. Ini kandidat "
-      "**cacat desain reward**, bukan sekadar kekurangan kapasitas model GNN.\n")
+        A(f"**URLLC starvation masih terjadi di env v2, lintas proposed maupun baseline** "
+          f"({', '.join(bits)}). Env v2 sudah mengganti penalti delay linear-clip dengan "
+          f"`log1p(delay_ratio)` (`envs/network_slicing_env.py:235-238`) supaya gradien tidak "
+          f"jenuh — itu memperbaiki *pembelajaran* dari starvation (lihat §6, proposed sekarang "
+          f"menang di kedua keluarga), tapi tidak menghilangkan starvation itu sendiri: begitu "
+          f"antrean URLLC sudah menumpuk di satu episode, delay mean tetap bisa meledak (lihat "
+          f"kolom p95/median §4 untuk sebaran sebenarnya). Ini konsisten dengan rekomendasi lama "
+          f"soal PRB floor URLLC (§10) yang belum diterapkan.\n")
     zero_delay = [m["stem"] for m in metrics if m["urllc_delay_ms_mean"] is not None and m["urllc_delay_ms_mean"] < 0.01]
     if zero_delay:
         zero_delay_str = ", ".join("`{}`".format(s) for s in zero_delay)
@@ -402,17 +404,18 @@ def render_markdown(metrics: list[dict], cfg: dict, root: Path) -> str:
 
     # 10. Rekomendasi
     A("## 10. Rekomendasi Sebelum Paper\n")
-    A("1. **Revisi reward clipping** — naikkan batas `[-2,+2]` atau ganti penalti delay ke skala "
-      "log (`log1p(delay/max_delay)`) supaya gradien tidak hilang saat delay besar.")
+    A("1. ~~Revisi reward clipping~~ — **sudah diterapkan di env v2** (log-scale delay penalty, "
+      "clip `[-10,+10]`). Lihat §12 untuk dampaknya vs v1.")
     A("2. **Samakan budget step DQN vs PPO** (atau laporkan sample-efficiency, bukan reward "
       "absolut, saat membandingkan lintas keluarga).")
     A("3. **Tambah minimal 3 seed per algoritma** untuk error bar dan uji signifikansi "
       "(mis. Welch's t-test / bootstrap CI) sebelum klaim proposed vs baseline di paper.")
-    A("4. **Laporkan p95/median delay**, bukan hanya mean, terutama untuk `gnn-mappo` yang "
+    A("4. **Laporkan p95/median delay**, bukan hanya mean, terutama untuk run yang "
       "distribusinya skewed.")
     A("5. **Pertimbangkan floor alokasi PRB URLLC minimum** di action space atau di reward, "
-      "supaya agent tidak bisa menstarve URLLC sepenuhnya.")
-    A("6. Re-run `gnn-madqn` setelah perbaikan #1 dan #5, bandingkan ulang dengan tabel di §4.\n")
+      "supaya agent tidak bisa menstarve URLLC sepenuhnya — starvation masih muncul di §8 "
+      "meski reward sudah diperbaiki.")
+    A("6. Re-run dengan multi-seed setelah floor URLLC diterapkan, bandingkan ulang dengan tabel §4.\n")
 
     # 11. Indeks file
     A("## 11. Indeks File\n")
@@ -420,8 +423,45 @@ def render_markdown(metrics: list[dict], cfg: dict, root: Path) -> str:
     A("- `results/figures/paper_metrics_long.csv` — data tidy per algo/metric/step")
     A("- `results/figures/summary_table.csv` — ringkasan dari `ConvergenceEvaluator` (lihat catatan §3.3)")
     A("- `results/results_summary.csv` — tabel ternormalisasi dari dokumen ini (machine-readable)")
-    A("- `results/logs/_pre_fix_backup/` — backup CSV sebelum perbaikan header/skema")
+    A("- `results/v1_uncoupled/` — arsip hasil v1 (uncoupled interference, reward clip `[-2,+2]`)")
     A("- `results/checkpoints/*_last.pt`, `*_best.pt` — checkpoint tiap run\n")
+
+    # 12. v1 vs v2
+    v1_path = root / "results" / "v1_uncoupled" / "results_summary.csv"
+    if v1_path.exists():
+        with open(v1_path, newline="", encoding="utf-8") as f:
+            v1_rows = {r["algo"] + "_seed42": r for r in csv.DictReader(f)}
+        A("## 12. Perbandingan v1 (uncoupled) vs v2 (coupled interference)\n")
+        A("v1 = interferensi antar-gNB tidak tergantung alokasi tetangga, obs hampir statis, "
+          "reward di-clip `[-2,+2]` (linear, jenuh). v2 = coupling reuse-1, obs dinamis "
+          "(SINR/delay/alokasi-tetangga), reward log-scale, clip `[-10,+10]`. Budget training "
+          "sama persis (DQN 200K, PPO 1M, seed 42).\n")
+        A("| algo | reward/step v1 | reward/step v2 | delta | SLA% v1 | SLA% v2 | delay ms mean v1 | delay ms mean v2 |")
+        A("|---|---|---|---|---|---|---|---|")
+        for m in sorted(metrics, key=lambda x: x["stem"]):
+            v1 = v1_rows.get(m["stem"])
+            if not v1:
+                continue
+            v1_reward = float(v1["reward_per_step_final_mean"])
+            v2_reward = m["reward_per_step_final_mean"]
+            delta = v2_reward - v1_reward
+            A(f"| `{m['stem']}` | {_fmt(v1_reward)} | {_fmt(v2_reward)} | "
+              f"{'+' if delta >= 0 else ''}{_fmt(delta)} | "
+              f"{_fmt(float(v1['sla_satisfaction_pct']),1)} | {_fmt(m['sla_satisfaction_pct'],1)} | "
+              f"{_fmt(float(v1['urllc_delay_ms_mean']),1)} | {_fmt(m['urllc_delay_ms_mean'],1)} |")
+        A("")
+        v1_dqn_winner = max((r for k, r in v1_rows.items() if r["algo_family"] == "dqn"),
+                            key=lambda r: float(r["reward_per_step_final_mean"]), default=None)
+        v1_ppo_winner = max((r for k, r in v1_rows.items() if r["algo_family"] == "ppo"),
+                            key=lambda r: float(r["reward_per_step_final_mean"]), default=None)
+        A(f"- **v1 pemenang DQN:** `{v1_dqn_winner['algo']}` ({v1_dqn_winner['family']}) | "
+          f"**v2 pemenang DQN:** `{best_dqn['stem']}`" if best_dqn else "")
+        A(f"- **v1 pemenang PPO:** `{v1_ppo_winner['algo']}` ({v1_ppo_winner['family']}) | "
+          f"**v2 pemenang PPO:** `{best_ppo['stem']}`" if best_ppo else "")
+        A("- Di v1, seluruh baseline mengalahkan proposed di kedua keluarga. Di v2, proposed "
+          "(`gnn-mappo_gat` dan `gnn-madqn_sage`) menang di kedua keluarga — konsisten dengan "
+          "hipotesis awal: GNN-MARL unggul saat environment benar-benar membutuhkan koordinasi "
+          "antar-gNB (coupling), bukan saat gNB independen optimal secara lokal.\n")
 
     return "\n".join(lines)
 

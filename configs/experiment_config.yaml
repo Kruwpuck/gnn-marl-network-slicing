@@ -8,6 +8,7 @@ env:
   h_ut: 1.5
   area_size: 500
   n_ue_per_gnb: 5
+  slice_coupled_interference: true
 
 slices:
   embb:

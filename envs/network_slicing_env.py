@@ -16,10 +16,16 @@ class NetworkSlicingEnv(gym.Env):
     Centralized Gymnasium env for 5G/6G network slicing research.
 
     Observation: ndarray (n_gnb, 8) — one row per gNB:
-        [channel_gain_db, sinr_embb, sinr_urllc,
-         queue_embb, queue_urllc, demand_embb, demand_urllc, prev_alloc]
+        [channel_gain_db, sinr_embb_norm, sinr_urllc_norm,
+         queue_embb, queue_urllc, last_delay_norm,
+         neighbor_urllc_frac_mean, prev_alloc]
 
     Action (MultiDiscrete): tier index per gNB, 0..10 = 0%..100% URLLC PRB (step 10%).
+
+    Co-slice interference (env.slice_coupled_interference=True, reuse-1): interference
+    a gNB receives on a given slice's subband scales with how much of that subband its
+    neighbors are also using for the same slice — allocation decisions couple across
+    gNBs, so coordination (not just per-gNB optimization) matters.
     """
 
     metadata = {"render_modes": []}
@@ -38,6 +44,9 @@ class NetworkSlicingEnv(gym.Env):
         self.area_size: float = float(cfg["env"]["area_size"])
         self.n_ue_per_gnb: int = cfg["env"]["n_ue_per_gnb"]
         self.episode_length: int = cfg["training"]["episode_length"]
+        self.slice_coupled_interference: bool = bool(
+            cfg["env"].get("slice_coupled_interference", True)
+        )
 
         self.w1 = float(cfg["reward"]["w1"])
         self.w2 = float(cfg["reward"]["w2"])
@@ -84,6 +93,9 @@ class NetworkSlicingEnv(gym.Env):
         self._queue_embb: np.ndarray | None = None
         self._queue_urllc: np.ndarray | None = None
         self._prev_alloc: np.ndarray | None = None
+        self._last_sinr_embb: np.ndarray | None = None
+        self._last_sinr_urllc: np.ndarray | None = None
+        self._last_delay_ms: np.ndarray | None = None
         self._urllc_traffic: list = []
         self._embb_traffic: list = []
         self._step_count: int = 0
@@ -112,6 +124,9 @@ class NetworkSlicingEnv(gym.Env):
         self._queue_embb = np.zeros(self.n_gnb, dtype=np.float32)
         self._queue_urllc = np.zeros(self.n_gnb, dtype=np.float32)
         self._prev_alloc = np.zeros(self.n_gnb, dtype=np.float32)
+        self._last_sinr_embb = np.zeros(self.n_gnb, dtype=np.float32)
+        self._last_sinr_urllc = np.zeros(self.n_gnb, dtype=np.float32)
+        self._last_delay_ms = np.zeros(self.n_gnb, dtype=np.float32)
         self._step_count = 0
 
         self._urllc_traffic = [
@@ -148,23 +163,48 @@ class NetworkSlicingEnv(gym.Env):
         bw_embb = self.bandwidth_hz * embb_fracs
         bw_urllc = self.bandwidth_hz * urllc_fracs
 
+        # Mean rx power per gNB->own-UEs link (dBm), used for both signal and interference.
+        rx_dbm = np.array([
+            self.channel_model.compute_rx_power_dbm(
+                self._pl_matrix[i, i * self.n_ue_per_gnb:(i + 1) * self.n_ue_per_gnb].mean()
+            )
+            for i in range(self.n_gnb)
+        ])
+        # Interferer->my-UEs rx power (dBm), i.e. how strong gNB j's signal lands on my UEs.
+        interferer_rx_dbm = np.array([
+            [
+                self.channel_model.compute_rx_power_dbm(
+                    self._pl_matrix[j, i * self.n_ue_per_gnb:(i + 1) * self.n_ue_per_gnb].mean()
+                )
+                if j != i else -np.inf
+                for j in range(self.n_gnb)
+            ]
+            for i in range(self.n_gnb)
+        ])
+        interferer_mw = 10.0 ** (interferer_rx_dbm / 10.0)
+        interferer_mw = np.where(np.isfinite(interferer_rx_dbm), interferer_mw, 0.0)
+
         embb_rates = np.zeros(self.n_gnb)
         urllc_rates = np.zeros(self.n_gnb)
         sinr_embb = np.zeros(self.n_gnb)
         sinr_urllc = np.zeros(self.n_gnb)
 
         for i in range(self.n_gnb):
-            ue_s = i * self.n_ue_per_gnb
-            ue_e = ue_s + self.n_ue_per_gnb
-            rx = self.channel_model.compute_rx_power_dbm(self._pl_matrix[i, ue_s:ue_e].mean())
-            interf_mw = sum(
-                10.0 ** ((self.tx_power_dbm - self._pl_matrix[j, ue_s:ue_e].mean()) / 10.0)
-                for j in range(self.n_gnb) if j != i
-            )
-            interf_dbm = 10.0 * np.log10(interf_mw + 1e-30) if interf_mw > 0 else -200.0
+            if self.slice_coupled_interference:
+                # Reuse-1: neighbor only interferes on a slice's subband to the extent
+                # it also allocated that subband — this is what makes allocation a
+                # coupled multi-agent decision instead of n independent bandits.
+                interf_mw_embb = float(np.sum(interferer_mw[i] * embb_fracs))
+                interf_mw_urllc = float(np.sum(interferer_mw[i] * urllc_fracs))
+            else:
+                interf_mw_embb = float(np.sum(interferer_mw[i]))
+                interf_mw_urllc = float(np.sum(interferer_mw[i]))
 
-            sinr_embb[i] = self.channel_model.compute_sinr(rx, interf_dbm, max(bw_embb[i], 1.0))
-            sinr_urllc[i] = self.channel_model.compute_sinr(rx, interf_dbm, max(bw_urllc[i], 1.0))
+            interf_dbm_embb = 10.0 * np.log10(interf_mw_embb + 1e-30) if interf_mw_embb > 0 else -200.0
+            interf_dbm_urllc = 10.0 * np.log10(interf_mw_urllc + 1e-30) if interf_mw_urllc > 0 else -200.0
+
+            sinr_embb[i] = self.channel_model.compute_sinr(rx_dbm[i], interf_dbm_embb, max(bw_embb[i], 1.0))
+            sinr_urllc[i] = self.channel_model.compute_sinr(rx_dbm[i], interf_dbm_urllc, max(bw_urllc[i], 1.0))
             embb_rates[i] = self.channel_model.compute_rate(sinr_embb[i], max(bw_embb[i], 1.0))
             urllc_rates[i] = self.channel_model.compute_rate(sinr_urllc[i], max(bw_urllc[i], 1.0))
 
@@ -178,7 +218,11 @@ class NetworkSlicingEnv(gym.Env):
         )
 
         reward = self._compute_reward(embb_rates, urllc_delay_ms)
+
         self._prev_alloc = urllc_fracs.astype(np.float32)
+        self._last_sinr_embb = sinr_embb.astype(np.float32)
+        self._last_sinr_urllc = sinr_urllc.astype(np.float32)
+        self._last_delay_ms = urllc_delay_ms.astype(np.float32)
         self._step_count += 1
 
         obs = self._get_obs()
@@ -188,20 +232,30 @@ class NetworkSlicingEnv(gym.Env):
 
     def _compute_reward(self, embb_rates: np.ndarray, urllc_delay_ms: np.ndarray) -> float:
         t_ref = max(self.embb_min_throughput, 1.0)
-        r = (self.w1 * (embb_rates.mean() / t_ref)
+        delay_ratio = urllc_delay_ms / self.urllc_max_delay_ms
+        r = (self.w1 * min(float(embb_rates.mean() / t_ref), 5.0)
              - self.w2 * float(np.mean(urllc_delay_ms > self.urllc_max_delay_ms))
-             - self.w3 * float(np.mean(urllc_delay_ms / self.urllc_max_delay_ms))
+             - self.w3 * float(np.mean(np.log1p(delay_ratio)))
              + self.w4 * float(embb_rates.sum() / self.bandwidth_hz))
-        return float(np.clip(r, -2.0, 2.0))
+        return float(np.clip(r, -10.0, 10.0))
 
     def _get_obs(self) -> np.ndarray:
         pl_mean = self._pl_matrix.mean(axis=1)
         ch_gain = -pl_mean / 100.0
-        sinr_approx = np.clip(-pl_mean / 150.0, -1.0, 1.0)
+        sinr_embb_norm = np.clip(10.0 * np.log10(self._last_sinr_embb + 1e-12) / 40.0, -3.0, 3.0)
+        sinr_urllc_norm = np.clip(10.0 * np.log10(self._last_sinr_urllc + 1e-12) / 40.0, -3.0, 3.0)
         q_e = np.log1p(self._queue_embb) / 20.0
         q_u = np.log1p(self._queue_urllc) / 20.0
-        return np.stack([ch_gain, sinr_approx, sinr_approx, q_e, q_u, q_e, q_u,
-                         self._prev_alloc], axis=1).astype(np.float32)
+        last_delay_norm = np.log1p(self._last_delay_ms / self.urllc_max_delay_ms) / 5.0
+        n = self.n_gnb
+        if n > 1:
+            total = self._prev_alloc.sum()
+            neighbor_mean = (total - self._prev_alloc) / (n - 1)
+        else:
+            neighbor_mean = np.zeros_like(self._prev_alloc)
+        return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e, q_u,
+                         last_delay_norm, neighbor_mean, self._prev_alloc],
+                        axis=1).astype(np.float32)
 
     def _get_graph_dict(self) -> dict:
         return {"x": self._get_obs(), "edge_index": self._edge_index, "edge_attr": self._edge_attr}
