@@ -26,3 +26,9 @@ compass_artifact_*.md
 results/checkpoints/
 results/logs/stdout/
 results/logs/_pre_fix_backup/  
+ 
+# Local launcher scripts and run logs (machine-specific, not portable) 
+run_*.bat 
+smoke_*.log 
+results/logs/*.log 
+results/logs/*.pt
