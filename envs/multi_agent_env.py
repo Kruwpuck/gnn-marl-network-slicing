@@ -58,7 +58,8 @@ class NetworkSlicingMAEnv(ParallelEnv):
         infos = {a: {} for a in self.agents}
         infos["__common__"] = {"graph": info.get("graph", {}),
                                 "embb_rates": info.get("embb_rates"),
-                                "urllc_delay_ms": info.get("urllc_delay_ms")}
+                                "urllc_violation_rate": info.get("urllc_violation_rate"),
+                                "urllc_delivered_delays": info.get("urllc_delivered_delays")}
 
         if truncated or terminated:
             self.agents = []

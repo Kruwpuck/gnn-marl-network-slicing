@@ -30,9 +30,13 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--steps", type=int, default=200_000)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--config", type=str, default=None)
+    p.add_argument("--tag", type=str, default="")
     args = p.parse_args()
     common = ["--steps", str(args.steps), "--seed", str(args.seed),
-              "--resume", "--ckpt-interval", "25000"]
+              "--resume", "--ckpt-interval", "25000",
+              *(["--config", args.config] if args.config else []),
+              *(["--tag", args.tag] if args.tag else [])]
     jobs = [
         ("idqn",        ["training/train_baselines.py", "--algo", "idqn", *common]),
         ("central-dqn", ["training/train_baselines.py", "--algo", "central-dqn", *common]),

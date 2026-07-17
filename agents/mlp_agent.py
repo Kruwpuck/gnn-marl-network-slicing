@@ -125,13 +125,13 @@ class MLPPPOAgent(nn.Module):
     def _device(self):
         return next(self.parameters()).device
 
-    def act(self, obs: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def act(self, obs: np.ndarray, greedy: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         obs_t = torch.as_tensor(obs, dtype=torch.float32).to(self._device)
         with torch.no_grad():
             logits = self.actor(obs_t)
             values = self.critic(obs_t).squeeze(-1)
             dist = Categorical(logits=logits)
-            actions = dist.sample()
+            actions = logits.argmax(dim=-1) if greedy else dist.sample()
         return (np.atleast_1d(actions.cpu().numpy()),
                 np.atleast_1d(dist.log_prob(actions).cpu().numpy()),
                 np.atleast_1d(values.cpu().numpy()))

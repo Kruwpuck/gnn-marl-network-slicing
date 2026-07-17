@@ -50,7 +50,7 @@ class PPOAgent(nn.Module):
         return self.actor(emb), self.critic(emb).squeeze(-1)
 
     def act(
-        self, graph_dict: dict
+        self, graph_dict: dict, greedy: bool = False
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Return (actions, log_probs, values) each shape (N,)."""
         with torch.no_grad():
@@ -58,7 +58,7 @@ class PPOAgent(nn.Module):
             logits = self.actor(emb)
             values = self.critic(emb).squeeze(-1)
             dist = Categorical(logits=logits)
-            actions = dist.sample()
+            actions = logits.argmax(dim=-1) if greedy else dist.sample()
             log_probs = dist.log_prob(actions)
         return (
             actions.cpu().numpy(),

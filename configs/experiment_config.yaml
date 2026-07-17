@@ -8,7 +8,16 @@ env:
   h_ut: 1.5
   area_size: 500
   n_ue_per_gnb: 5
+  # Radius (m) each UE is dropped within, around its OWN serving gNB — NOT the same
+  # thing as area_size (gNB-to-gNB spacing). Bug-fix v2->v3: UE and gNB positions used
+  # to be sampled independently over the same area_size square (see env docstring for
+  # why that invalidates v1/v2). diag_topology_sweep.py: r=100m gives ~92% of gNBs
+  # positive SIR while still leaving real cell-edge cases (p10 SIR ~2dB) for the
+  # fairness/cell-edge KPI to be meaningful; r=50m was tried and nearly eliminates
+  # cell-edge (p10 ~10dB) — deliberately not used.
+  ue_radius_m: 100
   slice_coupled_interference: true
+  slot_duration_ms: 1.0
 
 slices:
   embb:
@@ -19,19 +28,52 @@ slices:
 
 reward:
   w1: 0.4
-  w2: 0.3
-  w3: 0.2
+  w2: 0.3   # only used when cmdp.enabled=false (scalarized ablation)
   w4: 0.1
 
 traffic:
   urllc:
-    lambda_arrival: 50.0
+    # packets/sec. Calibrated via scripts/diag_traffic_sweep.py + scripts/diag_breakdown.py
+    # AFTER the ue_radius_m channel fix (see env docstring): at this load, static
+    # frac=0.1 gives ~13% network-wide violation (contested), frac=0.8 gives ~5.6%
+    # (structural floor from cell-edge gNBs, spread across gNBs not dominated by one) —
+    # matches cmdp.delta below with a +4.4pp safety margin.
+    lambda_arrival: 25000.0   # ~6.4 Mbps/gNB offered load (25000 * 256 bits/pkt)
     packet_size_bits: 256
   embb:
-    lambda_burst: 4.0
-    lambda_idle: 0.5
-    r_burst_to_idle: 0.2
-    r_idle_to_burst: 0.8
+    lambda_burst: 30.0        # Mbps
+    lambda_idle: 2.0          # Mbps
+    r_burst_to_idle: 20.0     # 1/sec -> mean burst duration 50 ms
+    r_idle_to_burst: 10.0     # 1/sec -> mean idle duration 100 ms
+
+buffer:
+  urllc_max_bits: 40960
+  embb_max_bits: 50_000_000
+
+cmdp:
+  enabled: true
+  # Constraint is NETWORK-WIDE (mean violation across all n_gnb per step), not
+  # per-agent — a persistently weak (cell-edge) gNB can run above delta as long as
+  # the network mean stays under it. delta=0.12 (raised from 0.10): window-level
+  # (dual_update_every-sized) violation std at frac=0.8 measured 1.91pp
+  # (scripts/diag_window_variance.py) — too close to the 2.00pp comfort threshold to
+  # trust as a safe buffer given only 20 sampled windows; a 200K/1M-step real run
+  # will sample far more windows and could realize a worse tail. delta=0.12 keeps a
+  # comfortable margin above the ~5.6-8% structural floor (scripts/diag_breakdown.py)
+  # at low cost (CMDP gradient is still strongly active: frac=0.1 alone gives ~13%
+  # violation, well above delta).
+  delta: 0.12
+  lambda_init: 1.0
+  lambda_lr: 0.01
+  lambda_max: 100.0
+  dual_update_every: 2000
+
+floor:
+  mode: dynamic     # none | static | dynamic
+  base: 0.10
+  k: 0.30
+  lo: 0.10
+  hi: 0.40
 
 training:
   seed: 42

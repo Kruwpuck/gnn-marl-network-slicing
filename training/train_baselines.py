@@ -28,11 +28,11 @@ REPLAY_START = 1000
 ROLLOUT_STEPS = 512
 
 
-def make_env(seed):
-    env = NetworkSlicingEnv(); env.reset(seed=seed); return env
+def make_env(seed, config_path=None):
+    env = NetworkSlicingEnv(config_path=config_path); env.reset(seed=seed); return env
 
 
-def _maybe_resume(ckpt, agent, resume):
+def _maybe_resume(ckpt, agent, env, resume):
     if not resume:
         return 0, 0, deque(maxlen=100), 0.0
     state = ckpt.load_latest()
@@ -43,12 +43,13 @@ def _maybe_resume(ckpt, agent, resume):
     if "epsilon" in state and hasattr(agent, "epsilon"):
         agent.epsilon = state["epsilon"]
     restore_rng_state(state.get("rng", {}))
+    env.set_cmdp_state(state.get("cmdp", {}))
     ma = deque(state.get("ma_deque", []), maxlen=100)
     print(f"[resume] {ckpt.run_name}: from step {state['step']} ep {state['episode']}")
     return int(state["step"]), int(state["episode"]), ma, float(state.get("elapsed_sec", 0.0))
 
 
-def _save_ckpt(ckpt, agent, step, episode, logger, run_name, **meta):
+def _save_ckpt(ckpt, agent, env, step, episode, logger, run_name, **meta):
     ma = float(np.mean(logger.ma_deque)) if logger.ma_deque else None
     state = {
         "model": agent.state_dict(),
@@ -56,6 +57,7 @@ def _save_ckpt(ckpt, agent, step, episode, logger, run_name, **meta):
         "step": step,
         "episode": episode,
         "rng": capture_rng_state(),
+        "cmdp": env.get_cmdp_state(),
         "ma_deque": list(logger.ma_deque),
         "elapsed_sec": logger.elapsed(),
         "run_name": run_name,
@@ -71,10 +73,9 @@ def _save_model(log_path, agent, **meta):
                Path(log_path).with_suffix(".pt"))
 
 
-def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume):
-    run_name = f"{algo}_seed{seed}"
+def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume, config_path, run_name):
     np.random.seed(seed)
-    env = make_env(seed)
+    env = make_env(seed, config_path)
     n_gnb = env.n_gnb
     obs_dim = n_gnb * 8 if algo == "central-dqn" else 8
     agent = MLPDQNAgent(obs_dim).to(DEVICE)
@@ -82,7 +83,7 @@ def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume):
     buf = ReplayBuffer(50_000)
 
     ckpt = CheckpointManager(run_name)
-    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, resume)
+    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, env, resume)
     logger = MetricsLogger(log_path, resume=resume, ma_deque=ma_deque)
     logger.set_elapsed_offset(elapsed_off)
     netstats = EpisodeNetworkStats()
@@ -120,22 +121,23 @@ def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume):
 
         if done:
             ep_count += 1
-            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms)
+            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms, env.slot_s)
             ma = logger.log(step, ep_count, ep_reward, loss=loss,
                             epsilon=agent.epsilon, **net)
             netstats.reset()
             if step % 1000 == 0:
                 print(f"[{algo}] step={step:>7} ep={ep_count:>4} rew={ep_reward:+.3f} "
                       f"ma={ma:+.3f} eps={agent.epsilon:.3f} "
-                      f"loss={f'{loss:.4f}' if loss else 'N/A'} t={time.time()-t0:.0f}s")
+                      f"loss={f'{loss:.4f}' if loss else 'N/A'} lam={env._lam:.3f} "
+                      f"t={time.time()-t0:.0f}s")
             obs_arr, _ = env.reset(seed=seed + ep_count)
             ep_reward = 0.0
 
         if ckpt_interval and step > start_step and step % ckpt_interval == 0:
-            _save_ckpt(ckpt, agent, step, ep_count, logger, run_name,
+            _save_ckpt(ckpt, agent, env, step, ep_count, logger, run_name,
                        algo=algo, obs_dim=obs_dim, seed=seed)
 
-    _save_ckpt(ckpt, agent, steps, ep_count, logger, run_name,
+    _save_ckpt(ckpt, agent, env, steps, ep_count, logger, run_name,
                algo=algo, obs_dim=obs_dim, seed=seed)
     logger.close()
     env.close()
@@ -143,10 +145,9 @@ def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume):
     print(f"[{algo}] done -> {log_path}")
 
 
-def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume):
-    run_name = f"{algo}_seed{seed}"
+def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume, config_path, run_name):
     np.random.seed(seed)
-    env = make_env(seed)
+    env = make_env(seed, config_path)
     n_gnb = env.n_gnb
     is_central = algo == "central-ppo"
     obs_dim = n_gnb * 8 if is_central else 8
@@ -155,7 +156,7 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume):
     buf = RolloutBuffer(n_steps=ROLLOUT_STEPS, n_agents=1 if is_central else n_gnb)
 
     ckpt = CheckpointManager(run_name)
-    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, resume)
+    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, env, resume)
     logger = MetricsLogger(log_path, resume=resume, ma_deque=ma_deque)
     logger.set_elapsed_offset(elapsed_off)
     netstats = EpisodeNetworkStats()
@@ -190,7 +191,7 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume):
         if buf.is_full():
             loss_info = agent.learn(buf.compute_advantages())
             buf.clear()
-            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms)
+            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms, env.slot_s)
             ma = logger.log(step, ep_count, ep_reward,
                             loss=loss_info.get("loss"),
                             policy_loss=loss_info.get("policy_loss"),
@@ -199,14 +200,14 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume):
             netstats.reset()
             if step % 1000 < ROLLOUT_STEPS:
                 print(f"[{algo}] step={step:>7} ep={ep_count:>4} rew={ep_reward:+.3f} "
-                      f"ma={ma:+.3f} t={time.time()-t0:.0f}s")
+                      f"ma={ma:+.3f} lam={env._lam:.3f} t={time.time()-t0:.0f}s")
             ep_reward = 0.0
 
         if ckpt_interval and step > start_step and step % ckpt_interval == 0:
-            _save_ckpt(ckpt, agent, step, ep_count, logger, run_name,
+            _save_ckpt(ckpt, agent, env, step, ep_count, logger, run_name,
                        algo=algo, obs_dim=obs_dim, seed=seed)
 
-    _save_ckpt(ckpt, agent, steps, ep_count, logger, run_name,
+    _save_ckpt(ckpt, agent, env, steps, ep_count, logger, run_name,
                algo=algo, obs_dim=obs_dim, seed=seed)
     logger.close()
     env.close()
@@ -221,8 +222,16 @@ if __name__ == "__main__":
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--ckpt-interval", type=int, default=25_000)
     p.add_argument("--resume", action="store_true")
+    p.add_argument("--config", type=str, default=None,
+                   help="path to an experiment_config.yaml variant "
+                        "(default: configs/experiment_config.yaml)")
+    p.add_argument("--tag", type=str, default="",
+                   help="suffix for run_name/log/checkpoint, e.g. _floornone")
     args = p.parse_args()
+
+    run_name = f"{args.algo}{args.tag}_seed{args.seed}"
     log_dir = Path("results/logs"); log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / f"{args.algo}_seed{args.seed}.csv"
+    log_path = log_dir / f"{run_name}.csv"
     fn = train_dqn if "dqn" in args.algo else train_ppo
-    fn(args.algo, args.steps, args.seed, log_path, args.ckpt_interval, args.resume)
+    fn(args.algo, args.steps, args.seed, log_path, args.ckpt_interval, args.resume,
+       args.config, run_name)

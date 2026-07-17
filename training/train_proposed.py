@@ -7,6 +7,8 @@ resumable checkpoints. Use --resume to continue an interrupted run.
 Usage:
   python training/train_proposed.py --algo gnn-madqn --backbone gat --steps 200000 --seed 42
   python training/train_proposed.py --algo gnn-mappo --backbone gat --steps 1000000 --seed 42 --resume
+  python training/train_proposed.py --algo gnn-madqn --backbone gat --seed 42 \
+      --config configs/generated/floor_none.yaml --tag _floornone
 """
 from __future__ import annotations
 import argparse
@@ -38,8 +40,8 @@ REPLAY_START = 1000
 ROLLOUT_STEPS = 512
 
 
-def make_env(seed: int) -> NetworkSlicingEnv:
-    env = NetworkSlicingEnv()
+def make_env(seed: int, config_path: str | None = None) -> NetworkSlicingEnv:
+    env = NetworkSlicingEnv(config_path=config_path)
     env.reset(seed=seed)
     return env
 
@@ -48,7 +50,7 @@ def _graph_from_info(info: dict) -> dict:
     return info["graph"]
 
 
-def _maybe_resume(ckpt: CheckpointManager, agent, resume: bool):
+def _maybe_resume(ckpt: CheckpointManager, agent, env: NetworkSlicingEnv, resume: bool):
     """Restore (start_step, episode, ma_deque, elapsed) from last checkpoint."""
     if not resume:
         return 0, 0, deque(maxlen=100), 0.0
@@ -60,15 +62,16 @@ def _maybe_resume(ckpt: CheckpointManager, agent, resume: bool):
     if "epsilon" in state and hasattr(agent, "epsilon"):
         agent.epsilon = state["epsilon"]
     restore_rng_state(state.get("rng", {}))
+    env.set_cmdp_state(state.get("cmdp", {}))
     ma = deque(state.get("ma_deque", []), maxlen=100)
     print(f"[resume] {ckpt.run_name}: from step {state['step']} ep {state['episode']}")
     return int(state["step"]), int(state["episode"]), ma, float(state.get("elapsed_sec", 0.0))
 
 
-def train_gnn_dqn(backbone_name, steps, seed, log_path, ckpt_interval, resume) -> None:
-    run_name = f"gnn-madqn_{backbone_name}_seed{seed}"
+def train_gnn_dqn(backbone_name, steps, seed, log_path, ckpt_interval, resume,
+                   config_path, run_name) -> None:
     np.random.seed(seed)
-    env = make_env(seed)
+    env = make_env(seed, config_path)
 
     backbone = BACKBONES[backbone_name]()
     agent = DQNAgent(backbone).to(DEVICE)
@@ -76,7 +79,7 @@ def train_gnn_dqn(backbone_name, steps, seed, log_path, ckpt_interval, resume) -
     buf = ReplayBuffer(capacity=50_000)
 
     ckpt = CheckpointManager(run_name)
-    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, resume)
+    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, env, resume)
 
     logger = MetricsLogger(log_path, resume=resume, ma_deque=ma_deque)
     logger.set_elapsed_offset(elapsed_off)
@@ -104,23 +107,24 @@ def train_gnn_dqn(backbone_name, steps, seed, log_path, ckpt_interval, resume) -
 
         if done:
             ep_count += 1
-            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms)
+            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms, env.slot_s)
             ma = logger.log(step, ep_count, ep_reward, loss=loss,
                             epsilon=agent.epsilon, **net)
             netstats.reset()
             if step % 1000 == 0:
                 print(f"[gnn-madqn/{backbone_name}] step={step:>7} ep={ep_count:>4} "
                       f"rew={ep_reward:+.3f} ma={ma:+.3f} eps={agent.epsilon:.3f} "
-                      f"loss={f'{loss:.4f}' if loss else 'N/A'} t={time.time()-t0:.0f}s")
+                      f"loss={f'{loss:.4f}' if loss else 'N/A'} lam={env._lam:.3f} "
+                      f"t={time.time()-t0:.0f}s")
             obs_arr, info = env.reset(seed=seed + ep_count)
             graph = _graph_from_info(info)
             ep_reward = 0.0
 
         if ckpt_interval and step > start_step and step % ckpt_interval == 0:
-            _save_ckpt(ckpt, agent, step, ep_count, logger, run_name,
+            _save_ckpt(ckpt, agent, env, step, ep_count, logger, run_name,
                        algo="gnn-madqn", backbone=backbone_name, seed=seed)
 
-    _save_ckpt(ckpt, agent, steps, ep_count, logger, run_name,
+    _save_ckpt(ckpt, agent, env, steps, ep_count, logger, run_name,
                algo="gnn-madqn", backbone=backbone_name, seed=seed)
     logger.close()
     env.close()
@@ -129,10 +133,10 @@ def train_gnn_dqn(backbone_name, steps, seed, log_path, ckpt_interval, resume) -
     print(f"[gnn-madqn/{backbone_name}] done -> {log_path}")
 
 
-def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume) -> None:
-    run_name = f"gnn-mappo_{backbone_name}_seed{seed}"
+def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume,
+                   config_path, run_name) -> None:
     np.random.seed(seed)
-    env = make_env(seed)
+    env = make_env(seed, config_path)
     n_gnb = env.n_gnb
 
     backbone = BACKBONES[backbone_name]()
@@ -141,7 +145,7 @@ def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume) -
     buf = RolloutBuffer(n_steps=ROLLOUT_STEPS, n_agents=n_gnb)
 
     ckpt = CheckpointManager(run_name)
-    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, resume)
+    start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, env, resume)
 
     logger = MetricsLogger(log_path, resume=resume, ma_deque=ma_deque)
     logger.set_elapsed_offset(elapsed_off)
@@ -172,7 +176,7 @@ def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume) -
         if buf.is_full():
             loss_info = agent.learn(buf.compute_advantages())
             buf.clear()
-            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms)
+            net = netstats.summary(env.bandwidth_hz, env.urllc_max_delay_ms, env.slot_s)
             ma = logger.log(step, ep_count, ep_reward,
                             loss=loss_info.get("loss"),
                             policy_loss=loss_info.get("policy_loss"),
@@ -181,14 +185,15 @@ def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume) -
             netstats.reset()
             if step % 1000 < ROLLOUT_STEPS:
                 print(f"[gnn-mappo/{backbone_name}] step={step:>7} ep={ep_count:>4} "
-                      f"rew={ep_reward:+.3f} ma={ma:+.3f} t={time.time()-t0:.0f}s")
+                      f"rew={ep_reward:+.3f} ma={ma:+.3f} lam={env._lam:.3f} "
+                      f"t={time.time()-t0:.0f}s")
             ep_reward = 0.0
 
         if ckpt_interval and step > start_step and step % ckpt_interval == 0:
-            _save_ckpt(ckpt, agent, step, ep_count, logger, run_name,
+            _save_ckpt(ckpt, agent, env, step, ep_count, logger, run_name,
                        algo="gnn-mappo", backbone=backbone_name, seed=seed)
 
-    _save_ckpt(ckpt, agent, steps, ep_count, logger, run_name,
+    _save_ckpt(ckpt, agent, env, steps, ep_count, logger, run_name,
                algo="gnn-mappo", backbone=backbone_name, seed=seed)
     logger.close()
     env.close()
@@ -197,7 +202,7 @@ def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume) -
     print(f"[gnn-mappo/{backbone_name}] done -> {log_path}")
 
 
-def _save_ckpt(ckpt, agent, step, episode, logger, run_name, **meta) -> None:
+def _save_ckpt(ckpt, agent, env, step, episode, logger, run_name, **meta) -> None:
     ma = float(np.mean(logger.ma_deque)) if logger.ma_deque else None
     state = {
         "model": agent.state_dict(),
@@ -205,6 +210,7 @@ def _save_ckpt(ckpt, agent, step, episode, logger, run_name, **meta) -> None:
         "step": step,
         "episode": episode,
         "rng": capture_rng_state(),
+        "cmdp": env.get_cmdp_state(),
         "ma_deque": list(logger.ma_deque),
         "elapsed_sec": logger.elapsed(),
         "run_name": run_name,
@@ -228,15 +234,23 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--ckpt-interval", type=int, default=25_000)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--config", type=str, default=None,
+                         help="path to an experiment_config.yaml variant "
+                              "(default: configs/experiment_config.yaml)")
+    parser.add_argument("--tag", type=str, default="",
+                         help="suffix for run_name/log/checkpoint, e.g. _floornone, "
+                              "so ablation variants don't collide with the main wave")
     args = parser.parse_args()
+
+    run_name = f"{args.algo}_{args.backbone}{args.tag}_seed{args.seed}"
 
     log_dir = Path("results/logs")
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / f"{args.algo}_{args.backbone}_seed{args.seed}.csv"
+    log_path = log_dir / f"{run_name}.csv"
 
     if args.algo == "gnn-madqn":
         train_gnn_dqn(args.backbone, args.steps, args.seed, log_path,
-                      args.ckpt_interval, args.resume)
+                      args.ckpt_interval, args.resume, args.config, run_name)
     else:
         train_gnn_ppo(args.backbone, args.steps, args.seed, log_path,
-                      args.ckpt_interval, args.resume)
+                      args.ckpt_interval, args.resume, args.config, run_name)
