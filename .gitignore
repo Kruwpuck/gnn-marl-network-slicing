@@ -37,3 +37,18 @@ smoke_*.log
 # Generated per-run config variants (reproducible from configs/experiment_config.yaml
 # + scripts/run_wave.py, not hand-authored — regenerate rather than commit)
 configs/generated/
+
+# LaTeX build
+paper/build/
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.synctex.gz
+paper/*.toc
+paper/*.pdf
+# template zip (sumber, tak perlu di-track)
+*.zip
