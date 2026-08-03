@@ -1,8 +1,10 @@
-[← Bug-fix & kalibrasi](05_bugfix-topologi-kalibrasi.md) | [Index](00_INDEX.md)
+[← Bug-fix & kalibrasi](05_bugfix-topologi-kalibrasi.md) | [Index](00_INDEX.md) | [Hasil evaluasi v3 →](07_hasil-evaluasi-v3.md)
 
-# 06 — Status Training v3 (Saat Ini)
+# 06 — Rencana Training v3
 
-> Dokumen ini akan di-update setelah training wave selesai. Status di bawah adalah kondisi terakhir sebelum wave dijalankan.
+> **Status: selesai.** Wave dijalankan 2026-07-20 → 2026-08-01 (80 run), pipeline analisis selesai 2026-08-03. **Hasil, temuan, dan interpretasi ada di [file 07](07_hasil-evaluasi-v3.md).**
+>
+> Dokumen ini sengaja dipertahankan seperti aslinya — ditulis **sebelum** hasil terlihat. Kriteria sukses di bawah adalah pra-registrasi, dan file 07 menilai hasil terhadapnya apa adanya.
 
 ## Kode: siap, sudah ter-commit
 
@@ -10,7 +12,7 @@
 - Gate kalibrasi (`scripts/calibrate_load.py`) lolos dengan parameter final: `ue_radius_m=100`, `lambda_arrival=25000`, `delta=0.12` (lihat file 05 untuk proses lengkap).
 - Commit dilakukan **sebelum** training wave dijalankan — supaya titik kerja yang mahal untuk diulang (bug-fix + kalibrasi rigorous) sudah checkpoint aman di git sebelum training multi-hari dijalankan di atasnya.
 
-## Training wave: belum dijalankan
+## Training wave
 
 Wave dijalankan manual di PC lab (GPU RTX 3060 lokal) lewat 3 command `scripts/run_wave.py`, berurutan (satu GPU, tidak paralel antar-command):
 
@@ -56,13 +58,15 @@ scripts/make_paper_figures.py     → results/figures/*.png
 - **α-fair utility sweep** — KPI cell-edge P5 throughput sudah masuk logging v3 (gratis, tanpa run tambahan), jadi framing efficiency-vs-fairness sudah bisa ditulis dari data wave ini tanpa run α-fair terpisah.
 - **Curriculum learning / prioritized URLLC head** — ditunda sampai hasil v3 keluar; kalau proposed sudah menang SLA-at-equal-throughput, kompleksitas tambahan ini tidak diperlukan.
 
-## Data & artefak (akan terisi setelah wave berjalan)
+## Data & artefak
+
+Semua sudah terisi — daftar lengkap beserta angka hasilnya ada di [file 07 §8](07_hasil-evaluasi-v3.md).
 
 - `results/logs/*.csv` — CSV mentah per (algoritma, seed, floor-mode)
 - `results/eval/*.csv` — hasil evaluasi held-out
-- `results/RESULTS.md`, `results/RLIABLE.md` — laporan akhir
+- `results/RESULTS.md`, `results/RLIABLE.md` (+ varian `_floornone`, `_floorstatic`) — laporan akhir
 - `results/figures/*.png` — grafik untuk paper/presentasi
 
 ---
 
-[← Bug-fix & kalibrasi](05_bugfix-topologi-kalibrasi.md) | [Index](00_INDEX.md)
+[← Bug-fix & kalibrasi](05_bugfix-topologi-kalibrasi.md) | [Index](00_INDEX.md) | [Hasil evaluasi v3 →](07_hasil-evaluasi-v3.md)

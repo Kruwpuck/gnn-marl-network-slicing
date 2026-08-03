@@ -4,7 +4,7 @@ Dokumen ini adalah seri catatan perjalanan riset — dari rencana awal, tiga rev
 
 ## Cara baca
 
-Baca berurutan 01 → 06. Setiap file punya bagian **"Data & artefak"** di akhir yang menunjuk ke file CSV/figure/config asli — bukan angka yang diketik ulang dari ingatan, semua disalin langsung dari laporan `RESULTS.md` yang di-generate otomatis oleh `scripts/analyze_results.py` di tiap tahap.
+Baca berurutan 01 → 07. Setiap file punya bagian **"Data & artefak"** di akhir yang menunjuk ke file CSV/figure/config asli — bukan angka yang diketik ulang dari ingatan, semua disalin langsung dari laporan `RESULTS.md` yang di-generate otomatis oleh `scripts/analyze_results.py` di tiap tahap.
 
 | # | File | Isi |
 |---|---|---|
@@ -13,7 +13,8 @@ Baca berurutan 01 → 06. Setiap file punya bagian **"Data & artefak"** di akhir
 | 03 | [`03_revisi1-v2-coupled.md`](03_revisi1-v2-coupled.md) | Revisi 1: coupled interference + log-scale reward — hasil dan masalah tersisa |
 | 04 | [`04_revisi2-v3-cmdp.md`](04_revisi2-v3-cmdp.md) | Revisi 2: redesain CMDP + packet-level URLLC + PRB floor — desain dan justifikasi |
 | 05 | [`05_bugfix-topologi-kalibrasi.md`](05_bugfix-topologi-kalibrasi.md) | Bug-fix topologi UE-gNB (ditemukan saat gate kalibrasi v3) + proses kalibrasi ulang |
-| 06 | [`06_status-training-v3.md`](06_status-training-v3.md) | Status training v3 saat ini + rencana analisis akhir |
+| 06 | [`06_status-training-v3.md`](06_status-training-v3.md) | Rencana training wave v3 + pipeline analisis + kriteria sukses pra-registrasi |
+| 07 | [`07_hasil-evaluasi-v3.md`](07_hasil-evaluasi-v3.md) | **Hasil akhir**: 80 run selesai, IQM + bootstrap CI, saturasi KPI, temuan cell-edge, ablation floor, batasan |
 
 ## Timeline
 
@@ -26,7 +27,8 @@ Baca berurutan 01 → 06. Setiap file punya bagian **"Data & artefak"** di akhir
 | 2026-07-16 | `8a78a22` | **Revisi 1**: env v2 coupled interference — proposed menang di dua keluarga algoritma |
 | 2026-07-16 | `84fa150` | Housekeeping .gitignore |
 | 2026-07-17 | `87374bc` | **Revisi 2**: env v3 — packet-level URLLC + CMDP + PRB floor, plus bug-fix topologi UE-gNB |
-| *(berjalan)* | — | Training wave v3 (8 algoritma × 5 seed + 2 ablation) — lihat file 06 |
+| 2026-07-20 → 08-01 | — | Training wave v3 dijalankan di PC lab: 80 run (8 algoritma × 5 seed + 2 ablation × 4 algoritma × 5 seed), ±12 hari wall-clock |
+| 2026-08-03 | — | **Pipeline analisis selesai**: evaluasi held-out + IQM/bootstrap CI + figures — hasil dan interpretasi di file 07 |
 
 ## Peta lokasi data di repo
 
@@ -41,8 +43,13 @@ gnn-marl-network-slicing/
 │   │   ├── RESULTS.md
 │   │   ├── results_summary.csv
 │   │   └── figures/*.png
-│   ├── logs/                # akan berisi CSV run v3 (in progress, lihat file 06)
-│   ├── eval/                # akan berisi hasil evaluasi held-out v3 (belum ada)
+│   ├── RESULTS.md           # KPI operator training-time v3 (72 run) — diagnosis konvergensi
+│   ├── RLIABLE.md           # IQM + bootstrap CI, wave utama — sumber sah klaim statistik
+│   ├── RLIABLE_floornone.md # idem, ablation A (floor=none)
+│   ├── RLIABLE_floorstatic.md # idem, ablation B (floor=static)
+│   ├── logs/                # CSV training v3, 80 run (lihat file 07 §1.3 soal seed 42)
+│   ├── eval/                # 80 CSV evaluasi held-out v3 (30 episode greedy, seed >=10000)
+│   ├── figures/             # 11 grafik + paper_metrics_long.csv + summary_table.csv
 │   └── checkpoints/         # model .pt tersimpan
 ├── configs/experiment_config.yaml   # config aktif (v3)
 ├── envs/network_slicing_env.py      # environment (v3, dengan docstring bug-fix)
@@ -61,9 +68,9 @@ gnn-marl-network-slicing/
 | PyTorch Geometric | 2.8.0 |
 | Gymnasium | 1.1.0 |
 | NumPy | 1.26.4 |
-| Pandas | 3.0.3 |
+| Pandas | 2.2.3 (diturunkan dari 3.0.3 pada 2026-08-03 — lihat file 07 §1.4) |
 | rliable | 1.2.0 (dipakai mulai v3, untuk IQM + bootstrap CI multi-seed) |
-| arch | 7.2.0 |
+| arch | 7.2.0 (versi 8.0.0 tidak kompatibel dengan rliable 1.2.0 — lihat file 07 §1.4) |
 | SciPy | 1.13.0 |
 | Matplotlib | 3.11.0 |
 | GPU | NVIDIA RTX 3060 |

@@ -1,0 +1,82 @@
+{
+  "central-dqn_seed42": {
+    "sample_efficiency": {
+      "100000": 197.3544,
+      "500000": 197.3544,
+      "1000000": 197.3544
+    },
+    "stability_std": 169.39505649587704,
+    "final_reward": 197.3544,
+    "n_episodes": 59
+  },
+  "central-ppo_seed42": {
+    "sample_efficiency": {
+      "100000": -543.0703,
+      "500000": -294.8895,
+      "1000000": -247.752
+    },
+    "stability_std": 23.505329570421292,
+    "final_reward": -247.752,
+    "n_episodes": 1459
+  },
+  "gnn-madqn_gat_seed42": {
+    "sample_efficiency": {
+      "100000": 65.4163,
+      "500000": 65.4163,
+      "1000000": 65.4163
+    },
+    "stability_std": 140.93280061463292,
+    "final_reward": 65.4163,
+    "n_episodes": 14
+  },
+  "gnn-madqn_sage_seed42": {
+    "sample_efficiency": {
+      "100000": -273.3075,
+      "500000": -273.3075,
+      "1000000": -273.3075
+    },
+    "stability_std": 166.58909439824802,
+    "final_reward": -273.3075,
+    "n_episodes": 27
+  },
+  "gnn-mappo_gat_seed42": {
+    "sample_efficiency": {
+      "100000": -504.7254,
+      "500000": 81.433,
+      "1000000": 81.433
+    },
+    "stability_std": 28.798031919743853,
+    "final_reward": 81.433,
+    "n_episodes": 282
+  },
+  "gnn-mappo_sage_seed42": {
+    "sample_efficiency": {
+      "100000": -539.0431,
+      "500000": 165.143,
+      "1000000": 165.143
+    },
+    "stability_std": 38.99218731613587,
+    "final_reward": 165.143,
+    "n_episodes": 514
+  },
+  "idqn_seed42": {
+    "sample_efficiency": {
+      "100000": -2.5456,
+      "500000": -2.5456,
+      "1000000": -2.5456
+    },
+    "stability_std": 163.64575473990126,
+    "final_reward": -2.5456,
+    "n_episodes": 48
+  },
+  "ippo_seed42": {
+    "sample_efficiency": {
+      "100000": -732.393,
+      "500000": -575.6587,
+      "1000000": -410.0934
+    },
+    "stability_std": 14.908019346307212,
+    "final_reward": -410.0934,
+    "n_episodes": 1507
+  }
+}
