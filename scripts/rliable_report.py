@@ -124,6 +124,40 @@ def compare(df: pd.DataFrame, proposed: str, baselines: list[str], tag: str, rep
             else:
                 verdict = "proposed WORSE (CIs disjoint)"
             lines.append(f"    -> vs `{algo}`: {verdict}")
+
+        # P(improvement): pairwise seed-vs-seed comparison, orthogonal to the IQM-CI
+        # overlap verdict above (Mann-Whitney U over seed scores, not aggregate-level).
+        proposed_scores = score_dict[proposed]
+        for algo in baselines:
+            if algo not in score_dict:
+                continue
+            pair = {f"{proposed},{algo}": (proposed_scores, score_dict[algo])}
+            poi_point, poi_ci = rly.get_interval_estimates(
+                pair, lambda x, y: np.array([rly_metrics.probability_of_improvement(x, y)]),
+                reps=min(reps, 2000),  # mannwhitneyu-per-resample is the bottleneck, not sample size
+            )
+            key = f"{proposed},{algo}"
+            p_val = poi_point[key][0]
+            p_lo_r, p_hi_r = poi_ci[key][0][0], poi_ci[key][1][0]
+            lines.append(
+                f"    -> P(`{proposed}` > `{algo}`) = {p_val:.3f}  95% CI=[{p_lo_r:.3f}, {p_hi_r:.3f}]"
+            )
+
+        # Performance profile: fraction of seeds at/above tau, at each baseline's median.
+        # Cheap complement to IQM point estimates — shows spread, not just central tendency.
+        for algo in baselines:
+            if algo not in score_dict:
+                continue
+            tau = float(np.median(score_dict[algo]))
+            profile, _ = rly.create_performance_profile(
+                {proposed: score_dict[proposed], algo: score_dict[algo]}, [tau]
+            )
+            tau_display = tau if higher_better else -tau
+            lines.append(
+                f"    -> performance profile @ tau=median({algo})={tau_display:.4f}: "
+                f"P(`{proposed}` at least as good as tau)={profile[proposed][0]:.3f}  "
+                f"P(`{algo}` at least as good as tau)={profile[algo][0]:.3f}"
+            )
     return lines
 
 

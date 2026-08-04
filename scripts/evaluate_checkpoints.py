@@ -184,7 +184,12 @@ def main() -> None:
         paths = [Path(p) for p in sorted(glob.glob("results/logs/*.pt"))]
 
     for pt_path in paths:
-        evaluate_run(pt_path, args.episodes, args.config, Path(args.out_dir))
+        try:
+            evaluate_run(pt_path, args.episodes, args.config, Path(args.out_dir))
+        except RuntimeError as e:
+            # shape mismatch (e.g. central-* checkpoint evaluated at a different n_gnb
+            # than it was trained on) — that's data (CANNOT_RUN), not a crash.
+            print(f"[{pt_path.stem}] CANNOT_RUN: {e}")
 
 
 if __name__ == "__main__":

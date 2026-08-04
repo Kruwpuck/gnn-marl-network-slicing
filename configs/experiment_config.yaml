@@ -47,7 +47,13 @@ traffic:
     r_idle_to_burst: 10.0     # 1/sec -> mean idle duration 100 ms
 
 buffer:
-  urllc_max_bits: 40960
+  # urllc_max_bits raised 40960 -> 131072 (Fase 2, docs/rev2-implementation-plan.md #5.1):
+  # delay-bandwidth product = lambda_arrival*packet_size_bits * (urllc.max_delay_ms/1000)
+  # = 25000*256 * 0.010 = 64000 bit. Old value (40960) was 0.64x DBP -- buffer filled
+  # before deadline-drop could matter, so violations were overflow-dominated, not
+  # deadline-dominated. New value = 2x DBP + burst margin, so the deadline mechanism
+  # is what binds, matching the CMDP's intended constraint semantics.
+  urllc_max_bits: 131072
   embb_max_bits: 50_000_000
 
 cmdp:
@@ -62,7 +68,13 @@ cmdp:
   # comfortable margin above the ~5.6-8% structural floor (scripts/diag_breakdown.py)
   # at low cost (CMDP gradient is still strongly active: frac=0.1 alone gives ~13%
   # violation, well above delta).
-  delta: 0.12
+  # delta lowered 0.12 -> 0.05 (Fase 2 #5.1): 0.12 was calibrated against a STATIC
+  # policy (scripts/calibrate_load.py), which passed the gate while trained policies
+  # ran far below it -- the constraint never bound during training. 0.05 is a starting
+  # point; scripts/calibrate_trained.py (#5.2) is what sets the final value by raising
+  # load/lowering delta against a TRAINED policy until held-out violation sits near
+  # delta (target 5-12%).
+  delta: 0.05
   lambda_init: 1.0
   lambda_lr: 0.01
   lambda_max: 100.0
