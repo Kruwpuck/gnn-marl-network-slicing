@@ -1,12 +1,12 @@
 {
   "run_id": "2026-08-05-run01",
   "goal": "handoff/goal1.md",
-  "iterasi": 3,
+  "iterasi": 4,
   "level": 5,
   "gagal_beruntun": 0,
-  "commit_hijau_terakhir": "93d1dde",
+  "commit_hijau_terakhir": "5049198",
   "status": "blocked",
   "menunggu_manusia": true,
-  "catatan": "Gate A 4/4 PASS secara angka, tapi A2 lolos hampa: lam naik 18x tanpa mengubah perilaku policy. Lihat handoff/STUCK.md. Keputusan manusia diperlukan sebelum wave.",
-  "diperbarui": "2026-08-06T01:05:00"
+  "catatan": "Jalur B selesai (baseline referensi ippo, A2 dipecah A2a/A2b, mode pengukuran eksplisit). Pengukuran lantai menemukan sebab yang lebih dalam: di titik operasi sekarang seluruh rentang violation yang bisa dicapai policy cuma 1.6pp dan delta duduk di tengahnya. Empat opsi titik operasi di handoff/STUCK.md, semuanya butuh keputusan manusia (C6).",
+  "diperbarui": "2026-08-06T07:10:00"
 }
