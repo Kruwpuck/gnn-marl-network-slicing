@@ -8,13 +8,22 @@ trained policies ran far below delta, so the CMDP constraint never actually boun
 during training (v3 root cause). This trains the *reference baseline* to
 convergence and measures its held-out violation against cmdp.delta.
 
-Reference baseline is `central-ppo`, frozen in handoff/goal1.md Gate A1 *before*
-calibration and required to be non-GNN, so the operating point is never set by
-proposed-model behaviour. Note for the preregistration: central-ppo sees global
-state but emits ONE PRB tier broadcast to all gNB
-(training/train_baselines.py: `actions = np.full(n_gnb, central_action)`), so the
-operating point is fixed by a policy with a narrower action space than the
-per-gNB algorithms. That is legitimate under A1 but must be stated in the paper.
+Reference baseline is `ippo`, frozen in handoff/goal1.md Gate A1 and required to
+be non-GNN, so the operating point is never set by proposed-model behaviour. It
+was `central-ppo` until the 2026-08-06 amendment: central-ppo sees global state
+but emits ONE PRB tier broadcast to all gNB (training/train_baselines.py:
+`actions = np.full(n_gnb, central_action)`), so it would have fixed the operating
+point at the floor of the NARROWEST action space in the wave. `ippo` is per-gNB
+and still non-GNN.
+
+Gate A2 was split by the same amendment, because "lambda >= 5.0" measures the
+SIZE of the dual, not whether the constraint binds -- round 3 passed it with
+lambda 1.03 -> 18.59 and no change in policy behaviour at all. A2a (feasibility)
+takes the action-space violation floor from scripts/probe_action_floor.py via
+--floor-pct. A2b (sensitivity) needs a lambda-frozen control run -- identical
+config with cmdp.lambda_lr = 0 -- passed as --control-tag. Both are measured on
+the deterministic held-out policy; A3/A4 stay on the stochastic training log
+(goal1.md, "Mode pengukuran").
 
 One training + one eval per invocation. Not a fully automated multi-round loop:
 each round costs a full training, and the config being tuned is checked into
@@ -38,7 +47,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CALIB_TAG = "_calib"  # distinct from the main wave's <algo>_seed{N} -- must not collide
-REFERENCE_BASELINE = "central-ppo"  # handoff/goal1.md Gate A1, frozen before calibration
+REFERENCE_BASELINE = "ippo"  # handoff/goal1.md Gate A1 (amended 2026-08-06, see docstring)
 
 
 def gate_a234(csv_path: Path, dual_update_every: int) -> dict:
@@ -84,10 +93,30 @@ def main() -> int:
                    help="run tag; use a fresh one per calibration round (_calib2, _calib3, ...) so "
                         "--resume never mixes a new operating point into an old checkpoint, and so "
                         "earlier rounds stay on disk as evidence (goal1.md integritas #3)")
+    p.add_argument("--floor-pct", type=float, default=None,
+                   help="Gate A2a: violation floor of this algo's action space, in percent, from "
+                        "scripts/probe_action_floor.py. Not measured -> A2a cannot be evaluated")
+    p.add_argument("--control-tag", type=str, default=None,
+                   help="Gate A2b: tag of the lambda-frozen control run (same config, "
+                        "cmdp.lambda_lr = 0). Not given -> A2b cannot be evaluated")
+    p.add_argument("--as-control", action="store_true",
+                   help="train THIS run as the lambda-frozen control for A2b: same config with "
+                        "cmdp.lambda_lr = 0 (lambda stays at lambda_init), derived from the frozen "
+                        "config at runtime so the two runs can never drift apart. Gates are not "
+                        "meaningful for a control run; only its held-out violation is used")
     args = p.parse_args()
 
     config_path = args.config or str(ROOT / "configs" / "experiment_config.yaml")
     cfg = yaml.safe_load(Path(config_path).read_text())
+
+    if args.as_control:
+        cfg["cmdp"]["lambda_lr"] = 0.0
+        control_path = ROOT / "results" / "eval_calib" / "config_lamfrozen.yaml"
+        control_path.parent.mkdir(parents=True, exist_ok=True)
+        control_path.write_text(yaml.safe_dump(cfg, sort_keys=False))
+        config_path = str(control_path)
+        print(f"control run: lambda_lr = 0 (lambda pinned at {cfg['cmdp']['lambda_init']}), "
+              f"config written to {control_path}")
     delta = float(cfg["cmdp"]["delta"])
     dual_update_every = int(cfg["cmdp"]["dual_update_every"])
     lambda_arrival = float(cfg["traffic"]["urllc"]["lambda_arrival"])
@@ -127,24 +156,60 @@ def main() -> int:
     eval_csv = eval_dir / f"{run_name}_eval.csv"
     df = pd.read_csv(eval_csv)
     violation = float(df["sla_violation_pct"].mean()) / 100.0  # fraction, matches delta's units
+
+    if args.as_control:
+        print(f"\nCONTROL (lambda frozen) -- {run_name}: held-out violation "
+              f"{violation*100:.2f}%. Feed it to the real run as --control-tag {args.tag}")
+        return 0
+
     a = gate_a234(csv_path, dual_update_every)
 
+    # A2a/A2b are both scaled by the window std: a shift smaller than the noise the dual
+    # itself sees is not a shift, and a feasibility margin smaller than it is not a margin.
+    std_pp = a["window_std_pp"]
     lo, hi = 0.7 * delta, 1.0 * delta
     gates = {
         "A1 violation in [0.7d, 1.0d]": (lo <= violation <= hi,
             f"{violation*100:.2f}% vs [{lo*100:.2f}%, {hi*100:.2f}%]"),
-        "A2 lam_ss >= 5.0": (a["lam_ss"] >= 5.0, f"{a['lam_ss']:.3f}"),
-        "A3 deadline:overflow >= 3:1": (a["drop_ratio"] >= 3.0,
-            f"{a['drop_ratio']:.2f}:1  (late {a['drop_late_pct']:.2f}%, overflow {a['drop_overflow_pct']:.2f}%)"),
-        "A4 window std < 2.0pp": (a["window_std_pp"] < 2.0,
-            f"{a['window_std_pp']:.2f}pp over {a['n_windows']} windows"),
     }
+
+    if args.floor_pct is None:
+        gates["A2a floor <= delta - 1 std"] = (None, "not measured -- pass --floor-pct "
+                                                     "(scripts/probe_action_floor.py)")
+    else:
+        margin_pp = delta * 100.0 - args.floor_pct
+        gates["A2a floor <= delta - 1 std"] = (margin_pp >= std_pp,
+            f"floor {args.floor_pct:.2f}%, margin {margin_pp:.2f}pp vs std {std_pp:.2f}pp")
+
+    if args.control_tag is None:
+        gates["A2b |viol shift| >= 1 std"] = (None, "not measured -- pass --control-tag "
+                                                    "(lambda-frozen run, cmdp.lambda_lr = 0)")
+    else:
+        ctl_csv = eval_dir / f"{args.algo}{args.control_tag}_seed{args.seed}_eval.csv"
+        if not ctl_csv.exists():
+            print(f"no control eval at {ctl_csv} -- train the lambda-frozen run first")
+            return 1
+        ctl_viol = float(pd.read_csv(ctl_csv)["sla_violation_pct"].mean()) / 100.0
+        shift_pp = abs(ctl_viol - violation) * 100.0
+        gates["A2b |viol shift| >= 1 std"] = (shift_pp >= std_pp,
+            f"{shift_pp:.2f}pp vs std {std_pp:.2f}pp  "
+            f"(lam-frozen {ctl_viol*100:.2f}% -> lam-active {violation*100:.2f}%)")
+
+    gates["A3 deadline:overflow >= 3:1"] = (a["drop_ratio"] >= 3.0,
+        f"{a['drop_ratio']:.2f}:1  (late {a['drop_late_pct']:.2f}%, overflow {a['drop_overflow_pct']:.2f}%)")
+    gates["A4 window std < 2.0pp"] = (a["window_std_pp"] < 2.0,
+        f"{a['window_std_pp']:.2f}pp over {a['n_windows']} windows")
 
     print()
     print(f"GATE A -- {run_name}  (delta={delta:.4f}, lambda_arrival={lambda_arrival:.0f}, "
           f"dual_update_every={dual_update_every})")
     for name, (ok, detail) in gates.items():
-        print(f"  [{'PASS' if ok else 'FAIL'}] {name:<32} {detail}")
+        mark = "SKIP" if ok is None else ("PASS" if ok else "FAIL")
+        print(f"  [{mark}] {name:<32} {detail}")
+    # lam_ss is no longer a gate (it measured the dual's size, not whether it binds), but
+    # it stays in the report: a lambda still climbing at the end of training is evidence
+    # the constraint has no fixed point.
+    print(f"  [----] lam steady-state (report only)   {a['lam_ss']:.3f}")
 
     if all(ok for ok, _ in gates.values()):
         print("\nGate A PASS. Freeze lambda_arrival/delta/urllc_max_bits and commit "

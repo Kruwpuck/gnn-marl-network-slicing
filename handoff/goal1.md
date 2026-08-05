@@ -14,12 +14,17 @@ Wave v4 dinyatakan **selesai** hanya jika **semua** gate di bawah lolos. Kriteri
 
 | # | Kriteria | Ambang | Cara ukur |
 |---|---|---|---|
-| A1 | Constraint mengikat pada policy terlatih | violation held-out baseline referensi ∈ `[0.7·δ, 1.0·δ]` | latih 1 baseline referensi (`central-ppo`) sampai konvergen, ukur held-out |
-| A2 | Dual variable aktif | `λ` steady-state ≥ 5.0 (v3: 0.58–1.02) | rata-rata λ 20% step terakhir |
+| A1 | Constraint mengikat pada policy terlatih | violation held-out baseline referensi ∈ `[0.7·δ, 1.0·δ]` | latih 1 baseline referensi (`ippo`) sampai konvergen, ukur held-out |
+| A2a | Constraint feasible | lantai violation ruang aksi baseline referensi ≤ `δ − 1 std window` | sapuan statis per-gNB (`scripts/probe_action_floor.py`), tanpa training |
+| A2b | Dual punya efek pada perilaku | violation held-out bergeser ≥ 1 std window antara run λ-beku dan run λ steady-state | dua run identik, satu dengan `lambda_lr = 0` |
 | A3 | Mekanisme drop benar | `deadline_drop : overflow_drop` ≥ 3 : 1 | agregat seluruh run kalibrasi |
 | A4 | Variance window stabil | std violation level-window < 2.0 pp | window = `dual_update_every` step |
 
 > Baseline referensi dipilih **sebelum** kalibrasi dan wajib baseline (non-GNN), supaya titik operasi tidak pernah ditentukan oleh perilaku model proposed.
+
+> **Mode pengukuran (eksplisit).** A1, A2a, A2b diukur pada policy **deterministik held-out**. A3 dan A4 diukur pada log **training (stokastik)**, karena keduanya properti dinamika training. Dual variable dikendalikan violation stokastik saat training, jadi selisih training-vs-held-out wajib dilaporkan sebagai artefak kalibrasi, bukan dibiarkan implisit.
+
+> **Amandemen 2026-08-06** (dicatat di `runs/2026-08-05-run01/ledger.md`, sebelum wave dijalankan). A2 lama — "`λ` steady-state ≥ 5.0" — salah spesifikasi: ia mengukur **besaran** dual, bukan apakah constraint mengikat. Ronde kalibrasi 3 lolos A2 secara hampa (λ 1.03 → 18.59, perilaku policy tidak bergerak) justru karena `δ` berada **di bawah** lantai yang bisa dicapai ruang aksi `central-ppo`; pada constraint infeasible, λ → ∞ adalah perilaku Lagrangian yang benar, bukan dual yang malas. A2 dipecah jadi A2a (feasibility, syarat perlu) + A2b (sensitivitas, yang sebenarnya dimaksud). Baseline referensi A1 dipindah `central-ppo` → `ippo`: `central-ppo` menyiarkan satu tier PRB ke 5 gNB, jadi titik operasi ikut ditentukan ruang aksi tersempit di wave. `ippo` tetap non-GNN sehingga prinsip A1 utuh. Kedua amandemen dipilih atas dasar properti *task* (feasibility, daya sensitivitas), bukan properti *hasil* — tidak ada hasil per-algoritma v4 yang dilihat saat amandemen ini dibuat.
 
 ### B. Gate diskriminasi (dievaluasi SETELAH wave)
 
