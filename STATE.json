@@ -1,0 +1,11 @@
+{
+  "run_id": "2026-08-05-run01",
+  "goal": "handoff/goal1.md",
+  "iterasi": 0,
+  "level": 1,
+  "gagal_beruntun": 0,
+  "commit_hijau_terakhir": "04f4773",
+  "status": "running",
+  "menunggu_manusia": false,
+  "diperbarui": "2026-08-05T22:26:37"
+}

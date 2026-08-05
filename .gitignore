@@ -52,3 +52,7 @@ paper/*.toc
 paper/*.pdf
 # template zip (sumber, tak perlu di-track)
 *.zip
+
+# Loop eskalasi — log mentah besar; ledger + handoff + research TETAP di-commit
+runs/*/events.jsonl
+runs/*/transcripts/
