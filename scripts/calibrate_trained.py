@@ -80,6 +80,10 @@ def main() -> int:
     p.add_argument("--config", type=str, default=None, help="default: configs/experiment_config.yaml")
     p.add_argument("--episodes", type=int, default=30, help="held-out eval episodes")
     p.add_argument("--skip-train", action="store_true", help="reuse an existing calibration checkpoint, only re-eval")
+    p.add_argument("--tag", type=str, default=CALIB_TAG,
+                   help="run tag; use a fresh one per calibration round (_calib2, _calib3, ...) so "
+                        "--resume never mixes a new operating point into an old checkpoint, and so "
+                        "earlier rounds stay on disk as evidence (goal1.md integritas #3)")
     args = p.parse_args()
 
     config_path = args.config or str(ROOT / "configs" / "experiment_config.yaml")
@@ -92,7 +96,7 @@ def main() -> int:
         print(f"WARNING: --algo {args.algo} != {REFERENCE_BASELINE}. Gate A1 of handoff/goal1.md "
               f"is defined on {REFERENCE_BASELINE}; this run is a probe, not a gate result.")
 
-    run_name = f"{args.algo}{CALIB_TAG}_seed{args.seed}"
+    run_name = f"{args.algo}{args.tag}_seed{args.seed}"
     csv_path = ROOT / "results" / "logs" / f"{run_name}.csv"
     pt_path = ROOT / "results" / "logs" / f"{run_name}.pt"
     eval_dir = ROOT / "results" / "eval_calib"
@@ -100,7 +104,7 @@ def main() -> int:
     if not args.skip_train:
         cmd = [sys.executable, "training/train_baselines.py", "--algo", args.algo,
                "--steps", str(args.steps), "--seed", str(args.seed),
-               "--config", config_path, "--tag", CALIB_TAG,
+               "--config", config_path, "--tag", args.tag,
                "--resume", "--ckpt-interval", "25000"]
         print(f"training {run_name}: steps={args.steps} config={config_path} "
               f"lambda_arrival={lambda_arrival} delta={delta}")

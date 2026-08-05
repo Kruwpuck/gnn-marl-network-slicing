@@ -47,7 +47,13 @@ traffic:
     r_idle_to_burst: 10.0     # 1/sec -> mean idle duration 100 ms
 
 buffer:
-  urllc_max_bits: 40960
+  # urllc_max_bits raised 40960 -> 131072 (Fase 2, docs/rev2-implementation-plan.md #5.1):
+  # delay-bandwidth product = lambda_arrival*packet_size_bits * (urllc.max_delay_ms/1000)
+  # = 25000*256 * 0.010 = 64000 bit. Old value (40960) was 0.64x DBP -- buffer filled
+  # before deadline-drop could matter, so violations were overflow-dominated, not
+  # deadline-dominated. New value = 2x DBP + burst margin, so the deadline mechanism
+  # is what binds, matching the CMDP's intended constraint semantics.
+  urllc_max_bits: 131072
   embb_max_bits: 50_000_000
 
 cmdp:
@@ -62,11 +68,35 @@ cmdp:
   # comfortable margin above the ~5.6-8% structural floor (scripts/diag_breakdown.py)
   # at low cost (CMDP gradient is still strongly active: frac=0.1 alone gives ~13%
   # violation, well above delta).
-  delta: 0.12
+  # delta lowered 0.12 -> 0.05 (Fase 2 #5.1): 0.12 was calibrated against a STATIC
+  # policy (scripts/calibrate_load.py), which passed the gate while trained policies
+  # ran far below it -- the constraint never bound during training. 0.05 is a starting
+  # point; scripts/calibrate_trained.py (#5.2) is what sets the final value by raising
+  # load/lowering delta against a TRAINED policy until held-out violation sits near
+  # delta (target 5-12%).
+  delta: 0.05
   lambda_init: 1.0
-  lambda_lr: 0.01
+  # lambda_lr raised 0.01 -> 2.0 and dual_update_every 2000 -> 5000 (Gate A run
+  # central-ppo_calib_seed42, 2026-08-05). Both are SOLVER properties, chosen from
+  # a-priori rules, not from which algorithm they favour (goal1.md integritas #1):
+  #
+  # lambda_lr: the dual must be able to traverse the range where the penalty is
+  #   comparable to the objective, within the SHORTEST budget family. Rule: a
+  #   persistent one-delta gap must carry lambda from lambda_init to the Gate A2
+  #   activity threshold (5.0) within the DQN budget (200K steps / 5000 =
+  #   40 updates): lr >= 4.0 / (delta * 40) = 2.0.
+  #   At 0.01 this was impossible by construction: per-update step = 0.01 * gap
+  #   ~= 1e-4, so 500 updates moved lambda by 0.03 (measured 1.000 -> 1.033). That,
+  #   not the traffic load, is why the constraint never bound in v3 (lambda
+  #   0.58-1.02 across all 40 runs regardless of algorithm).
+  # dual_update_every: signal-to-noise. The per-window violation estimate must be
+  #   quiet enough that the dual tracks the mean, not the noise (Gate A4, < 2.0pp).
+  #   Measured on the calibration run: std 2.74pp @ 2000 steps, 1.87 @ 4000,
+  #   1.56 @ 6000 (~1/sqrt(n) as expected). 5000 gives ~1.73pp with margin while
+  #   keeping 40 dual updates in the 200K DQN budget.
+  lambda_lr: 2.0
   lambda_max: 100.0
-  dual_update_every: 2000
+  dual_update_every: 5000
 
 floor:
   mode: dynamic     # none | static | dynamic
