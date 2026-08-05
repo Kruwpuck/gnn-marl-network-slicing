@@ -85,6 +85,17 @@ cmdp:
   #   persistent one-delta gap must carry lambda from lambda_init to the Gate A2
   #   activity threshold (5.0) within the DQN budget (200K steps / 5000 =
   #   40 updates): lr >= 4.0 / (delta * 40) = 2.0.
+  #   Raised again 2.0 -> 14.0 after round 2 (central-ppo_calib2_seed42). The rule
+  #   is unchanged; only the gap it is evaluated at is now MEASURED instead of
+  #   hypothetical. Round 2 shows lambda still travelling at the end of training
+  #   (1.00 -> 3.34, monotone per 100K-step bin, no plateau) with violation flat at
+  #   5.5-6.2%, i.e. the realized gap is ~0.0075, not the one-delta 0.05 the first
+  #   rule assumed. Same requirement at the realized gap:
+  #   lr >= (5.0 - lambda_init) / (0.0075 * 40) = 13.3 -> 14.0.
+  #   Binding budget is DQN (40 updates); PPO gets 200. A single lr is mandatory
+  #   (goal1.md C2 forbids per-algorithm hyperparameters), so the shorter family
+  #   sets it. Consequence to report: the two budget families do not experience the
+  #   same number of dual updates -- another reason C3 forbids pooling them.
   #   At 0.01 this was impossible by construction: per-update step = 0.01 * gap
   #   ~= 1e-4, so 500 updates moved lambda by 0.03 (measured 1.000 -> 1.033). That,
   #   not the traffic load, is why the constraint never bound in v3 (lambda
@@ -94,7 +105,7 @@ cmdp:
   #   Measured on the calibration run: std 2.74pp @ 2000 steps, 1.87 @ 4000,
   #   1.56 @ 6000 (~1/sqrt(n) as expected). 5000 gives ~1.73pp with margin while
   #   keeping 40 dual updates in the 200K DQN budget.
-  lambda_lr: 2.0
+  lambda_lr: 14.0
   lambda_max: 100.0
   dual_update_every: 5000
 
