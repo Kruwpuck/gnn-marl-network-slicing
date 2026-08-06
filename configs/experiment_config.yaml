@@ -110,7 +110,25 @@ cmdp:
   # 0.5 to 0.8 moves gNB-0 by 0.0 pp). delta=0.15 is the level at which the constraint
   # genuinely binds; the gap to the nominal SLA is a property of the task and belongs
   # in the paper.
-  delta: 0.15
+  # 0.15 -> 0.085 (2026-08-06, second operating point tested -- the first is reported
+  # too, goal1.md integritas #3 forbids showing only the favourable one). The RULE is
+  # unchanged (floor + 3.0 pp, rounded to 0.005); the ANCHOR was wrong. delta=0.15 used
+  # the STATIC-allocation floor of 12.22%, and goal1.md's own constraint says
+  # calibration must be done against a TRAINED policy. Gate A round 4 showed why:
+  # unconstrained training violation was ~10.2%, already below 0.15, so lambda fell to
+  # 0 within 100K steps and A2b failed at 0.02pp of movement.
+  # Trained-policy floor, measured by pinning lambda and reading the policy the way it
+  # actually behaves (150 held-out episodes, sampled actions):
+  #   lambda    0     1     5    12    30
+  #   viol%  10.57 10.30  8.87  6.69  5.49
+  # Floor 5.49% + 3.0 pp = 8.49% -> 0.085. Equilibrium lambda lands near 8, well below
+  # the lambda=12..30 band where the greedy readout degenerates (see
+  # scripts/evaluate_checkpoints.py --stochastic).
+  # Note eMBB is flat (8.02-8.19 Mbps) across that whole lambda range: the policy buys
+  # 5 pp of violation without paying throughput, so the gain is temporal placement of
+  # PRB, not a static allocation trade-off. That is the adaptivity the architectures
+  # are supposed to differ on, and it exists at this operating point.
+  delta: 0.085
   lambda_init: 1.0
   # lambda_lr raised 0.01 -> 2.0 and dual_update_every 2000 -> 5000 (Gate A run
   # central-ppo_calib_seed42, 2026-08-05). Both are SOLVER properties, chosen from

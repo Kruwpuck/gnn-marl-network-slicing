@@ -1,12 +1,12 @@
 {
   "run_id": "2026-08-05-run01",
   "goal": "handoff/goal1.md",
-  "iterasi": 4,
+  "iterasi": 5,
   "level": 5,
   "gagal_beruntun": 0,
-  "commit_hijau_terakhir": "5049198",
+  "commit_hijau_terakhir": "6ba2aab",
   "status": "blocked",
   "menunggu_manusia": true,
-  "catatan": "Jalur B selesai (baseline referensi ippo, A2 dipecah A2a/A2b, mode pengukuran eksplisit). Pengukuran lantai menemukan sebab yang lebih dalam: di titik operasi sekarang seluruh rentang violation yang bisa dicapai policy cuma 1.6pp dan delta duduk di tengahnya. Empat opsi titik operasi di handoff/STUCK.md, semuanya butuh keputusan manusia (C6).",
-  "diperbarui": "2026-08-06T07:10:00"
+  "catatan": "Kalibrasi pada dasarnya berhasil: ronde 5 (delta=0.085) membuat dual setimbang tepat di sasaran -- violation training 8.32% vs delta 8.50%, lambda 1.87 berosilasi. A2a/A3/A4 lolos. A1 dan A2b gagal murni karena pilihan pengukuran: seluruh selisih A1 adalah artefak argmax (greedy 12.03% vs stokastik 8.71%), dan kontrol A2b dipatok di lambda=1 melawan run yang setimbang di 1.87 sehingga kontrasnya nol by construction (terhadap kontrol lambda=0 yang benar: 1.86pp vs std 1.62pp, lolos). Tiga keputusan pengukuran menunggu manusia, rinci di handoff/STUCK.md.",
+  "diperbarui": "2026-08-06T13:45:00"
 }
