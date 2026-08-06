@@ -38,7 +38,20 @@ traffic:
     # frac=0.1 gives ~13% network-wide violation (contested), frac=0.8 gives ~5.6%
     # (structural floor from cell-edge gNBs, spread across gNBs not dominated by one) —
     # matches cmdp.delta below with a +4.4pp safety margin.
-    lambda_arrival: 25000.0   # ~6.4 Mbps/gNB offered load (25000 * 256 bits/pkt)
+    # Raised 25000 -> 60000 (option O1, 2026-08-06, human decision recorded in
+    # runs/2026-08-05-run01/ledger.md). Task-property justification, measured with
+    # scripts/probe_action_floor.py on held-out seeds, 200 episodes:
+    #   At 25000 the ENTIRE violation range reachable by any policy was 3.66-5.26%
+    #   (1.6 pp wide) while the between-seed-population noise was 2.0 pp. No policy
+    #   could steer the constraint, so no architecture could differ -- that, not the
+    #   dual dynamics, is why v3 returned 35/40 COMPARABLE.
+    #   At 60000 the reachable range is 21.8% -> 11.9% (9.9 pp), ~6x the dual-update
+    #   window std and ~10x the standard error. Drops stay 100% deadline-driven
+    #   (overflow 0.00% at every tier), and eMBB responds to allocation
+    #   (7.84 -> 4.39 -> 0.00 Mbps), so the objective/constraint tension is real.
+    #   90000 was also measured (range 17.3 pp) and NOT chosen: it would force
+    #   delta ~= 0.21, further from any defensible URLLC SLA.
+    lambda_arrival: 60000.0   # ~15.4 Mbps/gNB offered load (60000 * 256 bits/pkt)
     packet_size_bits: 256
   embb:
     lambda_burst: 30.0        # Mbps
@@ -53,7 +66,14 @@ buffer:
   # before deadline-drop could matter, so violations were overflow-dominated, not
   # deadline-dominated. New value = 2x DBP + burst margin, so the deadline mechanism
   # is what binds, matching the CMDP's intended constraint semantics.
-  urllc_max_bits: 131072
+  # Rescaled 131072 -> 307200 together with lambda_arrival (2026-08-06). The RULE is
+  # unchanged -- buffer = 2x delay-bandwidth product -- only the load it is evaluated
+  # at moved: 2 * 60000 * 256 * 0.010 = 307200 bit. Raising the load WITHOUT rescaling
+  # was measured and rejected: at lambda=60000 with the old buffer, drops became
+  # overflow-dominated (late 8.21% vs overflow 6.19%, i.e. 1.3:1) and Gate A3 requires
+  # >= 3:1; at lambda=90000 it collapsed to 0.3:1. With the rescale, overflow is
+  # 0.00% at every tier and every load probed.
+  urllc_max_bits: 307200
   embb_max_bits: 50_000_000
 
 cmdp:
@@ -74,7 +94,23 @@ cmdp:
   # point; scripts/calibrate_trained.py (#5.2) is what sets the final value by raising
   # load/lowering delta against a TRAINED policy until held-out violation sits near
   # delta (target 5-12%).
-  delta: 0.05
+  # delta 0.05 -> 0.15 (2026-08-06). Set by a rule written into the ledger BEFORE the
+  # measurement that feeds it, so the value could not be chosen after seeing which
+  # allocation -- or which algorithm -- it favours:
+  #   delta = held-out violation floor + 3.0 pp, rounded to the nearest 0.005, where
+  #   the floor is the minimum over tiers that still leave eMBB >= 1.0 Mbps (frac=1.00
+  #   reaches 11.94% but starves eMBB to 0.00 Mbps, so it is not a usable operating
+  #   point). Measured floor = 12.22% at frac=0.90 -> delta = 0.1522 -> 0.150.
+  # The 3.0 pp margin is the window-variance argument: the margin must exceed the
+  # dual-update window std (1.77 pp at the new dual_update_every) or the constraint is
+  # not reliably satisfiable at the noise level the dual actually sees.
+  # Consequence that must be reported, not hidden: slices.urllc.reliability below says
+  # 0.999, but this environment cannot deliver 99.9% at ANY allocation -- its drops are
+  # deadline-bound, not PRB-bound (scripts/diag_breakdown.py: raising allocation from
+  # 0.5 to 0.8 moves gNB-0 by 0.0 pp). delta=0.15 is the level at which the constraint
+  # genuinely binds; the gap to the nominal SLA is a property of the task and belongs
+  # in the paper.
+  delta: 0.15
   lambda_init: 1.0
   # lambda_lr raised 0.01 -> 2.0 and dual_update_every 2000 -> 5000 (Gate A run
   # central-ppo_calib_seed42, 2026-08-05). Both are SOLVER properties, chosen from
@@ -105,12 +141,56 @@ cmdp:
   #   Measured on the calibration run: std 2.74pp @ 2000 steps, 1.87 @ 4000,
   #   1.56 @ 6000 (~1/sqrt(n) as expected). 5000 gives ~1.73pp with margin while
   #   keeping 40 dual updates in the 200K DQN budget.
+  # lambda_lr re-derived (not changed) for the new operating point. The old anchor
+  # "lambda must reach the Gate A2 activity threshold of 5.0" died with the 2026-08-06
+  # amendment that replaced A2 with A2a/A2b. New anchor, same spirit: the dual must be
+  # able to travel from lambda_init to the scale where the penalty is comparable to the
+  # objective, within the SHORTEST budget family.
+  #   r_obj at the operating region ~= w1*(7.5/4) + w4*(37.5e6/1e7) = 0.75 + 0.375 = 1.13
+  #   lambda* where lambda*delta ~= r_obj: 1.13 / 0.15 ~= 7.5
+  #   DQN budget now gives 200000 / 12500 = 16 dual updates, so
+  #   lr >= (7.5 - 1.0) / (gap * 16) = 0.41 / gap. At 14.0 this covers any realized gap
+  #   >= 0.029, i.e. a policy sitting within 2.9 pp of delta still drives the dual to
+  #   equilibrium inside the shortest budget. Kept at 14.0 rather than retuned: the rule
+  #   is a lower bound and changing the value without evidence is churn.
   lambda_lr: 14.0
   lambda_max: 100.0
-  dual_update_every: 5000
+  # dual_update_every 5000 -> 12500 (2026-08-06). Same signal-to-noise rule as before,
+  # re-evaluated at the new load, where the per-episode violation std rose from ~7.8 pp
+  # to ~14.0 pp (scripts/probe_action_floor.py, 200 held-out episodes, tiers 0.5-0.9).
+  # A window holds dual_update_every / episode_length episodes, so the window std is
+  # ~14.0 / sqrt(n): 5000 -> 25 ep -> 2.80 pp (fails Gate A4's < 2.0 pp), 10000 -> 1.98 pp
+  # (on the threshold), 12500 -> 62.5 ep -> 1.77 pp (passes with margin). 12500 is the
+  # cheapest value that passes while keeping 16 dual updates inside the 200K DQN budget.
+  # Consequence to report: DQN gets 16 dual updates, PPO gets 80. The two budget
+  # families do not experience the same constraint dynamics even with identical
+  # parameters (C2 forbids per-algorithm values) -- another reason C3 forbids pooling.
+  dual_update_every: 12500
 
 floor:
-  mode: dynamic     # none | static | dynamic
+  # Primary mode dynamic -> none (2026-08-06). Decided by criteria K1-K5 written into
+  # runs/2026-08-05-run01/ledger.md BEFORE the measurement, none of which mentions any
+  # algorithm. All three modes PASS all five criteria at the new operating point, and
+  # the full held-out tier grid (200 episodes) shows why: for frac >= 0.30 the three
+  # modes are identical to the last digit (20.06 / 16.71 / 14.93 / 13.84 / 13.12 /
+  # 12.58 / 12.22 / 11.94 %). The floor only decides what happens in the starvation
+  # corner:
+  #   frac   none    static  dynamic
+  #   0.00   94.50   48.72   21.76
+  #   0.10   48.72   48.72   21.76
+  #   0.20   27.46   27.46   21.79
+  # So at this operating point the floor is no longer a controller inside the operating
+  # region -- it is a safety net over bad actions. `none` was selected by the
+  # pre-registered tie-break (largest K1 margin; ties broken toward the simpler mode).
+  # Both readings of K1 agree: on total range `none` wins outright, and on the stricter
+  # reading (leverage only where a sane policy operates, frac >= 0.30) the three modes
+  # are degenerate and the simplicity tie-break decides.
+  # Two consequences that make `none` the honest default here: every action the agent
+  # can take now has a distinct outcome, and cell_edge_collapse_rate (a primary metric)
+  # stays reachable instead of being masked by the projection. `static` and `dynamic`
+  # remain the pre-registered ablation factor exactly as in v3
+  # (results/RLIABLE_floorstatic.md, results/RLIABLE_floornone.md).
+  mode: none        # none | static | dynamic
   base: 0.10
   k: 0.30
   lo: 0.10
