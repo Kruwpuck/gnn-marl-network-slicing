@@ -99,6 +99,13 @@ def main() -> int:
     p.add_argument("--control-tag", type=str, default=None,
                    help="Gate A2b: tag of the lambda-frozen control run (same config, "
                         "cmdp.lambda_lr = 0). Not given -> A2b cannot be evaluated")
+    p.add_argument("--control-lambda", type=float, default=None,
+                   help="with --as-control: pin lambda at this value instead of cmdp.lambda_init. "
+                        "A LOW pin (the default 1.0) measures what the policy does under almost no "
+                        "constraint pressure -- the upper anchor for delta. A HIGH pin measures the "
+                        "floor a TRAINED policy can reach, the lower anchor, which sits well below "
+                        "the static-allocation floor: a state-dependent per-gNB policy beats the "
+                        "best fixed uniform allocation (8.44%% vs 12.22%% measured 2026-08-06)")
     p.add_argument("--as-control", action="store_true",
                    help="train THIS run as the lambda-frozen control for A2b: same config with "
                         "cmdp.lambda_lr = 0 (lambda stays at lambda_init), derived from the frozen "
@@ -111,7 +118,12 @@ def main() -> int:
 
     if args.as_control:
         cfg["cmdp"]["lambda_lr"] = 0.0
-        control_path = ROOT / "results" / "eval_calib" / "config_lamfrozen.yaml"
+        if args.control_lambda is not None:
+            cfg["cmdp"]["lambda_init"] = float(args.control_lambda)
+        # one file per pinned value, so a high-lambda and a low-lambda control can be
+        # trained concurrently without overwriting each other's config
+        control_path = (ROOT / "results" / "eval_calib" /
+                        f"config_lamfrozen_{cfg['cmdp']['lambda_init']:g}.yaml")
         control_path.parent.mkdir(parents=True, exist_ok=True)
         control_path.write_text(yaml.safe_dump(cfg, sort_keys=False))
         config_path = str(control_path)
