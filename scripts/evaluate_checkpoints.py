@@ -72,7 +72,12 @@ def load_agent(pt_path: Path, device: torch.device):
     return agent, algo, kind
 
 
-def run_episode(env: NetworkSlicingEnv, agent, kind: str, seed: int) -> dict:
+def run_episode(env: NetworkSlicingEnv, agent, kind: str, seed: int, greedy: bool = True) -> dict:
+    """greedy=True is the reporting protocol. greedy=False exists as a DIAGNOSTIC: a
+    policy whose sampled behaviour is good can still have a degenerate argmax, and the
+    two diverge more the harder the constraint pushes (measured 2026-08-06 on
+    ippo_calib4hi_seed42, lambda pinned at 30: training violation 5.03%, greedy eval
+    94.06%). Comparing the two is how you tell a bad policy from a bad readout."""
     obs, info = env.reset(seed=seed)
     done = False
     ep_reward = 0.0
@@ -86,19 +91,19 @@ def run_episode(env: NetworkSlicingEnv, agent, kind: str, seed: int) -> dict:
 
     while not done:
         if kind == "gnn-dqn":
-            actions = agent.act(info["graph"], greedy=True)
+            actions = agent.act(info["graph"], greedy=greedy)
         elif kind == "gnn-ppo":
-            actions, _, _ = agent.act(info["graph"], greedy=True)
+            actions, _, _ = agent.act(info["graph"], greedy=greedy)
         elif kind == "mlp-dqn-central":
-            raw = agent.act(obs.flatten(), greedy=True)
+            raw = agent.act(obs.flatten(), greedy=greedy)
             actions = np.full(env.n_gnb, int(raw) if np.isscalar(raw) else int(np.asarray(raw).flat[0]))
         elif kind == "mlp-dqn":
-            actions = np.array([int(agent.act(obs[i], greedy=True)) for i in range(env.n_gnb)])
+            actions = np.array([int(agent.act(obs[i], greedy=greedy)) for i in range(env.n_gnb)])
         elif kind == "mlp-ppo-central":
-            actions_c, _, _ = agent.act(obs.flatten(), greedy=True)
+            actions_c, _, _ = agent.act(obs.flatten(), greedy=greedy)
             actions = np.full(env.n_gnb, int(actions_c[0]))
         else:  # mlp-ppo (independent)
-            actions, _, _ = agent.act(obs, greedy=True)
+            actions, _, _ = agent.act(obs, greedy=greedy)
 
         obs, reward, terminated, truncated, info = env.step(actions)
         done = terminated or truncated
@@ -142,7 +147,8 @@ def run_episode(env: NetworkSlicingEnv, agent, kind: str, seed: int) -> dict:
     }
 
 
-def evaluate_run(pt_path: Path, episodes: int, config_path: str | None, out_dir: Path) -> None:
+def evaluate_run(pt_path: Path, episodes: int, config_path: str | None, out_dir: Path,
+                 greedy: bool = True, suffix: str = "_eval") -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     agent, algo, kind = load_agent(pt_path, device)
     run_name = pt_path.stem
@@ -153,13 +159,13 @@ def evaluate_run(pt_path: Path, episodes: int, config_path: str | None, out_dir:
     env = NetworkSlicingEnv(config_path=config_path)
     env.cmdp_enabled = False  # evaluation: report raw violation, don't let lambda drift here
 
-    out_path = out_dir / f"{run_name}_eval.csv"
+    out_path = out_dir / f"{run_name}{suffix}.csv"
     out_dir.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=EVAL_COLUMNS)
         writer.writeheader()
         for ep in range(episodes):
-            metrics = run_episode(env, agent, kind, seed=EVAL_SEED_BASE + ep)
+            metrics = run_episode(env, agent, kind, seed=EVAL_SEED_BASE + ep, greedy=greedy)
             row = {"run_name": run_name, "algo": algo, "seed": seed, "episode": ep, **metrics}
             writer.writerow(row)
     env.close()
@@ -173,6 +179,11 @@ def main() -> None:
     p.add_argument("--episodes", type=int, default=30)
     p.add_argument("--config", type=str, default=None)
     p.add_argument("--out-dir", type=str, default="results/eval")
+    p.add_argument("--stochastic", action="store_true",
+                   help="DIAGNOSTIC ONLY: sample actions instead of taking the argmax, and write "
+                        "to <run>_eval_stoch.csv so the reporting file is never overwritten. Use "
+                        "it to check whether a bad held-out number is a bad policy or a degenerate "
+                        "argmax -- the wave protocol stays greedy")
     args = p.parse_args()
 
     paths: list[Path] = []
@@ -185,7 +196,9 @@ def main() -> None:
 
     for pt_path in paths:
         try:
-            evaluate_run(pt_path, args.episodes, args.config, Path(args.out_dir))
+            evaluate_run(pt_path, args.episodes, args.config, Path(args.out_dir),
+                         greedy=not args.stochastic,
+                         suffix="_eval_stoch" if args.stochastic else "_eval")
         except RuntimeError as e:
             # shape mismatch (e.g. central-* checkpoint evaluated at a different n_gnb
             # than it was trained on) — that's data (CANNOT_RUN), not a crash.

@@ -74,13 +74,21 @@ baseline referensi ke `ippo` **tetap benar** (titik operasi tidak lagi ditentuka
 ruang aksi tersempit), tapi tidak memulihkan feasibility — tidak ada yang perlu
 dipulihkan, δ=0.05 memang sudah di atas lantai 3.66%.
 
-### 4. Derau seed setara dengan seluruh rentang yang bisa disetir
+### 4. Derau sampel setara dengan seluruh rentang yang bisa disetir
 
 Vektor identik tier=10, dua populasi seed, 150 episode masing-masing:
 3.66% (seed 0–149) vs 5.70% (seed 10000–10149). Selisih 2.0 pp, sementara seluruh
 rentang yang bisa disetir 1.6 pp. `evaluate_checkpoints.py` default 30 episode
 memberi ±2.8 pp. Gate B tidak akan bisa memisahkan algoritma di titik operasi ini,
 berapa pun seed-nya.
+
+> **Koreksi 2026-08-06T11:05.** Selisih 2.0 pp itu **derau sampel, bukan properti
+> populasi seed**. Uji tuntas 400 episode per populasi pada alokasi identik memberi
+> 14.18 % ±0.68 (seed 0+) vs 14.87 % ±0.70 (seed 10000+) — selisih 0.69 pp pada SE
+> gabungan 0.98 pp, yaitu 0.7 σ, tidak signifikan. Yang tetap berlaku dari butir ini
+> hanyalah kesimpulan praktisnya: dengan std antar-episode ~14 pp, eval 30 episode
+> memberi ±2.6 pp dan tidak layak untuk gate berpresisi pp. Seluruh eval kalibrasi
+> sejak ronde 4 memakai ≥ 150 episode.
 
 ### 5. Rezim yang mengembalikan daya setir — terukur
 
