@@ -21,6 +21,10 @@ htmlcov/
 # Temporary files and artifacts
 compass_artifact_*.md
 .DS_Store
+desktop.ini
+
+# Local mirror of docs/journey/ — contains plaintext SSH credentials, never commit
+JOURNEY/
 
 # Training artifacts (generalized: applies inside results/, results/v2_scalarized/,
 # results/v3_*/ archives, etc. — not just the live results/logs/ directory)

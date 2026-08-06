@@ -36,11 +36,22 @@ BASELINE_PPO = ["ippo", "central-ppo"]
 ALL_ALGOS = PROPOSED_DQN + PROPOSED_PPO + BASELINE_DQN + BASELINE_PPO
 
 
-def make_variant_config(floor_mode: str) -> Path:
+def make_variant_config(floor_mode: str, overrides: dict | None = None) -> Path:
+    """overrides: {"env.n_gnb": 20, "buffer.urllc_max_bits": 131072} — dotted path."""
     GEN_DIR.mkdir(parents=True, exist_ok=True)
     cfg = yaml.safe_load(BASE_CONFIG.read_text())
     cfg.setdefault("floor", {})["mode"] = floor_mode
-    out_path = GEN_DIR / f"floor_{floor_mode}.yaml"
+
+    suffix = ""
+    for dotted_key, value in sorted((overrides or {}).items()):
+        node = cfg
+        *parents, leaf = dotted_key.split(".")
+        for part in parents:
+            node = node.setdefault(part, {})
+        node[leaf] = value
+        suffix += f"_{leaf}{value}"
+
+    out_path = GEN_DIR / f"floor_{floor_mode}{suffix}.yaml"
     out_path.write_text(yaml.safe_dump(cfg, sort_keys=False))
     return out_path
 
@@ -84,13 +95,21 @@ def main() -> int:
                    help="override run tag (default: derived from floor-mode, e.g. _floornone; "
                         "'' for the main dynamic wave to keep original filenames)")
     p.add_argument("--max-parallel", type=int, default=6)
+    p.add_argument("--n-gnb", type=int, default=None, help="override env.n_gnb (default: config value)")
+    p.add_argument("--area-size", type=float, default=None, help="override env.area_size (default: config value)")
     args = p.parse_args()
 
     seeds = [int(s) for s in args.seeds.split(",")]
     algos = args.algos.split(",") if args.algos else ALL_ALGOS
     tag = args.tag if args.tag is not None else ("" if args.floor_mode == "dynamic" else f"_floor{args.floor_mode}")
 
-    config_path = make_variant_config(args.floor_mode)
+    overrides = {}
+    if args.n_gnb is not None:
+        overrides["env.n_gnb"] = args.n_gnb
+    if args.area_size is not None:
+        overrides["env.area_size"] = args.area_size
+
+    config_path = make_variant_config(args.floor_mode, overrides or None)
     stdout_dir = ROOT / "results" / "logs" / "stdout"
     stdout_dir.mkdir(parents=True, exist_ok=True)
 

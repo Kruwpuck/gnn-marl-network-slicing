@@ -17,9 +17,12 @@ class NetworkSlicingEnv(gym.Env):
     """
     Centralized Gymnasium env for 5G/6G network slicing research.
 
-    Observation: ndarray (n_gnb, 8) — one row per gNB:
+    Observation: ndarray (n_gnb, 8) — one row per gNB, purely local (Fase 2 #5.3,
+    docs/rev2-implementation-plan.md — column 7 used to be a cross-gNB aggregate
+    (neighbor_urllc_frac_mean), which leaked global state to every agent including
+    ones meant to be independent; replaced with the agent's own lag-2 allocation):
         [ch_gain, sinr_embb_db_norm, sinr_urllc_db_norm, q_embb_log,
-         urllc_backlog_log, urllc_viol_rate_ewma, neighbor_urllc_frac_mean, prev_alloc]
+         urllc_backlog_log, urllc_viol_rate_ewma, prev_alloc_lag2, prev_alloc]
 
     Action (MultiDiscrete): tier index per gNB, 0..10 = 0%..100% URLLC PRB (step 10%).
 
@@ -36,14 +39,21 @@ class NetworkSlicingEnv(gym.Env):
     not a valid 3GPP UMa scenario (UEs are dropped within their serving cell), and
     diagnostics (scripts/diag_topology_sweep.py) confirmed most gNBs were
     interference-limited as a direct consequence: only ~28% had positive SIR,
-    independent of area_size (uniform log-distance path-loss scaling shifts every
-    link's PL by the same constant, so it cancels in the SIR ratio — area_size was
-    never the lever) and only weakly dependent on n_gnb. Clustering each UE within
-    env.ue_radius_m of its serving gNB (below) fixed it: ~92-98% of gNBs get positive
-    SIR across seeds. All v1 (results/v1_uncoupled/) and v2 (results/v2_scalarized/)
-    results used the buggy uncorrelated placement and are NOT representative of a
-    valid scenario — they are archived for historical/ablation reference only, not as
-    a baseline to build on. Only v3 results (this env) should be reported in the paper.
+    independent of area_size under the OLD (buggy) placement — uniform log-distance
+    path-loss scaling shifted every link's PL by the same constant, so it cancelled in
+    the SIR ratio. Clustering each UE within env.ue_radius_m of its serving gNB (below)
+    fixed it: ~92-98% of gNBs get positive SIR across seeds. All v1 (results/v1_uncoupled/)
+    and v2 (results/v2_scalarized/) results used the buggy uncorrelated placement and
+    are NOT representative of a valid scenario — they are archived for historical/
+    ablation reference only, not as a baseline to build on. Only v3 results (this env)
+    should be reported in the paper.
+
+    CORRECTION (docs/rev2-implementation-plan.md #1.6): "area_size was never the lever"
+    above describes the OLD placement only and is now stale. Post-fix, own-link distance
+    is capped by ue_radius_m (independent of area_size) but interferer distance scales
+    with area_size/sqrt(n_gnb) — so SIR now DOES increase with area_size. This matters
+    when scaling n_gnb: holding area_size fixed while raising n_gnb confounds agent
+    count with coupling strength (see Fase 3 grid design, plan #6.2).
 
     URLLC is modeled at packet level with an explicit slot duration (env.slot_duration_ms):
     packets sit in a per-gNB FIFO, are dropped on deadline expiry (>slices.urllc.max_delay_ms
@@ -147,6 +157,7 @@ class NetworkSlicingEnv(gym.Env):
         self._queue_embb: np.ndarray | None = None
         self._urllc_fifo: list[deque] | None = None
         self._prev_alloc: np.ndarray | None = None
+        self._prev_alloc_lag2: np.ndarray | None = None
         self._last_sinr_embb: np.ndarray | None = None
         self._last_sinr_urllc: np.ndarray | None = None
         self._last_backlog_bits: np.ndarray | None = None
@@ -192,6 +203,7 @@ class NetworkSlicingEnv(gym.Env):
         self._queue_embb = np.zeros(self.n_gnb, dtype=np.float32)
         self._urllc_fifo = [deque() for _ in range(self.n_gnb)]
         self._prev_alloc = np.zeros(self.n_gnb, dtype=np.float32)
+        self._prev_alloc_lag2 = np.zeros(self.n_gnb, dtype=np.float32)
         self._last_sinr_embb = np.zeros(self.n_gnb, dtype=np.float32)
         self._last_sinr_urllc = np.zeros(self.n_gnb, dtype=np.float32)
         self._last_backlog_bits = np.zeros(self.n_gnb, dtype=np.float32)
@@ -363,6 +375,7 @@ class NetworkSlicingEnv(gym.Env):
             self._lam = float(np.clip(self._lam + self.lambda_lr * (mean_viol - self.delta),
                                        0.0, self.lambda_max))
 
+        self._prev_alloc_lag2 = self._prev_alloc
         self._prev_alloc = urllc_fracs.astype(np.float32)
         self._last_sinr_embb = sinr_embb.astype(np.float32)
         self._last_sinr_urllc = sinr_urllc.astype(np.float32)
@@ -413,14 +426,8 @@ class NetworkSlicingEnv(gym.Env):
         sinr_urllc_norm = np.clip(10.0 * np.log10(self._last_sinr_urllc + 1e-12) / 40.0, -3.0, 3.0)
         q_e = np.log1p(self._queue_embb) / 20.0
         urllc_backlog_log = np.log1p(self._last_backlog_bits) / 20.0
-        n = self.n_gnb
-        if n > 1:
-            total = self._prev_alloc.sum()
-            neighbor_mean = (total - self._prev_alloc) / (n - 1)
-        else:
-            neighbor_mean = np.zeros_like(self._prev_alloc)
         return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,
-                         urllc_backlog_log, self._viol_ewma, neighbor_mean, self._prev_alloc],
+                         urllc_backlog_log, self._viol_ewma, self._prev_alloc_lag2, self._prev_alloc],
                         axis=1).astype(np.float32)
 
     def _get_graph_dict(self) -> dict:

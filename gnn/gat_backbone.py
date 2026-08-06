@@ -42,10 +42,19 @@ class GATBackbone(GNNBackbone):
         x: torch.Tensor,
         edge_index: torch.Tensor,
         edge_attr: torch.Tensor,
-    ) -> torch.Tensor:
+        return_attention: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, list[tuple[torch.Tensor, torch.Tensor]]]:
         x, edge_index, edge_attr = self.to_tensors(x, edge_index, edge_attr)
-        h = F.elu(self.conv1(x, edge_index, edge_attr=edge_attr))
+        if not return_attention:
+            h = F.elu(self.conv1(x, edge_index, edge_attr=edge_attr))
+            if self.dropout > 0 and self.training:
+                h = F.dropout(h, p=self.dropout)
+            h = self.conv2(h, edge_index, edge_attr=edge_attr)
+            return h
+
+        h, attn1 = self.conv1(x, edge_index, edge_attr=edge_attr, return_attention_weights=True)
+        h = F.elu(h)
         if self.dropout > 0 and self.training:
             h = F.dropout(h, p=self.dropout)
-        h = self.conv2(h, edge_index, edge_attr=edge_attr)
-        return h
+        h, attn2 = self.conv2(h, edge_index, edge_attr=edge_attr, return_attention_weights=True)
+        return h, [attn1, attn2]
