@@ -35,6 +35,11 @@ Usage:
   python scripts/calibrate_trained.py --seed 42
   python scripts/calibrate_trained.py --seed 42 --skip-train   # re-eval an existing run
   python scripts/calibrate_trained.py --seed 42 --algo ippo    # cheaper probe, NOT Gate A1
+
+Gate A1 needs several seeds, so the full form is: train each seed, then evaluate the
+gate once over all of them.
+  for s in 42 43 44 45 46; do python scripts/calibrate_trained.py --seed $s; done
+  python scripts/calibrate_trained.py --seed 42 --skip-train --a1-seeds 42,43,44,45,46
 """
 from __future__ import annotations
 import argparse
@@ -42,7 +47,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+from scipy import stats
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -96,16 +103,24 @@ def main() -> int:
     p.add_argument("--floor-pct", type=float, default=None,
                    help="Gate A2a: violation floor of this algo's action space, in percent, from "
                         "scripts/probe_action_floor.py. Not measured -> A2a cannot be evaluated")
+    p.add_argument("--a1-seeds", type=str, default=None,
+                   help="Gate A1: comma-separated seeds to pool, e.g. 42,43,44,45,46. A1 is a "
+                        "statement about trained policies at this operating point, so its "
+                        "denominator is the spread BETWEEN seeds; one run's episode SE has zero "
+                        "seed-level degrees of freedom and cannot support the gate. Minimum 5 "
+                        "seeds -- fewer makes t*SE wider than the precision cap and A1 fails on "
+                        "imprecision, which is the correct outcome, not a bug")
     p.add_argument("--control-tag", type=str, default=None,
                    help="Gate A2b: tag of the lambda-frozen control run (same config, "
                         "cmdp.lambda_lr = 0). Not given -> A2b cannot be evaluated")
-    p.add_argument("--control-lambda", type=float, default=None,
+    p.add_argument("--control-lambda", type=float, default=0.0,
                    help="with --as-control: pin lambda at this value instead of cmdp.lambda_init. "
-                        "A LOW pin (the default 1.0) measures what the policy does under almost no "
-                        "constraint pressure -- the upper anchor for delta. A HIGH pin measures the "
-                        "floor a TRAINED policy can reach, the lower anchor, which sits well below "
-                        "the static-allocation floor: a state-dependent per-gNB policy beats the "
-                        "best fixed uniform allocation (8.44%% vs 12.22%% measured 2026-08-06)")
+                        "Default 0.0 is the A2b control: a genuinely UNCONSTRAINED run. Round 5 "
+                        "pinned it at lambda_init = 1.0 against a run that equilibrated at 1.87 -- "
+                        "two near-identical prices, so the contrast was zero by construction and "
+                        "A2b failed on a specification defect, not on the dual. A HIGH pin is a "
+                        "different measurement: the floor a TRAINED policy can reach, which sits "
+                        "well below the static-allocation floor (8.44%% vs 12.22%%, 2026-08-06)")
     p.add_argument("--as-control", action="store_true",
                    help="train THIS run as the lambda-frozen control for A2b: same config with "
                         "cmdp.lambda_lr = 0 (lambda stays at lambda_init), derived from the frozen "
@@ -158,16 +173,26 @@ def main() -> int:
         print(f"no checkpoint at {pt_path} -- run without --skip-train first")
         return 1
 
-    eval_cmd = [sys.executable, "scripts/evaluate_checkpoints.py", "--run", str(pt_path),
-                "--episodes", str(args.episodes), "--config", config_path, "--out-dir", str(eval_dir)]
-    r = subprocess.run(eval_cmd, cwd=str(ROOT))
-    if r.returncode != 0:
-        print(f"eval failed, rc={r.returncode}")
-        return 1
+    # P3 reporting protocol: both readouts every time. Stochastic is primary because argmax
+    # is measurably not this policy's behaviour -- it carries 0.17-0.33 of the action mass and
+    # agrees with the sampled action on 17-33% of steps (scripts/policy_confidence.py,
+    # 2026-08-08). Greedy is kept as the deployment-realism readout, never as the gate.
+    for extra, label in ((["--stochastic"], " (stochastic)"), ([], "")):
+        eval_cmd = [sys.executable, "scripts/evaluate_checkpoints.py", "--run", str(pt_path),
+                    "--episodes", str(args.episodes), "--config", config_path,
+                    "--out-dir", str(eval_dir)] + extra
+        r = subprocess.run(eval_cmd, cwd=str(ROOT))
+        if r.returncode != 0:
+            print(f"eval{label} failed, rc={r.returncode}")
+            return 1
 
-    eval_csv = eval_dir / f"{run_name}_eval.csv"
-    df = pd.read_csv(eval_csv)
-    violation = float(df["sla_violation_pct"].mean()) / 100.0  # fraction, matches delta's units
+    def read_viol(name: str, suffix: str = "_eval_stoch") -> float:
+        """Held-out violation as a fraction, matching delta's units."""
+        path = eval_dir / f"{name}{suffix}.csv"
+        return float(pd.read_csv(path)["sla_violation_pct"].mean()) / 100.0
+
+    violation = read_viol(run_name)
+    violation_greedy = read_viol(run_name, "_eval")
 
     if args.as_control:
         print(f"\nCONTROL (lambda frozen) -- {run_name}: held-out violation "
@@ -179,11 +204,27 @@ def main() -> int:
     # A2a/A2b are both scaled by the window std: a shift smaller than the noise the dual
     # itself sees is not a shift, and a feasibility margin smaller than it is not a margin.
     std_pp = a["window_std_pp"]
-    lo, hi = 0.7 * delta, 1.0 * delta
-    gates = {
-        "A1 violation in [0.7d, 1.0d]": (lo <= violation <= hi,
-            f"{violation*100:.2f}% vs [{lo*100:.2f}%, {hi*100:.2f}%]"),
-    }
+
+    # A1 (amended 2026-08-08). Two-sided: a dual that works drives violation TO delta, so the
+    # old one-sided [0.7d, 1.0d] band punished the mechanism succeeding. The spread that matters
+    # is between SEEDS, not between episodes -- one seed's 150-episode SE has zero seed-level
+    # degrees of freedom. Critical value is Student t on n-1 dof, not 1.96: the SE is estimated,
+    # not known. The second clause exists because |x - d| <= k*SE alone rewards a NOISIER
+    # instrument with a wider band; a readout too imprecise to resolve one dual-update window
+    # cannot certify anything, whatever its mean.
+    if args.a1_seeds:
+        seeds = [int(s) for s in args.a1_seeds.split(",")]
+        vals = np.array([read_viol(f"{args.algo}{args.tag}_seed{s}") for s in seeds]) * 100.0
+        se_pp = float(vals.std(ddof=1) / np.sqrt(len(vals)))
+        tcrit = float(stats.t.ppf(0.975, len(vals) - 1))
+        half_pp, miss_pp = tcrit * se_pp, abs(float(vals.mean()) - delta * 100.0)
+        gates = {"A1 |viol - delta| <= t*SE_seed": (miss_pp <= half_pp and half_pp <= std_pp,
+            f"|{vals.mean():.2f} - {delta*100:.2f}| = {miss_pp:.2f}pp vs t*SE {half_pp:.2f}pp "
+            f"(n={len(vals)}, SE_seed {se_pp:.2f}pp, precision cap {std_pp:.2f}pp)")}
+    else:
+        gates = {"A1 |viol - delta| <= t*SE_seed": (None,
+            f"single seed -- pass --a1-seeds; this run alone reads {violation*100:.2f}% "
+            f"vs delta {delta*100:.2f}%")}
 
     if args.floor_pct is None:
         gates["A2a floor <= delta - 1 std"] = (None, "not measured -- pass --floor-pct "
@@ -197,11 +238,12 @@ def main() -> int:
         gates["A2b |viol shift| >= 1 std"] = (None, "not measured -- pass --control-tag "
                                                     "(lambda-frozen run, cmdp.lambda_lr = 0)")
     else:
-        ctl_csv = eval_dir / f"{args.algo}{args.control_tag}_seed{args.seed}_eval.csv"
+        ctl_name = f"{args.algo}{args.control_tag}_seed{args.seed}"
+        ctl_csv = eval_dir / f"{ctl_name}_eval_stoch.csv"
         if not ctl_csv.exists():
             print(f"no control eval at {ctl_csv} -- train the lambda-frozen run first")
             return 1
-        ctl_viol = float(pd.read_csv(ctl_csv)["sla_violation_pct"].mean()) / 100.0
+        ctl_viol = read_viol(ctl_name)
         shift_pp = abs(ctl_viol - violation) * 100.0
         gates["A2b |viol shift| >= 1 std"] = (shift_pp >= std_pp,
             f"{shift_pp:.2f}pp vs std {std_pp:.2f}pp  "
@@ -222,6 +264,11 @@ def main() -> int:
     # it stays in the report: a lambda still climbing at the end of training is evidence
     # the constraint has no fixed point.
     print(f"  [----] lam steady-state (report only)   {a['lam_ss']:.3f}")
+    # P3: the greedy readout is reported next to the primary one, never silently dropped.
+    # A large gap is a readout failure, not a policy failure -- check it against
+    # scripts/policy_confidence.py before reading anything into it.
+    print(f"  [----] greedy readout (report only)     {violation_greedy*100:.2f}% "
+          f"(stochastic {violation*100:.2f}%, gap {(violation_greedy-violation)*100:+.2f}pp)")
 
     if all(ok for ok, _ in gates.values()):
         print("\nGate A PASS. Freeze lambda_arrival/delta/urllc_max_bits and commit "
@@ -230,10 +277,10 @@ def main() -> int:
 
     print("\nGate A FAIL. Adjust the operating point on TASK grounds only "
           "(goal1.md Larangan integritas #1), then re-run.")
-    if not gates["A1 violation in [0.7d, 1.0d]"][0]:
-        direction = "raise" if violation < lo else "lower"
-        print(f"  A1: violation {'below' if violation < lo else 'above'} the band -> {direction} "
-              f"traffic/urllc/lambda_arrival (now {lambda_arrival:.0f})")
+    if gates["A1 |viol - delta| <= t*SE_seed"][0] is False:
+        print(f"  A1: seeds do not sit at delta -> adjust traffic/urllc/lambda_arrival "
+              f"(now {lambda_arrival:.0f}) on task grounds, or add seeds if the miss is "
+              f"inside the noise but t*SE exceeded the precision cap")
     if a["drop_ratio"] < 3.0:
         print("  A3: overflow-dominated -> raise buffer.urllc_max_bits so the deadline, "
               "not the buffer, is the binding mechanism. NOTE: urllc_max_bits is also "
