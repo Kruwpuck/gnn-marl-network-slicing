@@ -205,24 +205,32 @@ def main() -> int:
     # itself sees is not a shift, and a feasibility margin smaller than it is not a margin.
     std_pp = a["window_std_pp"]
 
-    # A1 (amended 2026-08-08). Two-sided: a dual that works drives violation TO delta, so the
-    # old one-sided [0.7d, 1.0d] band punished the mechanism succeeding. The spread that matters
-    # is between SEEDS, not between episodes -- one seed's 150-episode SE has zero seed-level
-    # degrees of freedom. Critical value is Student t on n-1 dof, not 1.96: the SE is estimated,
-    # not known. The second clause exists because |x - d| <= k*SE alone rewards a NOISIER
-    # instrument with a wider band; a readout too imprecise to resolve one dual-update window
-    # cannot certify anything, whatever its mean.
+    # A1 (amended 2026-08-08). Equivalence test, not a point-null test: the whole confidence
+    # interval must lie inside delta +/- one window std.
+    #
+    # Two-sided because a dual that works drives violation TO delta -- the old one-sided
+    # [0.7d, 1.0d] band punished the mechanism succeeding. The spread that matters is between
+    # SEEDS, not between episodes: one seed's 150-episode SE has zero seed-level degrees of
+    # freedom. Critical value is Student t on n-1 dof, not 1.96, because the SE is estimated.
+    #
+    # The tolerance is scaled on PROCESS noise (window std), never on the precision of the mean
+    # (SE), because a controller's steady-state offset does not shrink with the number of seeds:
+    # an SE-based criterion is asymptotically impossible to pass regardless of system
+    # performance. Containment gives the second clause for free -- an interval wider than the
+    # band cannot fit inside it, so an imprecise readout is rejected on its own imprecision.
+    A1_NAME = "A1 CI inside delta +/- 1 std window"
     if args.a1_seeds:
         seeds = [int(s) for s in args.a1_seeds.split(",")]
         vals = np.array([read_viol(f"{args.algo}{args.tag}_seed{s}") for s in seeds]) * 100.0
         se_pp = float(vals.std(ddof=1) / np.sqrt(len(vals)))
         tcrit = float(stats.t.ppf(0.975, len(vals) - 1))
-        half_pp, miss_pp = tcrit * se_pp, abs(float(vals.mean()) - delta * 100.0)
-        gates = {"A1 |viol - delta| <= t*SE_seed": (miss_pp <= half_pp and half_pp <= std_pp,
-            f"|{vals.mean():.2f} - {delta*100:.2f}| = {miss_pp:.2f}pp vs t*SE {half_pp:.2f}pp "
-            f"(n={len(vals)}, SE_seed {se_pp:.2f}pp, precision cap {std_pp:.2f}pp)")}
+        lo_pp, hi_pp = vals.mean() - tcrit * se_pp, vals.mean() + tcrit * se_pp
+        band_lo, band_hi = delta * 100.0 - std_pp, delta * 100.0 + std_pp
+        gates = {A1_NAME: (band_lo <= lo_pp and hi_pp <= band_hi,
+            f"CI [{lo_pp:.2f}, {hi_pp:.2f}] vs band [{band_lo:.2f}, {band_hi:.2f}] "
+            f"(n={len(vals)}, mean {vals.mean():.2f}%, SE_seed {se_pp:.2f}pp)")}
     else:
-        gates = {"A1 |viol - delta| <= t*SE_seed": (None,
+        gates = {A1_NAME: (None,
             f"single seed -- pass --a1-seeds; this run alone reads {violation*100:.2f}% "
             f"vs delta {delta*100:.2f}%")}
 
@@ -277,10 +285,10 @@ def main() -> int:
 
     print("\nGate A FAIL. Adjust the operating point on TASK grounds only "
           "(goal1.md Larangan integritas #1), then re-run.")
-    if gates["A1 |viol - delta| <= t*SE_seed"][0] is False:
-        print(f"  A1: seeds do not sit at delta -> adjust traffic/urllc/lambda_arrival "
-              f"(now {lambda_arrival:.0f}) on task grounds, or add seeds if the miss is "
-              f"inside the noise but t*SE exceeded the precision cap")
+    if gates[A1_NAME][0] is False:
+        print(f"  A1: CI not inside the band -> if the mean is off, adjust "
+              f"traffic/urllc/lambda_arrival (now {lambda_arrival:.0f}) on task grounds; "
+              f"if the mean is inside but the CI overhangs, add seeds")
     if a["drop_ratio"] < 3.0:
         print("  A3: overflow-dominated -> raise buffer.urllc_max_bits so the deadline, "
               "not the buffer, is the binding mechanism. NOTE: urllc_max_bits is also "
