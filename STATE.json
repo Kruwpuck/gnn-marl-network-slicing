@@ -1,12 +1,12 @@
 {
   "run_id": "2026-08-05-run01",
   "goal": "handoff/goal1.md",
-  "iterasi": 6,
-  "level": 5,
+  "iterasi": 7,
+  "level": 1,
   "gagal_beruntun": 0,
-  "commit_hijau_terakhir": "b929648",
-  "status": "blocked",
-  "menunggu_manusia": true,
-  "catatan": "Tiga keputusan manusia iterasi 5 dibekukan di goal1.md dan diselaraskan di calibrate_trained.py. Dua penguatan yang diminta sudah diukur: entropi TIDAK melonjak (turun 2.34->2.10) sehingga hipotesisnya batal, tapi mekanisme yang lebih kuat ditemukan (argmax membawa <=0.33 massa aksi, cocok dengan perilaku policy hanya 17-33% langkah); SE ternyata dari 150 episode SATU seed, nol derajat kebebasan antar-seed, jadi 4 seed ditambah. Hasil 5 seed: constraint mengikat berulang (training 8.61% vs delta 8.50%, sd_seed 0.43pp), A2a/A2b/A3/A4 lolos, A2b kini dengan kontrol lambda=0 yang benar (1.86pp vs 1.62pp). A1 GAGAL: held-out 9.12% vs delta 8.50%, miss 0.62pp lawan t*SE 0.54pp -- bukan karena constraint tidak mengikat melainkan karena SE_seed runtuh ke 0.19pp sehingga gate jadi lebih presisi daripada pengendalinya; pita berbasis SE menyempit seiring seed bertambah sehingga di 20 seed wave A1 mustahil dilewati pengendali integral mana pun. Satu fork menunggu manusia (E toleransi kesetaraan / A ukur di training / F terima gagal), rinci di handoff/STUCK.md. Agent menolak memilih sendiri karena usulan utamanya muncul setelah melihat FAIL.",
-  "diperbarui": "2026-08-08T13:05:00"
+  "commit_hijau_terakhir": "528a726",
+  "status": "running",
+  "menunggu_manusia": false,
+  "catatan": "Gate A LOLOS seluruhnya di titik operasi beku (delta=0.085, lambda_arrival=60000, urllc_max_bits=307200, dual_update_every=12500, floor.mode=none). A1 dibekukan sebagai uji kesetaraan atas keputusan manusia (opsi E): CI [8.58,9.66] termuat dalam pita [6.88,10.12]. Uji falsifikasi dijalankan sebelum pembekuan dan lolos -- pita menolak v3 (miss 6.81pp vs Delta 2.70pp), ronde 4 (4.43 vs 1.40), dan ronde 3 (CI lebih lebar dari pita). A2b lolos 2.13pp vs 1.62pp dengan kontrol lambda=0. Wave v4 berjalan: 8 algoritma x 5 seed (42-46), floor.mode=none, tag _v4, max_parallel 3, 40 job. Tag _v4 dipakai supaya berkas ablasi v3 _floornone tidak tertimpa.",
+  "diperbarui": "2026-08-08T15:15:00"
 }
