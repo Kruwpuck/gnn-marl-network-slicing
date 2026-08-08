@@ -165,6 +165,12 @@ def evaluate_run(pt_path: Path, episodes: int, config_path: str | None, out_dir:
         writer = csv.DictWriter(f, fieldnames=EVAL_COLUMNS)
         writer.writeheader()
         for ep in range(episodes):
+            # The env seed alone does not make a stochastic eval reproducible: action
+            # sampling draws from torch's global RNG. Without this the same checkpoint
+            # read 8.71% and 8.65% on consecutive invocations -- 0.06pp, harmless for a
+            # headline number but not for a gate whose margin is 0.11pp. Greedy runs are
+            # unaffected; seeding both keeps the two protocols on the same footing.
+            torch.manual_seed(EVAL_SEED_BASE + ep)
             metrics = run_episode(env, agent, kind, seed=EVAL_SEED_BASE + ep, greedy=greedy)
             row = {"run_name": run_name, "algo": algo, "seed": seed, "episode": ep, **metrics}
             writer.writerow(row)

@@ -1,106 +1,121 @@
 # STUCK
-run: 2026-08-05-run01   iterasi: 5   level: 5 (pertanyaan metode)   waktu: 2026-08-06T13:45:00
+run: 2026-08-05-run01   iterasi: 6   level: 5 (pertanyaan metode)   waktu: 2026-08-08T13:05:00
 
-Versi sebelumnya: iterasi 3 di commit `50664fb`, iterasi 4 di commit `7193247`.
+Versi sebelumnya: iterasi 4 di commit `7193247`, iterasi 5 di commit `aad4198`.
 
 ## Ringkasan
 
-**Kalibrasinya berhasil.** Ronde 5 (`delta=0.085`, titik operasi O1) adalah pertama
-kalinya sejak v3 dual benar-benar setimbang di sasaran:
+Tiga keputusan manusia iterasi 5 sudah dibekukan di `handoff/goal1.md` dan
+diselaraskan di `scripts/calibrate_trained.py`. Dua penguatan yang diminta sudah
+diukur. Empat dari lima gate lolos.
+
+A1 gagal — **dan bentuk kegagalannya baru**. Bukan lagi "constraint tidak
+mengikat", melainkan gate yang jadi lebih presisi daripada pengendali yang
+diujinya.
 
 ```
-training 20% terakhir : viol = 8.32 %   lam = 1.87   (delta = 8.50 %)
+A1   GAGAL  |9.12 - 8.50| = 0.62pp  vs  2*SE 0.39pp / t*SE 0.54pp
+A2a  LOLOS  lantai 5.49%, margin 3.01pp vs std 1.62pp
+A2b  LOLOS  1.86pp vs std 1.62pp   (kontrol lam=0 10.98% -> lam-aktif 9.12%)
+A3   LOLOS  inf:1   (late 8.78%, overflow 0.00%)
+A4   LOLOS  1.62pp atas 80 window
 ```
-
-λ tidak meluncur ke 0 (v3, ronde 4) dan tidak lari ke tak hingga (ronde 3). Ia
-mendarat dan berosilasi 1.27–1.64. A2a, A3, A4 lolos.
-
-A1 dan A2b tercetak FAIL, tapi **keduanya berasal dari pilihan pengukuranku sendiri,
-bukan dari properti task.** Itulah yang perlu diputuskan manusia sebelum wave.
 
 ## Bukti
 
-### Uraian celah ronde 5
+### Constraint mengikat, berulang, di 5 dari 5 seed
 
 ```
-training 20% terakhir    8.32 %      <- yang dikendalikan dual, vs delta 8.50 %
-held-out stokastik       8.71 %      celah dari training  +0.39 pp
-held-out greedy         12.03 %      celah dari stokastik +3.32 pp
+seed   viol 20% akhir   viol 5% akhir   lam setimbang   held-out stokastik
+42          8.32            8.51            1.87              8.85
+43          8.29            8.44            3.72              8.77
+44          9.28            9.53            0.80              9.86
+45          8.81            8.99            3.66              9.02
+46          8.34            8.65            0.39              9.10
+rerata      8.61            8.82                              9.12     (delta 8.50)
+sd_seed     0.43                                              0.48
+SE_seed     0.19                                              0.19
 ```
 
-Seluruh selisih A1 (12.03 % vs pita [5.95 %, 8.50 %]) adalah artefak argmax. Dibaca
-stokastik, A1 = 8.71 % — meleset 0.21 pp, jauh di dalam SE 1.1 pp.
+Tiga pembacaan, tiga-tiganya di atas δ dengan selisih kecil dan **konsisten
+arah**: +0.11, +0.32, +0.62 pp. Dual mendarat dekat sasaran dengan offset tunak.
 
-### Kurva respons λ (ippo, 1M step per titik, 150 episode held-out)
+λ setimbang berpencar hampir 10× (0.39–3.72). Itu bukan kegagalan: λ* adalah
+harga yang dibutuhkan policy seed itu untuk duduk di δ, dan policy berbeda butuh
+harga berbeda. Yang harus konsisten adalah variabel terkendali, dan ia konsisten
+(sd 0.43 pp). Ini sekaligus menguatkan penurunan A2 lama dari "λ ≥ 5.0": di sini
+λ=0.39 dan λ=3.72 sama-sama mengikat sempurna.
 
-| λ | greedy | stokastik | selisih | eMBB |
-|---|---|---|---|---|
-| 0 | 12.57 % | 10.57 % | −2.00 pp | 8.15 |
-| 1 | 12.55 % | 10.30 % | −2.25 pp | 8.12 |
-| 5 | 10.83 % | 8.87 % | −1.96 pp | 8.02 |
-| 12 | 9.65 % | 6.69 % | −2.96 pp | 8.19 |
-| 30 | 94.06 % | 5.49 % | −88.56 pp | 8.14 |
+### Kenapa A1 gagal
 
-Tiga hal terbaca. Dual punya wewenang kendali nyata (5.1 pp, vs SE 1.1 pp). Tebing
-degenerasi argmax ada antara λ=12 dan λ=30; di bawah itu greedy melacak stokastik
-dengan selisih stabil 2–3 pp. Dan violation turun 5 pp **tanpa** membayar eMBB, jadi
-perbaikannya penempatan waktu PRB — keterampilan adaptif yang seharusnya membedakan
-arsitektur, dan ia tersedia di titik operasi ini.
+`SE_seed` runtuh dari 1.1 pp (satu seed, antar-episode) ke **0.19 pp** (lima
+seed). Pengukurannya jadi cukup presisi untuk mendeteksi bias kecil yang nyata.
+Gate menuntut kesesuaian dalam 0.54 pp; pengendalinya punya offset 0.6 pp.
 
-### A2b dihitung ulang dengan kontrol yang benar
+Arah cacatnya berbahaya: **tambah seed → pita menyempit → controller yang sama
+gagal lebih parah.** Pada 20 seed wave, `t·SE` turun ke ~0.27 pp dan A1 mustahil
+dilewati pengendali integral mana pun. Pola klasik uji hipotesis titik dengan
+daya yang naik: cukup presisi, selalu menolak.
 
-Kontrol dipatok di λ=1.0 sementara run setimbang di λ=1.87 — dua λ hampir sama,
-kontrasnya nol *by construction*. Terhadap kontrol λ=0 yang benar-benar tak
-terbatasi (`ippo_calib4`, stokastik 10.57 %):
+Pemilihan `t` lawan 1.96 tidak menyelamatkan apa pun — gagal di kedua konvensi.
+
+### Perbaikan reproduktibilitas (memengaruhi semua angka di atas)
+
+Sampling aksi menarik dari RNG global torch yang tidak pernah di-seed, jadi
+pembacaan stokastik — angka primer yang baru — tidak reproducible: checkpoint
+sama membaca 8.71 % lalu 8.65 % pada dua invokasi berturut. Diperbaiki dengan
+`torch.manual_seed(EVAL_SEED_BASE + ep)` per episode, berlaku untuk kedua
+protokol. Seluruh angka di dokumen ini sudah memakai versi yang diperbaiki.
+
+### Entropi: hipotesis tidak terkonfirmasi, mekanismenya lain
 
 ```
-|10.57 - 8.71| = 1.86 pp  >=  std 1.62 pp   -> LOLOS
+λ      p_max  margin  entropi  agree | greedy  stoch    gap
+0      0.194   0.042    2.281  0.199 | 12.57   10.57   2.00
+1      0.167   0.049    2.341  0.171 | 12.55   10.30   2.25
+5      0.238   0.068    2.204  0.237 | 10.83    8.87   1.96
+12     0.265   0.088    2.161  0.259 |  9.65    6.69   2.96
+30     0.331   0.209    2.096  0.327 | 94.06    5.49  88.56
+seragam 0.091          maks 2.398
 ```
 
-Cacatnya di spesifikasi gate buatanku: A2b ditulis "run λ-beku" tanpa menetapkan
-nilai patokan.
+Tidak ada lonjakan entropi — entropi justru turun monoton sementara gap meledak,
+dan di λ=30 policy paling percaya diri se-sweep (sd greedy antar-episode 0.11 pp:
+mantap, konsisten, salah). Mekanisme sebenarnya: **argmax membawa ≤ 0.33 massa
+aksi dan cocok dengan perilaku policy hanya 17–33 % langkah.** Kompetensi policy
+ada di campurannya, bukan modusnya — konsisten dengan violation turun 5 pp tanpa
+membayar eMBB, yang berarti perbaikannya penempatan PRB terhadap *waktu*, dan
+satu aksi tetap tidak bisa bervariasi terhadap waktu.
 
-### Ringkasan ronde 5 dengan pembacaan stokastik + kontrol λ=0
-
-| gate | hasil |
-|---|---|
-| A1 | 8.71 % vs [5.95 %, 8.50 %] — meleset 0.21 pp, di dalam derau |
-| A2a | lantai 5.49 %, margin 3.01 pp vs std 1.62 pp — lolos |
-| A2b | 1.86 pp vs std 1.62 pp — lolos |
-| A3 | inf:1 (late 8.78 %, overflow 0.00 %) — lolos |
-| A4 | 1.62 pp atas 80 window — lolos |
+Ambang bernomor untuk kegagalan-pembacaan ditolak: gap 2–3 pp itu offset
+sistematis, bukan derau, jadi tidak ada SE yang sah jadi penyebutnya. 3×SE
+berpasangan (0.8–2.4 pp) menandai seluruh regime sehat; 3×SE_episode (2.73 pp)
+menandai λ=12 dan calib5 yang dua-duanya sehat.
 
 ## Keputusan yang dibutuhkan
 
-Tidak satu pun menyangkut algoritma mana yang unggul.
+Satu fork. Agent menolak mengambilnya sendiri karena usulan utamanya muncul
+**setelah** melihat FAIL — persis situasi yang dijaga larangan integritas #1.
 
-**1. Protokol pelaporan.** `evaluate_checkpoints.py` menjalankan argmax. Argmax dan
-sampel berbeda 2–3 pp sistematis lalu putus total di antara λ=12 dan λ=30. Di wave,
-8 algoritma × 20 seed akan mendarat di λ berbeda-beda; yang melewati tebing akan
-melaporkan angka sampah padahal policy-nya sehat.
+**E. Toleransi kesetaraan, bukan pita SE** *(rekomendasi)*. Nyatakan Δ yang
+berarti secara praktis, lalu minta seluruh CI termuat di dalamnya:
 
-- **P1 greedy tetap primer** — standar RL, realistis untuk deployment. Tapi A1 diukur
-  pada pembacaan yang meleset 2–3 pp, dan δ harus digeser ke ~0.11 supaya greedy masuk
-  pita, yang mendekatkan titik kerja ke tebing.
-- **P2 stokastik primer** — cocok dengan yang dioptimalkan training dan dikendalikan
-  dual. δ=0.085 langsung konsisten. Kurang lazim sebagai angka utama di paper RL.
-- **P3 laporkan dua-duanya, stokastik primer** *(rekomendasi)* — biaya satu pass eval
-  tambahan. Greedy jadi uji realisme deployment, tebingnya jadi temuan tersendiri.
-  Aturan yang bisa dipra-registrasi: selisih greedy−stokastik di atas ambang (misal
-  10 pp) ditandai **kegagalan pembacaan**, bukan kegagalan policy, dan dilaporkan
-  sebagai keduanya.
+```
+A1 LOLOS jika  [mean - t*SE, mean + t*SE]  termuat dalam  [delta - D, delta + D]
+```
 
-**2. Nilai patokan kontrol A2b.** Tetapkan λ=0 (benar-benar tak terbatasi), bukan
-`lambda_init`. Tanpa ini A2b bisa gagal semata karena kontrol dan run kebetulan punya
-λ yang mirip.
+dengan `D = 1 std window = 1.62 pp` — satuan yang sudah dideklarasikan di A2a dan
+A2b, bukan angka baru. Artinya "mengikat = violation berada dalam resolusi yang
+dilihat dual itu sendiri". Pita tidak menyusut ke nol seiring bertambahnya seed,
+sehingga cacat struktural di atas hilang. Hasil: `[8.58, 9.66] ⊂ [6.88, 10.12]`
+→ LOLOS.
 
-**3. Penempatan A1 terhadap kesetimbangan dual.** Dual menggiring violation *training*
-ke δ, sehingga held-out mendarat di δ + ~0.4 pp, sementara pita A1 `[0.7δ, 1.0δ]`
-menuntut held-out ≤ δ. Selalu meleset tipis, dan dengan SE 1.1 pp hasilnya jadi lemparan
-koin tiap run — bukan gate yang kokoh. Pilihan:
-- ukur A1 pada violation training (kuantitas yang benar-benar dikendalikan dual);
-- lebarkan batas atas pita sebesar celah terukur;
-- naikkan δ ~0.5 pp supaya held-out mendarat di dalam pita.
+**A. Ukur A1 pada violation training** — kuantitas yang benar-benar dikendalikan
+dual. Miss 0.11 pp vs t·SE 0.54 pp → lolos. Celah ke held-out dilaporkan sebagai
+artefak kalibrasi, yang memang sudah diwajibkan `goal1.md` §Mode pengukuran.
+
+**F. Terima GAGAL.** Titik operasi tidak memenuhi A1 sebagaimana didefinisikan;
+wave tidak dijalankan.
 
 ## Sudah dicoba dan gagal
 
@@ -109,16 +124,20 @@ koin tiap run — bukan gate yang kokoh. Pilihan:
 | `lambda_lr` 0.01 → 2.0 → 14.0 (ronde 1–3) | λ 1.03 → 18.59, perilaku policy tidak bergerak |
 | δ=0.05 di titik operasi lama | δ di bawah lantai, λ → tak hingga, A2 lolos hampa |
 | δ=0.15 dengan jangkar lantai statis (ronde 4) | λ → 0 dalam 100K step, A2b gagal 0.02 pp |
-| kontrol A2b dipatok λ=1 (ronde 5) | kontras nol *by construction* |
-| opsi C, clip berprinsip | **tidak diperlukan** — pada λ=30 kurva training sehat (viol 10.65 → 5.03, reward −881 → −72); kolapsnya degenerasi argmax, bukan gradien mati |
+| kontrol A2b dipatok λ=1 (ronde 5) | kontras nol *by construction*; diperbaiki, kini λ=0 dan lolos |
+| pita A1 satu sisi `[0.7δ, 1.0δ]` | menghukum dual yang berhasil; diganti dua sisi atas keputusan manusia |
+| pita A1 dua sisi berbasis SE | menyempit seiring seed bertambah; gagal 0.62 vs 0.54 pp |
+| ambang kegagalan-pembacaan 3×SE | menandai seluruh regime sehat — gap sistematis, bukan derau |
+| opsi C, clip berprinsip | **tidak diperlukan** — kurva training di λ=30 sehat; kolapsnya degenerasi argmax |
 
 ## File tersentuh
 
-- `configs/experiment_config.yaml` — `delta` 0.15 → 0.085 (titik operasi kedua; keduanya dilaporkan)
-- `scripts/evaluate_checkpoints.py` — `--stochastic` (diagnostik, default tetap greedy)
-- `scripts/calibrate_trained.py` — `--control-lambda`
+- `handoff/goal1.md` — amandemen 2026-08-08 (A1 dua sisi, kontrol A2b λ=0, mode pengukuran P3)
+- `scripts/calibrate_trained.py` — `--a1-seeds`, `--control-lambda` default 0.0, kedua eval tiap invokasi
+- `scripts/evaluate_checkpoints.py` — `torch.manual_seed` per episode
+- `scripts/policy_confidence.py` — baru; `results/policy_confidence.csv`
 - `runs/2026-08-05-run01/ledger.md` — seluruh angka
 
 ## Commit terakhir hijau
 
-`6ba2aab` (pytest 80 passed)
+`b929648` (pytest 80 passed)
