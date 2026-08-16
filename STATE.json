@@ -1,12 +1,12 @@
 {
   "run_id": "2026-08-05-run01",
   "goal": "handoff/goal1.md",
-  "iterasi": 7,
+  "iterasi": 10,
   "level": 1,
   "gagal_beruntun": 0,
-  "commit_hijau_terakhir": "528a726",
-  "status": "running",
+  "commit_hijau_terakhir": "3ad4666",
+  "status": "ok",
   "menunggu_manusia": false,
-  "catatan": "Gate A LOLOS seluruhnya di titik operasi beku (delta=0.085, lambda_arrival=60000, urllc_max_bits=307200, dual_update_every=12500, floor.mode=none). A1 dibekukan sebagai uji kesetaraan atas keputusan manusia (opsi E): CI [8.58,9.66] termuat dalam pita [6.88,10.12]. Uji falsifikasi dijalankan sebelum pembekuan dan lolos -- pita menolak v3 (miss 6.81pp vs Delta 2.70pp), ronde 4 (4.43 vs 1.40), dan ronde 3 (CI lebih lebar dari pita). A2b lolos 2.13pp vs 1.62pp dengan kontrol lambda=0. Wave v4 berjalan: 8 algoritma x 5 seed (42-46), floor.mode=none, tag _v4, max_parallel 3, 40 job. Tag _v4 dipakai supaya berkas ablasi v3 _floornone tidak tertimpa.",
-  "diperbarui": "2026-08-08T15:15:00"
+  "catatan": "Blokir C4 diangkat keputusan manusia 2026-08-16: C4 TETAP GAGAL, ambang tetap >=20, yang dipecah cakupan klaim (komparatif sah karena Wilson terpisah di n=5; karakterisasi rate/bimodalitas TIDAK diklaim). Aturan penulisan mengikat: 'kolaps di k dari 5 seed', bukan persen. Dicatat di handoff/goal1.md section 'Keputusan scoping C4 2026-08-16' + results/GATE_C.md + ledger; tidak ada ambang, definisi metrik, atau tabel gate yang disentuh. Perluasan seed: aturan biaya dideklarasikan sebelum jalan (naikkan keluarga yang lebih murah per seed). Terukur dari elapsed_sec 40 CSV wave: PPO 8.32 job-jam/seed lawan DQN 77.57 -- PPO 9.3x lebih murah, kebalikan dugaan, karena DQN belajar tiap langkah sedangkan PPO sekali per 512. 15 seed tambahan butuh 124.8 job-jam lawan sisa anggaran 20.5, jadi DILEWATI; pembacaan device-jam yang justru meloloskannya dicatat tapi eksekusinya milik manusia. C2 diremediasi: hyperparameter pindah ke configs/experiment_config.yaml blok agent: lewat agents/hparams.py, nilai bit-identik dengan default lama (tests/test_hparams_identity.py), suite 86 lolos, C1 diulang 9/9, 1 episode eval reproduksi bit-identik; verdict C2 untuk wave tetap SEBAGIAN. Bukti C6 dinyatakan ulang jadi cek per-kunci (diff config murni aditif, 31 tambahan 0 hapusan). Struktur paper: collapse rate jadi hasil utama, temuan readout jadi subsection metodologi dengan kontrafaktual greedy 16.77 lawan 68.06 -- handoff/paper_structure.md. Berikutnya: commit seluruh pekerjaan; push dilakukan manusia.",
+  "diperbarui": "2026-08-16T11:45:00"
 }

@@ -1,0 +1,1012 @@
+﻿[central-ppo] device=cuda
+[central-ppo] step=    511 ep=   2 rew=+460.891 ma=+460.891 lam=1.000 t=1s
+[central-ppo] step=   1023 ep=   5 rew=+348.125 ma=+404.508 lam=1.000 t=2s
+[central-ppo] step=   2047 ep=  10 rew=+608.325 ma=+454.653 lam=1.000 t=3s
+[central-ppo] step=   3071 ep=  15 rew=+426.806 ma=+477.936 lam=1.000 t=4s
+[central-ppo] step=   4095 ep=  20 rew=+604.080 ma=+517.165 lam=1.000 t=6s
+[central-ppo] step=   5119 ep=  25 rew=+360.897 ma=+476.258 lam=1.000 t=7s
+[central-ppo] step=   6143 ep=  30 rew=+590.769 ma=+480.815 lam=1.001 t=8s
+[central-ppo] step=   7167 ep=  35 rew=+542.698 ma=+486.865 lam=1.001 t=10s
+[central-ppo] step=   8191 ep=  40 rew=+556.669 ma=+489.257 lam=1.001 t=11s
+[central-ppo] step=   9215 ep=  46 rew=+796.039 ma=+515.315 lam=1.001 t=13s
+[central-ppo] step=  10239 ep=  51 rew=+310.730 ma=+503.961 lam=1.000 t=15s
+[central-ppo] step=  11263 ep=  56 rew=+255.060 ma=+483.063 lam=1.000 t=16s
+[central-ppo] step=  12287 ep=  61 rew=+434.951 ma=+469.981 lam=1.000 t=18s
+[central-ppo] step=  13311 ep=  66 rew=+815.904 ma=+495.278 lam=1.000 t=20s
+[central-ppo] step=  14335 ep=  71 rew=+813.520 ma=+514.301 lam=1.000 t=21s
+[central-ppo] step=  15359 ep=  76 rew=+650.459 ma=+524.485 lam=1.000 t=23s
+[central-ppo] step=  16383 ep=  81 rew=+594.082 ma=+531.327 lam=1.000 t=25s
+[central-ppo] step=  17407 ep=  87 rew=+478.863 ma=+530.065 lam=1.000 t=26s
+[central-ppo] step=  18431 ep=  92 rew=+583.697 ma=+533.389 lam=0.999 t=28s
+[central-ppo] step=  19455 ep=  97 rew=+524.718 ma=+530.883 lam=0.999 t=30s
+[central-ppo] step=  20479 ep= 102 rew=+911.719 ma=+551.246 lam=0.999 t=31s
+[central-ppo] step=  21503 ep= 107 rew=+280.668 ma=+546.461 lam=0.999 t=33s
+[central-ppo] step=  22015 ep= 110 rew=+456.272 ma=+544.363 lam=0.999 t=34s
+[central-ppo] step=  23039 ep= 115 rew=+263.770 ma=+540.615 lam=0.999 t=35s
+[central-ppo] step=  24063 ep= 120 rew=+324.471 ma=+534.719 lam=1.000 t=37s
+[central-ppo] step=  25087 ep= 125 rew=+595.806 ma=+540.340 lam=1.000 t=39s
+[central-ppo] step=  26111 ep= 130 rew=+514.924 ma=+541.607 lam=0.999 t=40s
+[central-ppo] step=  27135 ep= 135 rew=+530.241 ma=+543.749 lam=0.999 t=42s
+[central-ppo] step=  28159 ep= 140 rew=+459.005 ma=+541.754 lam=0.999 t=44s
+[central-ppo] step=  29183 ep= 145 rew=+543.487 ma=+541.738 lam=0.999 t=46s
+[central-ppo] step=  30207 ep= 151 rew=+686.777 ma=+544.839 lam=0.999 t=47s
+[central-ppo] step=  31231 ep= 156 rew=+484.661 ma=+547.195 lam=0.999 t=49s
+[central-ppo] step=  32255 ep= 161 rew=+429.356 ma=+541.982 lam=0.999 t=51s
+[central-ppo] step=  33279 ep= 166 rew=+663.952 ma=+544.522 lam=0.999 t=52s
+[central-ppo] step=  34303 ep= 171 rew=+671.646 ma=+548.192 lam=1.000 t=54s
+[central-ppo] step=  35327 ep= 176 rew=+287.109 ma=+544.120 lam=1.000 t=56s
+[central-ppo] step=  36351 ep= 181 rew=+605.068 ma=+544.223 lam=0.999 t=58s
+[central-ppo] step=  37375 ep= 186 rew=+372.799 ma=+540.148 lam=0.999 t=59s
+[central-ppo] step=  38399 ep= 192 rew=+22.485 ma=+530.980 lam=1.000 t=61s
+[central-ppo] step=  39423 ep= 197 rew=+702.269 ma=+531.995 lam=1.000 t=63s
+[central-ppo] step=  40447 ep= 202 rew=+560.729 ma=+533.734 lam=1.000 t=64s
+[central-ppo] step=  41471 ep= 207 rew=+538.229 ma=+534.950 lam=1.000 t=66s
+[central-ppo] step=  42495 ep= 212 rew=+356.544 ma=+531.259 lam=1.000 t=68s
+[central-ppo] step=  43007 ep= 215 rew=+489.083 ma=+530.757 lam=1.000 t=69s
+[central-ppo] step=  44031 ep= 220 rew=+314.341 ma=+527.194 lam=1.000 t=70s
+[central-ppo] step=  45055 ep= 225 rew=+428.305 ma=+524.892 lam=1.000 t=72s
+[central-ppo] step=  46079 ep= 230 rew=+645.593 ma=+526.198 lam=1.000 t=74s
+[central-ppo] step=  47103 ep= 235 rew=+801.647 ma=+530.003 lam=1.000 t=76s
+[central-ppo] step=  48127 ep= 240 rew=+553.722 ma=+532.812 lam=1.000 t=77s
+[central-ppo] step=  49151 ep= 245 rew=+802.685 ma=+536.032 lam=1.000 t=79s
+[central-ppo] step=  50175 ep= 250 rew=+487.450 ma=+537.934 lam=1.000 t=81s
+[central-ppo] step=  51199 ep= 256 rew=+606.366 ma=+539.019 lam=1.000 t=83s
+[central-ppo] step=  52223 ep= 261 rew=+634.092 ma=+543.986 lam=1.000 t=84s
+[central-ppo] step=  53247 ep= 266 rew=+533.095 ma=+545.707 lam=1.000 t=86s
+[central-ppo] step=  54271 ep= 271 rew=+596.081 ma=+546.917 lam=1.000 t=88s
+[central-ppo] step=  55295 ep= 276 rew=+391.861 ma=+543.424 lam=1.000 t=89s
+[central-ppo] step=  56319 ep= 281 rew=+362.740 ma=+547.226 lam=1.000 t=91s
+[central-ppo] step=  57343 ep= 286 rew=+457.694 ma=+545.247 lam=1.000 t=93s
+[central-ppo] step=  58367 ep= 291 rew=+648.612 ma=+545.470 lam=1.000 t=95s
+[central-ppo] step=  59391 ep= 296 rew=+867.625 ma=+550.339 lam=1.000 t=96s
+[central-ppo] step=  60415 ep= 302 rew=+552.852 ma=+546.592 lam=1.000 t=98s
+[central-ppo] step=  61439 ep= 307 rew=+925.413 ma=+554.113 lam=1.000 t=100s
+[central-ppo] step=  62463 ep= 312 rew=+611.065 ma=+560.394 lam=1.000 t=102s
+[central-ppo] step=  63487 ep= 317 rew=+639.636 ma=+567.101 lam=1.000 t=103s
+[central-ppo] step=  64511 ep= 322 rew=+602.762 ma=+562.699 lam=1.000 t=105s
+[central-ppo] step=  65023 ep= 325 rew=+479.425 ma=+560.396 lam=1.000 t=106s
+[central-ppo] step=  66047 ep= 330 rew=+912.952 ma=+558.127 lam=1.000 t=107s
+[central-ppo] step=  67071 ep= 335 rew=+546.129 ma=+555.586 lam=1.000 t=109s
+[central-ppo] step=  68095 ep= 340 rew=+760.568 ma=+557.593 lam=1.000 t=111s
+[central-ppo] step=  69119 ep= 345 rew=+667.342 ma=+561.764 lam=1.000 t=112s
+[central-ppo] step=  70143 ep= 350 rew=+738.565 ma=+565.262 lam=1.000 t=114s
+[central-ppo] step=  71167 ep= 355 rew=+578.595 ma=+562.125 lam=1.000 t=116s
+[central-ppo] step=  72191 ep= 360 rew=+698.892 ma=+558.869 lam=1.000 t=118s
+[central-ppo] step=  73215 ep= 366 rew=+708.689 ma=+566.406 lam=1.000 t=119s
+[central-ppo] step=  74239 ep= 371 rew=+598.200 ma=+568.790 lam=1.000 t=121s
+[central-ppo] step=  75263 ep= 376 rew=+273.429 ma=+566.686 lam=1.000 t=123s
+[central-ppo] step=  76287 ep= 381 rew=+645.767 ma=+565.878 lam=1.000 t=124s
+[central-ppo] step=  77311 ep= 386 rew=+683.368 ma=+568.641 lam=1.000 t=126s
+[central-ppo] step=  78335 ep= 391 rew=+271.873 ma=+565.196 lam=1.000 t=128s
+[central-ppo] step=  79359 ep= 396 rew=+508.521 ma=+565.753 lam=1.000 t=129s
+[central-ppo] step=  80383 ep= 401 rew=+766.130 ma=+568.248 lam=1.000 t=131s
+[central-ppo] step=  81407 ep= 407 rew=+503.301 ma=+566.541 lam=1.000 t=133s
+[central-ppo] step=  82431 ep= 412 rew=+325.447 ma=+562.558 lam=1.000 t=134s
+[central-ppo] step=  83455 ep= 417 rew=+368.723 ma=+562.055 lam=1.000 t=136s
+[central-ppo] step=  84479 ep= 422 rew=+757.893 ma=+562.726 lam=1.000 t=138s
+[central-ppo] step=  85503 ep= 427 rew=+322.585 ma=+559.830 lam=1.000 t=139s
+[central-ppo] step=  86015 ep= 430 rew=+661.426 ma=+561.161 lam=1.000 t=140s
+[central-ppo] step=  87039 ep= 435 rew=+738.509 ma=+565.842 lam=1.000 t=142s
+[central-ppo] step=  88063 ep= 440 rew=+562.125 ma=+567.343 lam=1.000 t=143s
+[central-ppo] step=  89087 ep= 445 rew=+412.618 ma=+568.920 lam=1.000 t=145s
+[central-ppo] step=  90111 ep= 450 rew=+504.623 ma=+575.488 lam=1.000 t=147s
+[central-ppo] step=  91135 ep= 455 rew=+657.168 ma=+572.671 lam=1.000 t=148s
+[central-ppo] step=  92159 ep= 460 rew=+301.559 ma=+569.464 lam=1.001 t=150s
+[central-ppo] step=  93183 ep= 465 rew=+328.400 ma=+565.447 lam=1.001 t=152s
+[central-ppo] step=  94207 ep= 471 rew=+664.765 ma=+569.087 lam=1.001 t=153s
+[central-ppo] step=  95231 ep= 476 rew=+547.707 ma=+575.631 lam=1.001 t=155s
+[central-ppo] step=  96255 ep= 481 rew=+900.233 ma=+583.335 lam=1.001 t=157s
+[central-ppo] step=  97279 ep= 486 rew=+205.595 ma=+579.383 lam=1.001 t=158s
+[central-ppo] step=  98303 ep= 491 rew=+260.557 ma=+571.927 lam=1.002 t=160s
+[central-ppo] step=  99327 ep= 496 rew=+202.113 ma=+566.449 lam=1.002 t=162s
+[central-ppo] step= 100351 ep= 501 rew=+476.546 ma=+561.424 lam=1.002 t=164s
+[central-ppo] step= 101375 ep= 506 rew=+554.620 ma=+558.285 lam=1.002 t=165s
+[central-ppo] step= 102399 ep= 512 rew=+427.912 ma=+553.865 lam=1.002 t=167s
+[central-ppo] step= 103423 ep= 517 rew=+481.050 ma=+549.195 lam=1.002 t=169s
+[central-ppo] step= 104447 ep= 522 rew=+660.637 ma=+549.552 lam=1.002 t=170s
+[central-ppo] step= 105471 ep= 527 rew=+805.729 ma=+551.824 lam=1.002 t=172s
+[central-ppo] step= 106495 ep= 532 rew=+443.301 ma=+551.241 lam=1.002 t=174s
+[central-ppo] step= 107007 ep= 535 rew=+374.711 ma=+548.561 lam=1.002 t=175s
+[central-ppo] step= 108031 ep= 540 rew=+540.375 ma=+549.708 lam=1.002 t=176s
+[central-ppo] step= 109055 ep= 545 rew=+748.629 ma=+554.944 lam=1.002 t=178s
+[central-ppo] step= 110079 ep= 550 rew=+288.853 ma=+550.809 lam=1.002 t=180s
+[central-ppo] step= 111103 ep= 555 rew=+546.367 ma=+546.886 lam=1.002 t=182s
+[central-ppo] step= 112127 ep= 560 rew=+973.207 ma=+546.466 lam=1.003 t=183s
+[central-ppo] step= 113151 ep= 565 rew=+730.268 ma=+546.911 lam=1.003 t=185s
+[central-ppo] step= 114175 ep= 570 rew=+727.939 ma=+548.097 lam=1.002 t=187s
+[central-ppo] step= 115199 ep= 576 rew=+395.420 ma=+543.682 lam=1.002 t=189s
+[central-ppo] step= 116223 ep= 581 rew=+588.749 ma=+543.569 lam=1.002 t=190s
+[central-ppo] step= 117247 ep= 586 rew=+458.843 ma=+542.162 lam=1.002 t=192s
+[central-ppo] step= 118271 ep= 591 rew=+291.923 ma=+539.633 lam=1.002 t=194s
+[central-ppo] step= 119295 ep= 596 rew=+248.275 ma=+530.712 lam=1.002 t=195s
+[central-ppo] step= 120319 ep= 601 rew=+408.471 ma=+522.818 lam=1.002 t=197s
+[central-ppo] step= 121343 ep= 606 rew=+400.235 ma=+517.683 lam=1.002 t=199s
+[central-ppo] step= 122367 ep= 611 rew=+577.430 ma=+516.042 lam=1.002 t=201s
+[central-ppo] step= 123391 ep= 616 rew=+733.254 ma=+515.986 lam=1.002 t=202s
+[central-ppo] step= 124415 ep= 622 rew=+693.938 ma=+511.908 lam=1.002 t=204s
+[central-ppo] step= 125439 ep= 627 rew=+677.971 ma=+513.917 lam=1.002 t=206s
+[central-ppo] step= 126463 ep= 632 rew=+351.617 ma=+518.611 lam=1.002 t=208s
+[central-ppo] step= 127487 ep= 637 rew=+492.777 ma=+516.457 lam=1.002 t=209s
+[central-ppo] step= 128511 ep= 642 rew=+392.944 ma=+513.275 lam=1.002 t=211s
+[central-ppo] step= 129023 ep= 645 rew=+629.537 ma=+513.767 lam=1.002 t=212s
+[central-ppo] step= 130047 ep= 650 rew=+488.610 ma=+515.919 lam=1.002 t=214s
+[central-ppo] step= 131071 ep= 655 rew=+565.688 ma=+517.680 lam=1.002 t=216s
+[central-ppo] step= 132095 ep= 660 rew=+335.299 ma=+511.613 lam=1.002 t=217s
+[central-ppo] step= 133119 ep= 665 rew=+801.139 ma=+515.409 lam=1.002 t=219s
+[central-ppo] step= 134143 ep= 670 rew=+558.949 ma=+520.269 lam=1.002 t=221s
+[central-ppo] step= 135167 ep= 675 rew=+680.813 ma=+523.432 lam=1.002 t=223s
+[central-ppo] step= 136191 ep= 680 rew=+711.075 ma=+522.688 lam=1.002 t=224s
+[central-ppo] step= 137215 ep= 686 rew=+338.956 ma=+520.948 lam=1.002 t=226s
+[central-ppo] step= 138239 ep= 691 rew=+411.093 ma=+516.917 lam=1.002 t=228s
+[central-ppo] step= 139263 ep= 696 rew=+689.988 ma=+517.665 lam=1.002 t=229s
+[central-ppo] step= 140287 ep= 701 rew=+337.967 ma=+519.303 lam=1.002 t=231s
+[central-ppo] step= 141311 ep= 706 rew=+806.918 ma=+522.820 lam=1.002 t=233s
+[central-ppo] step= 142335 ep= 711 rew=+240.946 ma=+518.764 lam=1.002 t=234s
+[central-ppo] step= 143359 ep= 716 rew=+248.047 ma=+515.538 lam=1.002 t=236s
+[central-ppo] step= 144383 ep= 721 rew=+505.150 ma=+520.359 lam=1.003 t=238s
+[central-ppo] step= 145407 ep= 727 rew=+728.726 ma=+520.837 lam=1.003 t=239s
+[central-ppo] step= 146431 ep= 732 rew=+967.685 ma=+526.660 lam=1.003 t=241s
+[central-ppo] step= 147455 ep= 737 rew=+550.156 ma=+520.343 lam=1.003 t=243s
+[central-ppo] step= 148479 ep= 742 rew=+470.922 ma=+521.973 lam=1.003 t=244s
+[central-ppo] step= 149503 ep= 747 rew=+292.546 ma=+522.557 lam=1.003 t=246s
+[central-ppo] step= 150015 ep= 750 rew=+481.361 ma=+521.629 lam=1.004 t=247s
+[central-ppo] step= 151039 ep= 755 rew=+541.624 ma=+526.327 lam=1.004 t=248s
+[central-ppo] step= 152063 ep= 760 rew=+507.654 ma=+525.527 lam=1.004 t=250s
+[central-ppo] step= 153087 ep= 765 rew=+534.057 ma=+529.020 lam=1.004 t=252s
+[central-ppo] step= 154111 ep= 770 rew=+325.907 ma=+527.706 lam=1.004 t=253s
+[central-ppo] step= 155135 ep= 775 rew=+357.185 ma=+525.866 lam=1.004 t=255s
+[central-ppo] step= 156159 ep= 780 rew=+463.477 ma=+522.766 lam=1.004 t=257s
+[central-ppo] step= 157183 ep= 785 rew=+875.441 ma=+526.342 lam=1.004 t=258s
+[central-ppo] step= 158207 ep= 791 rew=+418.065 ma=+528.330 lam=1.004 t=260s
+[central-ppo] step= 159231 ep= 796 rew=+541.830 ma=+527.172 lam=1.004 t=262s
+[central-ppo] step= 160255 ep= 801 rew=+656.400 ma=+525.537 lam=1.005 t=263s
+[central-ppo] step= 161279 ep= 806 rew=+717.647 ma=+530.796 lam=1.005 t=265s
+[central-ppo] step= 162303 ep= 811 rew=+676.145 ma=+533.970 lam=1.005 t=267s
+[central-ppo] step= 163327 ep= 816 rew=+514.049 ma=+535.677 lam=1.005 t=268s
+[central-ppo] step= 164351 ep= 821 rew=+681.669 ma=+533.422 lam=1.005 t=270s
+[central-ppo] step= 165375 ep= 826 rew=+787.917 ma=+534.707 lam=1.005 t=272s
+[central-ppo] step= 166399 ep= 832 rew=+634.226 ma=+537.517 lam=1.005 t=273s
+[central-ppo] step= 167423 ep= 837 rew=+490.608 ma=+538.384 lam=1.005 t=275s
+[central-ppo] step= 168447 ep= 842 rew=+338.031 ma=+536.590 lam=1.005 t=277s
+[central-ppo] step= 169471 ep= 847 rew=+446.236 ma=+535.742 lam=1.005 t=278s
+[central-ppo] step= 170495 ep= 852 rew=+573.185 ma=+542.905 lam=1.005 t=280s
+[central-ppo] step= 171007 ep= 855 rew=+624.216 ma=+546.206 lam=1.005 t=281s
+[central-ppo] step= 172031 ep= 860 rew=+602.170 ma=+548.952 lam=1.005 t=283s
+[central-ppo] step= 173055 ep= 865 rew=+489.107 ma=+548.048 lam=1.005 t=284s
+[central-ppo] step= 174079 ep= 870 rew=+780.896 ma=+554.106 lam=1.005 t=286s
+[central-ppo] step= 175103 ep= 875 rew=+762.352 ma=+560.907 lam=1.005 t=288s
+[central-ppo] step= 176127 ep= 880 rew=+377.527 ma=+556.332 lam=1.005 t=290s
+[central-ppo] step= 177151 ep= 885 rew=+286.058 ma=+548.747 lam=1.005 t=291s
+[central-ppo] step= 178175 ep= 890 rew=+627.415 ma=+551.621 lam=1.005 t=293s
+[central-ppo] step= 179199 ep= 896 rew=+741.094 ma=+553.126 lam=1.005 t=295s
+[central-ppo] step= 180223 ep= 901 rew=+708.589 ma=+555.678 lam=1.005 t=296s
+[central-ppo] step= 181247 ep= 906 rew=+480.907 ma=+555.399 lam=1.005 t=298s
+[central-ppo] step= 182271 ep= 911 rew=+760.837 ma=+556.683 lam=1.005 t=300s
+[central-ppo] step= 183295 ep= 916 rew=+556.617 ma=+561.719 lam=1.005 t=302s
+[central-ppo] step= 184319 ep= 921 rew=+666.712 ma=+558.187 lam=1.005 t=303s
+[central-ppo] step= 185343 ep= 926 rew=+246.644 ma=+555.364 lam=1.005 t=305s
+[central-ppo] step= 186367 ep= 931 rew=+616.540 ma=+553.033 lam=1.005 t=307s
+[central-ppo] step= 187391 ep= 936 rew=+596.349 ma=+549.800 lam=1.005 t=308s
+[central-ppo] step= 188415 ep= 942 rew=+455.674 ma=+549.197 lam=1.005 t=310s
+[central-ppo] step= 189439 ep= 947 rew=+671.089 ma=+552.502 lam=1.005 t=312s
+[central-ppo] step= 190463 ep= 952 rew=+279.488 ma=+545.738 lam=1.006 t=314s
+[central-ppo] step= 191487 ep= 957 rew=+543.257 ma=+546.339 lam=1.006 t=316s
+[central-ppo] step= 192511 ep= 962 rew=+832.218 ma=+545.252 lam=1.006 t=317s
+[central-ppo] step= 193023 ep= 965 rew=+819.415 ma=+549.299 lam=1.006 t=318s
+[central-ppo] step= 194047 ep= 970 rew=+486.818 ma=+555.414 lam=1.006 t=320s
+[central-ppo] step= 195071 ep= 975 rew=+571.271 ma=+557.808 lam=1.006 t=322s
+[central-ppo] step= 196095 ep= 980 rew=+483.293 ma=+558.655 lam=1.007 t=324s
+[central-ppo] step= 197119 ep= 985 rew=+301.944 ma=+548.312 lam=1.007 t=326s
+[central-ppo] step= 198143 ep= 990 rew=+407.286 ma=+541.926 lam=1.007 t=327s
+[central-ppo] step= 199167 ep= 995 rew=+508.641 ma=+541.175 lam=1.007 t=329s
+[central-ppo] step= 200191 ep=1000 rew=+410.021 ma=+540.603 lam=1.007 t=331s
+[central-ppo] step= 201215 ep=1006 rew=+513.221 ma=+540.631 lam=1.007 t=333s
+[central-ppo] step= 202239 ep=1011 rew=+739.829 ma=+542.808 lam=1.007 t=335s
+[central-ppo] step= 203263 ep=1016 rew=+890.421 ma=+550.919 lam=1.007 t=336s
+[central-ppo] step= 204287 ep=1021 rew=+515.382 ma=+552.166 lam=1.007 t=338s
+[central-ppo] step= 205311 ep=1026 rew=+636.696 ma=+556.707 lam=1.007 t=340s
+[central-ppo] step= 206335 ep=1031 rew=+670.593 ma=+560.023 lam=1.008 t=342s
+[central-ppo] step= 207359 ep=1036 rew=+876.743 ma=+566.101 lam=1.008 t=344s
+[central-ppo] step= 208383 ep=1041 rew=+592.040 ma=+562.620 lam=1.008 t=345s
+[central-ppo] step= 209407 ep=1047 rew=+668.646 ma=+565.073 lam=1.008 t=347s
+[central-ppo] step= 210431 ep=1052 rew=+541.216 ma=+570.850 lam=1.008 t=349s
+[central-ppo] step= 211455 ep=1057 rew=+592.438 ma=+570.281 lam=1.008 t=350s
+[central-ppo] step= 212479 ep=1062 rew=+361.723 ma=+562.692 lam=1.008 t=352s
+[central-ppo] step= 213503 ep=1067 rew=+795.425 ma=+560.473 lam=1.008 t=354s
+[central-ppo] step= 214015 ep=1070 rew=+627.688 ma=+558.772 lam=1.008 t=355s
+[central-ppo] step= 215039 ep=1075 rew=+513.444 ma=+557.644 lam=1.008 t=356s
+[central-ppo] step= 216063 ep=1080 rew=+411.481 ma=+553.599 lam=1.008 t=358s
+[central-ppo] step= 217087 ep=1085 rew=+306.983 ma=+548.922 lam=1.008 t=360s
+[central-ppo] step= 218111 ep=1090 rew=+800.436 ma=+549.056 lam=1.008 t=361s
+[central-ppo] step= 219135 ep=1095 rew=+582.501 ma=+549.970 lam=1.008 t=363s
+[central-ppo] step= 220159 ep=1100 rew=+799.462 ma=+559.261 lam=1.008 t=365s
+[central-ppo] step= 221183 ep=1105 rew=+464.231 ma=+557.625 lam=1.008 t=366s
+[central-ppo] step= 222207 ep=1111 rew=+207.108 ma=+552.908 lam=1.008 t=368s
+[central-ppo] step= 223231 ep=1116 rew=+648.940 ma=+555.097 lam=1.008 t=370s
+[central-ppo] step= 224255 ep=1121 rew=+371.412 ma=+557.884 lam=1.008 t=371s
+[central-ppo] step= 225279 ep=1126 rew=+392.752 ma=+550.423 lam=1.008 t=373s
+[central-ppo] step= 226303 ep=1131 rew=+454.071 ma=+542.272 lam=1.007 t=375s
+[central-ppo] step= 227327 ep=1136 rew=+289.168 ma=+540.149 lam=1.007 t=376s
+[central-ppo] step= 228351 ep=1141 rew=+536.635 ma=+545.385 lam=1.008 t=378s
+[central-ppo] step= 229375 ep=1146 rew=+876.419 ma=+547.845 lam=1.008 t=380s
+[central-ppo] step= 230399 ep=1152 rew=+647.421 ma=+549.032 lam=1.008 t=381s
+[central-ppo] step= 231423 ep=1157 rew=+780.476 ma=+547.658 lam=1.008 t=383s
+[central-ppo] step= 232447 ep=1162 rew=+522.251 ma=+549.353 lam=1.008 t=385s
+[central-ppo] step= 233471 ep=1167 rew=+646.482 ma=+546.487 lam=1.008 t=386s
+[central-ppo] step= 234495 ep=1172 rew=+341.903 ma=+542.702 lam=1.008 t=388s
+[central-ppo] step= 235007 ep=1175 rew=+385.599 ma=+542.833 lam=1.008 t=389s
+[central-ppo] step= 236031 ep=1180 rew=+418.884 ma=+536.454 lam=1.008 t=391s
+[central-ppo] step= 237055 ep=1185 rew=+240.110 ma=+537.846 lam=1.008 t=392s
+[central-ppo] step= 238079 ep=1190 rew=+481.584 ma=+534.985 lam=1.008 t=394s
+[central-ppo] step= 239103 ep=1195 rew=+669.169 ma=+537.605 lam=1.008 t=396s
+[central-ppo] step= 240127 ep=1200 rew=+659.085 ma=+541.631 lam=1.008 t=398s
+[central-ppo] step= 241151 ep=1205 rew=+775.839 ma=+546.875 lam=1.008 t=399s
+[central-ppo] step= 242175 ep=1210 rew=+409.106 ma=+550.738 lam=1.008 t=401s
+[central-ppo] step= 243199 ep=1216 rew=+756.415 ma=+553.769 lam=1.008 t=403s
+[central-ppo] step= 244223 ep=1221 rew=+715.370 ma=+552.121 lam=1.008 t=404s
+[central-ppo] step= 245247 ep=1226 rew=+651.840 ma=+554.107 lam=1.008 t=406s
+[central-ppo] step= 246271 ep=1231 rew=+444.162 ma=+554.425 lam=1.008 t=408s
+[central-ppo] step= 247295 ep=1236 rew=+675.695 ma=+557.280 lam=1.008 t=409s
+[central-ppo] step= 248319 ep=1241 rew=+629.960 ma=+564.127 lam=1.008 t=411s
+[central-ppo] step= 249343 ep=1246 rew=+397.136 ma=+565.505 lam=1.008 t=413s
+[central-ppo] step= 250367 ep=1251 rew=+555.233 ma=+568.236 lam=1.009 t=414s
+[central-ppo] step= 251391 ep=1256 rew=+598.573 ma=+570.471 lam=1.009 t=416s
+[central-ppo] step= 252415 ep=1262 rew=+408.327 ma=+573.111 lam=1.009 t=418s
+[central-ppo] step= 253439 ep=1267 rew=+575.855 ma=+569.699 lam=1.009 t=420s
+[central-ppo] step= 254463 ep=1272 rew=+673.756 ma=+567.901 lam=1.009 t=421s
+[central-ppo] step= 255487 ep=1277 rew=+798.197 ma=+571.781 lam=1.009 t=423s
+[central-ppo] step= 256511 ep=1282 rew=+563.102 ma=+572.611 lam=1.009 t=425s
+[central-ppo] step= 257023 ep=1285 rew=+423.436 ma=+571.698 lam=1.009 t=425s
+[central-ppo] step= 258047 ep=1290 rew=+805.062 ma=+570.767 lam=1.009 t=427s
+[central-ppo] step= 259071 ep=1295 rew=+364.757 ma=+566.479 lam=1.009 t=429s
+[central-ppo] step= 260095 ep=1300 rew=+491.897 ma=+564.509 lam=1.009 t=430s
+[central-ppo] step= 261119 ep=1305 rew=+408.663 ma=+558.065 lam=1.009 t=432s
+[central-ppo] step= 262143 ep=1310 rew=+529.644 ma=+557.059 lam=1.009 t=434s
+[central-ppo] step= 263167 ep=1315 rew=+696.113 ma=+560.107 lam=1.009 t=435s
+[central-ppo] step= 264191 ep=1320 rew=+495.375 ma=+564.600 lam=1.009 t=437s
+[central-ppo] step= 265215 ep=1326 rew=+354.837 ma=+557.578 lam=1.009 t=439s
+[central-ppo] step= 266239 ep=1331 rew=+737.917 ma=+559.127 lam=1.009 t=440s
+[central-ppo] step= 267263 ep=1336 rew=+1021.506 ma=+572.099 lam=1.009 t=442s
+[central-ppo] step= 268287 ep=1341 rew=+751.082 ma=+580.009 lam=1.009 t=444s
+[central-ppo] step= 269311 ep=1346 rew=+704.184 ma=+579.910 lam=1.009 t=445s
+[central-ppo] step= 270335 ep=1351 rew=+472.082 ma=+580.238 lam=1.009 t=447s
+[central-ppo] step= 271359 ep=1356 rew=+593.430 ma=+574.845 lam=1.009 t=449s
+[central-ppo] step= 272383 ep=1361 rew=+671.485 ma=+579.728 lam=1.009 t=450s
+[central-ppo] step= 273407 ep=1367 rew=+599.772 ma=+585.285 lam=1.009 t=452s
+[central-ppo] step= 274431 ep=1372 rew=+470.330 ma=+582.840 lam=1.009 t=454s
+[central-ppo] step= 275455 ep=1377 rew=+442.311 ma=+582.432 lam=1.009 t=456s
+[central-ppo] step= 276479 ep=1382 rew=+588.517 ma=+581.832 lam=1.009 t=457s
+[central-ppo] step= 277503 ep=1387 rew=+330.313 ma=+581.760 lam=1.009 t=459s
+[central-ppo] step= 278015 ep=1390 rew=+316.458 ma=+580.759 lam=1.009 t=460s
+[central-ppo] step= 279039 ep=1395 rew=+294.451 ma=+577.481 lam=1.009 t=461s
+[central-ppo] step= 280063 ep=1400 rew=+545.855 ma=+577.525 lam=1.009 t=463s
+[central-ppo] step= 281087 ep=1405 rew=+413.317 ma=+568.895 lam=1.009 t=465s
+[central-ppo] step= 282111 ep=1410 rew=+605.700 ma=+571.673 lam=1.009 t=466s
+[central-ppo] step= 283135 ep=1415 rew=+744.325 ma=+569.958 lam=1.009 t=468s
+[central-ppo] step= 284159 ep=1420 rew=+532.013 ma=+571.615 lam=1.009 t=470s
+[central-ppo] step= 285183 ep=1425 rew=+686.419 ma=+574.186 lam=1.009 t=471s
+[central-ppo] step= 286207 ep=1431 rew=+674.706 ma=+581.104 lam=1.009 t=473s
+[central-ppo] step= 287231 ep=1436 rew=+610.821 ma=+584.408 lam=1.009 t=475s
+[central-ppo] step= 288255 ep=1441 rew=+523.223 ma=+587.873 lam=1.009 t=477s
+[central-ppo] step= 289279 ep=1446 rew=+586.118 ma=+591.217 lam=1.009 t=478s
+[central-ppo] step= 290303 ep=1451 rew=+537.483 ma=+590.729 lam=1.010 t=480s
+[central-ppo] step= 291327 ep=1456 rew=+524.922 ma=+588.395 lam=1.010 t=482s
+[central-ppo] step= 292351 ep=1461 rew=+340.297 ma=+581.499 lam=1.009 t=483s
+[central-ppo] step= 293375 ep=1466 rew=+660.885 ma=+579.809 lam=1.009 t=485s
+[central-ppo] step= 294399 ep=1472 rew=+1012.408 ma=+583.093 lam=1.009 t=486s
+[central-ppo] step= 295423 ep=1477 rew=+912.686 ma=+586.073 lam=1.009 t=488s
+[central-ppo] step= 296447 ep=1482 rew=+732.079 ma=+586.950 lam=1.009 t=490s
+[central-ppo] step= 297471 ep=1487 rew=+818.455 ma=+590.833 lam=1.009 t=491s
+[central-ppo] step= 298495 ep=1492 rew=+357.437 ma=+585.824 lam=1.009 t=493s
+[central-ppo] step= 299007 ep=1495 rew=+549.963 ma=+583.592 lam=1.009 t=494s
+[central-ppo] step= 300031 ep=1500 rew=+575.298 ma=+584.037 lam=1.009 t=496s
+[central-ppo] step= 301055 ep=1505 rew=+550.483 ma=+584.819 lam=1.009 t=497s
+[central-ppo] step= 302079 ep=1510 rew=+401.859 ma=+584.372 lam=1.009 t=499s
+[central-ppo] step= 303103 ep=1515 rew=+746.425 ma=+586.817 lam=1.009 t=501s
+[central-ppo] step= 304127 ep=1520 rew=+356.236 ma=+588.325 lam=1.009 t=502s
+[central-ppo] step= 305151 ep=1525 rew=+759.757 ma=+587.162 lam=1.009 t=504s
+[central-ppo] step= 306175 ep=1530 rew=+568.287 ma=+583.957 lam=1.009 t=506s
+[central-ppo] step= 307199 ep=1536 rew=+541.382 ma=+579.662 lam=1.009 t=507s
+[central-ppo] step= 308223 ep=1541 rew=+661.761 ma=+581.335 lam=1.010 t=509s
+[central-ppo] step= 309247 ep=1546 rew=+475.742 ma=+577.968 lam=1.010 t=511s
+[central-ppo] step= 310271 ep=1551 rew=+488.731 ma=+576.841 lam=1.010 t=512s
+[central-ppo] step= 311295 ep=1556 rew=+350.020 ma=+574.308 lam=1.010 t=514s
+[central-ppo] step= 312319 ep=1561 rew=+935.264 ma=+582.113 lam=1.010 t=516s
+[central-ppo] step= 313343 ep=1566 rew=+607.534 ma=+586.108 lam=1.010 t=517s
+[central-ppo] step= 314367 ep=1571 rew=+569.868 ma=+584.929 lam=1.010 t=519s
+[central-ppo] step= 315391 ep=1576 rew=+688.928 ma=+586.956 lam=1.010 t=521s
+[central-ppo] step= 316415 ep=1582 rew=+660.947 ma=+593.173 lam=1.010 t=523s
+[central-ppo] step= 317439 ep=1587 rew=+489.020 ma=+591.692 lam=1.010 t=524s
+[central-ppo] step= 318463 ep=1592 rew=+443.746 ma=+579.925 lam=1.010 t=526s
+[central-ppo] step= 319487 ep=1597 rew=+812.085 ma=+579.905 lam=1.010 t=528s
+[central-ppo] step= 320511 ep=1602 rew=+518.719 ma=+577.163 lam=1.010 t=530s
+[central-ppo] step= 321023 ep=1605 rew=+604.146 ma=+575.656 lam=1.010 t=530s
+[central-ppo] step= 322047 ep=1610 rew=+409.089 ma=+574.713 lam=1.010 t=532s
+[central-ppo] step= 323071 ep=1615 rew=+611.966 ma=+573.889 lam=1.010 t=534s
+[central-ppo] step= 324095 ep=1620 rew=+539.112 ma=+571.408 lam=1.010 t=536s
+[central-ppo] step= 325119 ep=1625 rew=+660.258 ma=+572.986 lam=1.010 t=537s
+[central-ppo] step= 326143 ep=1630 rew=+671.426 ma=+574.589 lam=1.010 t=539s
+[central-ppo] step= 327167 ep=1635 rew=+627.581 ma=+581.143 lam=1.010 t=541s
+[central-ppo] step= 328191 ep=1640 rew=+557.390 ma=+580.616 lam=1.010 t=542s
+[central-ppo] step= 329215 ep=1646 rew=+284.804 ma=+580.923 lam=1.010 t=544s
+[central-ppo] step= 330239 ep=1651 rew=+511.733 ma=+584.056 lam=1.010 t=546s
+[central-ppo] step= 331263 ep=1656 rew=+644.381 ma=+583.894 lam=1.010 t=548s
+[central-ppo] step= 332287 ep=1661 rew=+275.111 ma=+582.920 lam=1.010 t=549s
+[central-ppo] step= 333311 ep=1666 rew=+542.473 ma=+580.619 lam=1.010 t=551s
+[central-ppo] step= 334335 ep=1671 rew=+908.156 ma=+583.997 lam=1.010 t=553s
+[central-ppo] step= 335359 ep=1676 rew=+612.181 ma=+585.089 lam=1.010 t=554s
+[central-ppo] step= 336383 ep=1681 rew=+600.403 ma=+583.137 lam=1.010 t=556s
+[central-ppo] step= 337407 ep=1687 rew=+680.648 ma=+580.654 lam=1.010 t=558s
+[central-ppo] step= 338431 ep=1692 rew=+569.950 ma=+584.820 lam=1.011 t=560s
+[central-ppo] step= 339455 ep=1697 rew=+759.967 ma=+586.146 lam=1.011 t=561s
+[central-ppo] step= 340479 ep=1702 rew=+397.307 ma=+585.773 lam=1.011 t=563s
+[central-ppo] step= 341503 ep=1707 rew=+445.467 ma=+582.755 lam=1.011 t=565s
+[central-ppo] step= 342015 ep=1710 rew=+577.877 ma=+582.514 lam=1.011 t=566s
+[central-ppo] step= 343039 ep=1715 rew=+716.561 ma=+587.792 lam=1.011 t=567s
+[central-ppo] step= 344063 ep=1720 rew=+396.716 ma=+592.750 lam=1.011 t=569s
+[central-ppo] step= 345087 ep=1725 rew=+475.850 ma=+589.707 lam=1.011 t=571s
+[central-ppo] step= 346111 ep=1730 rew=+598.356 ma=+582.694 lam=1.011 t=573s
+[central-ppo] step= 347135 ep=1735 rew=+401.430 ma=+575.041 lam=1.011 t=574s
+[central-ppo] step= 348159 ep=1740 rew=+376.749 ma=+569.798 lam=1.011 t=576s
+[central-ppo] step= 349183 ep=1745 rew=+588.325 ma=+566.736 lam=1.011 t=578s
+[central-ppo] step= 350207 ep=1751 rew=+484.370 ma=+568.327 lam=1.011 t=580s
+[central-ppo] step= 351231 ep=1756 rew=+451.514 ma=+564.818 lam=1.011 t=581s
+[central-ppo] step= 352255 ep=1761 rew=+957.444 ma=+566.597 lam=1.011 t=583s
+[central-ppo] step= 353279 ep=1766 rew=+773.071 ma=+573.267 lam=1.011 t=585s
+[central-ppo] step= 354303 ep=1771 rew=+651.657 ma=+571.742 lam=1.011 t=586s
+[central-ppo] step= 355327 ep=1776 rew=+563.775 ma=+574.306 lam=1.011 t=588s
+[central-ppo] step= 356351 ep=1781 rew=+623.171 ma=+573.361 lam=1.012 t=590s
+[central-ppo] step= 357375 ep=1786 rew=+607.439 ma=+572.904 lam=1.012 t=591s
+[central-ppo] step= 358399 ep=1792 rew=+576.722 ma=+573.611 lam=1.011 t=593s
+[central-ppo] step= 359423 ep=1797 rew=+549.918 ma=+573.869 lam=1.011 t=595s
+[central-ppo] step= 360447 ep=1802 rew=+738.785 ma=+579.956 lam=1.011 t=596s
+[central-ppo] step= 361471 ep=1807 rew=+491.476 ma=+580.531 lam=1.011 t=598s
+[central-ppo] step= 362495 ep=1812 rew=+412.973 ma=+584.326 lam=1.011 t=600s
+[central-ppo] step= 363007 ep=1815 rew=+416.633 ma=+582.299 lam=1.011 t=601s
+[central-ppo] step= 364031 ep=1820 rew=+536.632 ma=+578.098 lam=1.011 t=602s
+[central-ppo] step= 365055 ep=1825 rew=+417.562 ma=+575.594 lam=1.011 t=604s
+[central-ppo] step= 366079 ep=1830 rew=+463.954 ma=+573.421 lam=1.012 t=606s
+[central-ppo] step= 367103 ep=1835 rew=+654.020 ma=+572.885 lam=1.012 t=607s
+[central-ppo] step= 368127 ep=1840 rew=+354.407 ma=+568.629 lam=1.012 t=609s
+[central-ppo] step= 369151 ep=1845 rew=+507.930 ma=+566.470 lam=1.012 t=611s
+[central-ppo] step= 370175 ep=1850 rew=+698.163 ma=+567.481 lam=1.012 t=612s
+[central-ppo] step= 371199 ep=1856 rew=+538.290 ma=+566.301 lam=1.012 t=614s
+[central-ppo] step= 372223 ep=1861 rew=+725.165 ma=+566.808 lam=1.012 t=616s
+[central-ppo] step= 373247 ep=1866 rew=+732.630 ma=+572.331 lam=1.012 t=617s
+[central-ppo] step= 374271 ep=1871 rew=+648.992 ma=+573.918 lam=1.011 t=619s
+[central-ppo] step= 375295 ep=1876 rew=+362.817 ma=+571.148 lam=1.011 t=621s
+[central-ppo] step= 376319 ep=1881 rew=+529.002 ma=+567.106 lam=1.011 t=622s
+[central-ppo] step= 377343 ep=1886 rew=+367.281 ma=+564.775 lam=1.011 t=624s
+[central-ppo] step= 378367 ep=1891 rew=+386.157 ma=+558.991 lam=1.011 t=626s
+[central-ppo] step= 379391 ep=1896 rew=+640.805 ma=+560.988 lam=1.011 t=627s
+[central-ppo] step= 380415 ep=1902 rew=+596.016 ma=+565.414 lam=1.011 t=629s
+[central-ppo] step= 381439 ep=1907 rew=+369.440 ma=+566.041 lam=1.011 t=631s
+[central-ppo] step= 382463 ep=1912 rew=+465.653 ma=+564.345 lam=1.011 t=632s
+[central-ppo] step= 383487 ep=1917 rew=+502.539 ma=+567.825 lam=1.011 t=634s
+[central-ppo] step= 384511 ep=1922 rew=+337.360 ma=+562.769 lam=1.012 t=636s
+[central-ppo] step= 385023 ep=1925 rew=+504.045 ma=+561.111 lam=1.012 t=636s
+[central-ppo] step= 386047 ep=1930 rew=+496.907 ma=+557.208 lam=1.011 t=638s
+[central-ppo] step= 387071 ep=1935 rew=+690.326 ma=+557.291 lam=1.011 t=640s
+[central-ppo] step= 388095 ep=1940 rew=+814.266 ma=+562.108 lam=1.011 t=641s
+[central-ppo] step= 389119 ep=1945 rew=+499.752 ma=+560.203 lam=1.011 t=643s
+[central-ppo] step= 390143 ep=1950 rew=+494.782 ma=+559.806 lam=1.012 t=645s
+[central-ppo] step= 391167 ep=1955 rew=+913.498 ma=+558.606 lam=1.012 t=647s
+[central-ppo] step= 392191 ep=1960 rew=+793.962 ma=+568.072 lam=1.012 t=648s
+[central-ppo] step= 393215 ep=1966 rew=+404.358 ma=+568.951 lam=1.012 t=650s
+[central-ppo] step= 394239 ep=1971 rew=+585.433 ma=+564.975 lam=1.012 t=652s
+[central-ppo] step= 395263 ep=1976 rew=+796.760 ma=+566.719 lam=1.012 t=654s
+[central-ppo] step= 396287 ep=1981 rew=+366.856 ma=+564.848 lam=1.012 t=655s
+[central-ppo] step= 397311 ep=1986 rew=+702.003 ma=+566.554 lam=1.012 t=657s
+[central-ppo] step= 398335 ep=1991 rew=+620.708 ma=+568.659 lam=1.012 t=659s
+[central-ppo] step= 399359 ep=1996 rew=+567.554 ma=+570.865 lam=1.012 t=660s
+[central-ppo] step= 400383 ep=2001 rew=+696.340 ma=+574.119 lam=1.012 t=662s
+[central-ppo] step= 401407 ep=2007 rew=+753.636 ma=+575.570 lam=1.012 t=664s
+[central-ppo] step= 402431 ep=2012 rew=+791.032 ma=+581.841 lam=1.011 t=665s
+[central-ppo] step= 403455 ep=2017 rew=+513.944 ma=+580.082 lam=1.011 t=667s
+[central-ppo] step= 404479 ep=2022 rew=+511.007 ma=+574.581 lam=1.012 t=669s
+[central-ppo] step= 405503 ep=2027 rew=+563.498 ma=+571.297 lam=1.012 t=671s
+[central-ppo] step= 406015 ep=2030 rew=+637.657 ma=+571.476 lam=1.012 t=671s
+[central-ppo] step= 407039 ep=2035 rew=+540.123 ma=+574.846 lam=1.012 t=673s
+[central-ppo] step= 408063 ep=2040 rew=+734.450 ma=+573.070 lam=1.012 t=675s
+[central-ppo] step= 409087 ep=2045 rew=+529.182 ma=+574.768 lam=1.012 t=677s
+[central-ppo] step= 410111 ep=2050 rew=+561.783 ma=+573.783 lam=1.013 t=678s
+[central-ppo] step= 411135 ep=2055 rew=+576.345 ma=+573.185 lam=1.013 t=680s
+[central-ppo] step= 412159 ep=2060 rew=+537.351 ma=+571.110 lam=1.013 t=682s
+[central-ppo] step= 413183 ep=2065 rew=+404.488 ma=+569.771 lam=1.013 t=684s
+[central-ppo] step= 414207 ep=2071 rew=+489.189 ma=+574.700 lam=1.013 t=685s
+[central-ppo] step= 415231 ep=2076 rew=+426.185 ma=+570.259 lam=1.013 t=687s
+[central-ppo] step= 416255 ep=2081 rew=+678.995 ma=+572.274 lam=1.012 t=689s
+[central-ppo] step= 417279 ep=2086 rew=+505.857 ma=+575.452 lam=1.012 t=691s
+[central-ppo] step= 418303 ep=2091 rew=+705.616 ma=+576.122 lam=1.013 t=692s
+[central-ppo] step= 419327 ep=2096 rew=+565.541 ma=+578.166 lam=1.013 t=694s
+[central-ppo] step= 420351 ep=2101 rew=+882.497 ma=+584.635 lam=1.013 t=696s
+[central-ppo] step= 421375 ep=2106 rew=+708.165 ma=+584.624 lam=1.013 t=698s
+[central-ppo] step= 422399 ep=2112 rew=+563.322 ma=+585.137 lam=1.013 t=699s
+[central-ppo] step= 423423 ep=2117 rew=+946.041 ma=+588.146 lam=1.013 t=701s
+[central-ppo] step= 424447 ep=2122 rew=+884.735 ma=+592.783 lam=1.012 t=703s
+[central-ppo] step= 425471 ep=2127 rew=+700.940 ma=+593.852 lam=1.012 t=705s
+[central-ppo] step= 426495 ep=2132 rew=+261.857 ma=+597.211 lam=1.012 t=706s
+[central-ppo] step= 427007 ep=2135 rew=+479.713 ma=+597.226 lam=1.012 t=707s
+[central-ppo] step= 428031 ep=2140 rew=+755.372 ma=+599.692 lam=1.012 t=709s
+[central-ppo] step= 429055 ep=2145 rew=+802.182 ma=+607.282 lam=1.012 t=710s
+[central-ppo] step= 430079 ep=2150 rew=+721.847 ma=+608.039 lam=1.013 t=712s
+[central-ppo] step= 431103 ep=2155 rew=+568.887 ma=+609.241 lam=1.013 t=714s
+[central-ppo] step= 432127 ep=2160 rew=+588.912 ma=+609.265 lam=1.012 t=715s
+[central-ppo] step= 433151 ep=2165 rew=+509.014 ma=+609.988 lam=1.012 t=717s
+[central-ppo] step= 434175 ep=2170 rew=+527.611 ma=+611.147 lam=1.013 t=719s
+[central-ppo] step= 435199 ep=2176 rew=+393.386 ma=+609.644 lam=1.013 t=720s
+[central-ppo] step= 436223 ep=2181 rew=+924.084 ma=+617.640 lam=1.013 t=722s
+[central-ppo] step= 437247 ep=2186 rew=+406.451 ma=+616.073 lam=1.013 t=724s
+[central-ppo] step= 438271 ep=2191 rew=+496.928 ma=+613.373 lam=1.013 t=725s
+[central-ppo] step= 439295 ep=2196 rew=+831.829 ma=+612.844 lam=1.013 t=727s
+[central-ppo] step= 440319 ep=2201 rew=+495.643 ma=+611.634 lam=1.013 t=729s
+[central-ppo] step= 441343 ep=2206 rew=+386.739 ma=+610.341 lam=1.013 t=730s
+[central-ppo] step= 442367 ep=2211 rew=+676.471 ma=+609.366 lam=1.013 t=732s
+[central-ppo] step= 443391 ep=2216 rew=+294.664 ma=+600.901 lam=1.013 t=734s
+[central-ppo] step= 444415 ep=2222 rew=+821.289 ma=+602.066 lam=1.013 t=735s
+[central-ppo] step= 445439 ep=2227 rew=+418.173 ma=+599.658 lam=1.013 t=737s
+[central-ppo] step= 446463 ep=2232 rew=+567.514 ma=+597.160 lam=1.014 t=739s
+[central-ppo] step= 447487 ep=2237 rew=+461.083 ma=+599.497 lam=1.014 t=740s
+[central-ppo] step= 448511 ep=2242 rew=+406.183 ma=+592.915 lam=1.014 t=742s
+[central-ppo] step= 449023 ep=2245 rew=+789.426 ma=+596.399 lam=1.014 t=743s
+[central-ppo] step= 450047 ep=2250 rew=+558.745 ma=+601.198 lam=1.014 t=745s
+[central-ppo] step= 451071 ep=2255 rew=+396.027 ma=+595.652 lam=1.014 t=746s
+[central-ppo] step= 452095 ep=2260 rew=+378.950 ma=+591.872 lam=1.014 t=748s
+[central-ppo] step= 453119 ep=2265 rew=+563.563 ma=+587.850 lam=1.014 t=750s
+[central-ppo] step= 454143 ep=2270 rew=+561.396 ma=+584.026 lam=1.014 t=751s
+[central-ppo] step= 455167 ep=2275 rew=+698.243 ma=+585.766 lam=1.014 t=753s
+[central-ppo] step= 456191 ep=2280 rew=+699.946 ma=+588.387 lam=1.014 t=754s
+[central-ppo] step= 457215 ep=2286 rew=+625.387 ma=+590.425 lam=1.014 t=756s
+[central-ppo] step= 458239 ep=2291 rew=+450.979 ma=+585.454 lam=1.014 t=758s
+[central-ppo] step= 459263 ep=2296 rew=+850.229 ma=+589.797 lam=1.014 t=759s
+[central-ppo] step= 460287 ep=2301 rew=+279.722 ma=+585.005 lam=1.014 t=761s
+[central-ppo] step= 461311 ep=2306 rew=+362.225 ma=+582.518 lam=1.014 t=763s
+[central-ppo] step= 462335 ep=2311 rew=+949.609 ma=+585.710 lam=1.014 t=765s
+[central-ppo] step= 463359 ep=2316 rew=+553.736 ma=+587.910 lam=1.014 t=766s
+[central-ppo] step= 464383 ep=2321 rew=+693.469 ma=+590.236 lam=1.014 t=768s
+[central-ppo] step= 465407 ep=2327 rew=+799.370 ma=+591.785 lam=1.014 t=770s
+[central-ppo] step= 466431 ep=2332 rew=+242.105 ma=+590.892 lam=1.014 t=771s
+[central-ppo] step= 467455 ep=2337 rew=+417.995 ma=+588.137 lam=1.014 t=773s
+[central-ppo] step= 468479 ep=2342 rew=+401.095 ma=+583.147 lam=1.014 t=775s
+[central-ppo] step= 469503 ep=2347 rew=+587.973 ma=+581.189 lam=1.014 t=777s
+[central-ppo] step= 470015 ep=2350 rew=+678.649 ma=+583.762 lam=1.014 t=777s
+[central-ppo] step= 471039 ep=2355 rew=+689.928 ma=+585.390 lam=1.014 t=779s
+[central-ppo] step= 472063 ep=2360 rew=+495.211 ma=+580.824 lam=1.014 t=781s
+[central-ppo] step= 473087 ep=2365 rew=+429.382 ma=+579.543 lam=1.014 t=783s
+[central-ppo] step= 474111 ep=2370 rew=+533.672 ma=+578.197 lam=1.014 t=784s
+[central-ppo] step= 475135 ep=2375 rew=+513.022 ma=+568.759 lam=1.014 t=786s
+[central-ppo] step= 476159 ep=2380 rew=+603.317 ma=+565.392 lam=1.014 t=788s
+[central-ppo] step= 477183 ep=2385 rew=+719.405 ma=+562.316 lam=1.014 t=789s
+[central-ppo] step= 478207 ep=2391 rew=+507.997 ma=+567.093 lam=1.014 t=791s
+[central-ppo] step= 479231 ep=2396 rew=+639.773 ma=+565.616 lam=1.014 t=793s
+[central-ppo] step= 480255 ep=2401 rew=+328.841 ma=+558.037 lam=1.014 t=795s
+[central-ppo] step= 481279 ep=2406 rew=+319.387 ma=+552.498 lam=1.014 t=797s
+[central-ppo] step= 482303 ep=2411 rew=+401.901 ma=+547.569 lam=1.014 t=798s
+[central-ppo] step= 483327 ep=2416 rew=+390.781 ma=+542.361 lam=1.014 t=800s
+[central-ppo] step= 484351 ep=2421 rew=+452.782 ma=+543.121 lam=1.015 t=802s
+[central-ppo] step= 485375 ep=2426 rew=+695.453 ma=+544.049 lam=1.015 t=804s
+[central-ppo] step= 486399 ep=2432 rew=+281.464 ma=+547.939 lam=1.015 t=806s
+[central-ppo] step= 487423 ep=2437 rew=+844.334 ma=+546.996 lam=1.015 t=807s
+[central-ppo] step= 488447 ep=2442 rew=+585.454 ma=+548.246 lam=1.015 t=809s
+[central-ppo] step= 489471 ep=2447 rew=+690.925 ma=+553.285 lam=1.015 t=811s
+[central-ppo] step= 490495 ep=2452 rew=+593.584 ma=+550.157 lam=1.015 t=813s
+[central-ppo] step= 491007 ep=2455 rew=+558.947 ma=+548.655 lam=1.015 t=814s
+[central-ppo] step= 492031 ep=2460 rew=+559.472 ma=+550.275 lam=1.015 t=815s
+[central-ppo] step= 493055 ep=2465 rew=+609.709 ma=+554.350 lam=1.015 t=817s
+[central-ppo] step= 494079 ep=2470 rew=+685.211 ma=+553.018 lam=1.015 t=819s
+[central-ppo] step= 495103 ep=2475 rew=+443.116 ma=+555.377 lam=1.015 t=821s
+[central-ppo] step= 496127 ep=2480 rew=+383.500 ma=+550.063 lam=1.015 t=822s
+[central-ppo] step= 497151 ep=2485 rew=+272.152 ma=+547.766 lam=1.015 t=824s
+[central-ppo] step= 498175 ep=2490 rew=+668.258 ma=+545.178 lam=1.015 t=826s
+[central-ppo] step= 499199 ep=2496 rew=+636.063 ma=+550.236 lam=1.015 t=827s
+[central-ppo] step= 500223 ep=2501 rew=+683.628 ma=+549.679 lam=1.015 t=829s
+[central-ppo] step= 501247 ep=2506 rew=+575.277 ma=+544.960 lam=1.015 t=831s
+[central-ppo] step= 502271 ep=2511 rew=+804.453 ma=+551.676 lam=1.015 t=832s
+[central-ppo] step= 503295 ep=2516 rew=+444.614 ma=+555.705 lam=1.015 t=834s
+[central-ppo] step= 504319 ep=2521 rew=+553.008 ma=+557.545 lam=1.015 t=836s
+[central-ppo] step= 505343 ep=2526 rew=+842.797 ma=+559.088 lam=1.015 t=837s
+[central-ppo] step= 506367 ep=2531 rew=+841.951 ma=+561.906 lam=1.015 t=839s
+[central-ppo] step= 507391 ep=2536 rew=+351.411 ma=+560.113 lam=1.015 t=841s
+[central-ppo] step= 508415 ep=2542 rew=+411.330 ma=+552.477 lam=1.015 t=842s
+[central-ppo] step= 509439 ep=2547 rew=+577.753 ma=+554.003 lam=1.015 t=844s
+[central-ppo] step= 510463 ep=2552 rew=+517.546 ma=+551.775 lam=1.015 t=846s
+[central-ppo] step= 511487 ep=2557 rew=+466.346 ma=+553.714 lam=1.015 t=848s
+[central-ppo] step= 512511 ep=2562 rew=+422.845 ma=+557.450 lam=1.015 t=849s
+[central-ppo] step= 513023 ep=2565 rew=+557.094 ma=+556.585 lam=1.015 t=850s
+[central-ppo] step= 514047 ep=2570 rew=+602.530 ma=+549.444 lam=1.015 t=852s
+[central-ppo] step= 515071 ep=2575 rew=+609.294 ma=+550.746 lam=1.015 t=853s
+[central-ppo] step= 516095 ep=2580 rew=+467.412 ma=+544.049 lam=1.016 t=855s
+[central-ppo] step= 517119 ep=2585 rew=+386.522 ma=+539.886 lam=1.016 t=857s
+[central-ppo] step= 518143 ep=2590 rew=+724.808 ma=+545.755 lam=1.016 t=859s
+[central-ppo] step= 519167 ep=2595 rew=+485.963 ma=+549.616 lam=1.016 t=860s
+[central-ppo] step= 520191 ep=2600 rew=+815.128 ma=+552.150 lam=1.016 t=862s
+[central-ppo] step= 521215 ep=2606 rew=+481.856 ma=+551.570 lam=1.016 t=864s
+[central-ppo] step= 522239 ep=2611 rew=+693.445 ma=+549.212 lam=1.016 t=865s
+[central-ppo] step= 523263 ep=2616 rew=+842.662 ma=+554.435 lam=1.016 t=867s
+[central-ppo] step= 524287 ep=2621 rew=+741.102 ma=+555.969 lam=1.016 t=869s
+[central-ppo] step= 525311 ep=2626 rew=+505.678 ma=+558.849 lam=1.016 t=870s
+[central-ppo] step= 526335 ep=2631 rew=+602.272 ma=+560.580 lam=1.016 t=872s
+[central-ppo] step= 527359 ep=2636 rew=+376.239 ma=+552.907 lam=1.016 t=874s
+[central-ppo] step= 528383 ep=2641 rew=+389.819 ma=+548.428 lam=1.016 t=876s
+[central-ppo] step= 529407 ep=2647 rew=+714.767 ma=+549.762 lam=1.016 t=877s
+[central-ppo] step= 530431 ep=2652 rew=+398.443 ma=+545.883 lam=1.016 t=879s
+[central-ppo] step= 531455 ep=2657 rew=+549.897 ma=+549.339 lam=1.016 t=881s
+[central-ppo] step= 532479 ep=2662 rew=+608.720 ma=+555.242 lam=1.016 t=882s
+[central-ppo] step= 533503 ep=2667 rew=+644.474 ma=+561.078 lam=1.016 t=884s
+[central-ppo] step= 534015 ep=2670 rew=+542.603 ma=+563.778 lam=1.017 t=885s
+[central-ppo] step= 535039 ep=2675 rew=+438.670 ma=+563.914 lam=1.017 t=887s
+[central-ppo] step= 536063 ep=2680 rew=+520.702 ma=+563.593 lam=1.016 t=888s
+[central-ppo] step= 537087 ep=2685 rew=+531.612 ma=+560.459 lam=1.016 t=890s
+[central-ppo] step= 538111 ep=2690 rew=+234.473 ma=+559.951 lam=1.017 t=892s
+[central-ppo] step= 539135 ep=2695 rew=+658.720 ma=+557.101 lam=1.017 t=893s
+[central-ppo] step= 540159 ep=2700 rew=+728.009 ma=+557.793 lam=1.017 t=895s
+[central-ppo] step= 541183 ep=2705 rew=+434.752 ma=+554.432 lam=1.017 t=897s
+[central-ppo] step= 542207 ep=2711 rew=+324.525 ma=+549.871 lam=1.018 t=898s
+[central-ppo] step= 543231 ep=2716 rew=+720.233 ma=+551.670 lam=1.018 t=900s
+[central-ppo] step= 544255 ep=2721 rew=+686.710 ma=+550.400 lam=1.018 t=902s
+[central-ppo] step= 545279 ep=2726 rew=+702.039 ma=+551.339 lam=1.018 t=903s
+[central-ppo] step= 546303 ep=2731 rew=+443.953 ma=+555.611 lam=1.018 t=905s
+[central-ppo] step= 547327 ep=2736 rew=+515.128 ma=+558.506 lam=1.018 t=907s
+[central-ppo] step= 548351 ep=2741 rew=+707.045 ma=+563.384 lam=1.018 t=909s
+[central-ppo] step= 549375 ep=2746 rew=+547.639 ma=+566.233 lam=1.018 t=910s
+[central-ppo] step= 550399 ep=2752 rew=+613.000 ma=+567.343 lam=1.018 t=912s
+[central-ppo] step= 551423 ep=2757 rew=+510.075 ma=+564.449 lam=1.018 t=914s
+[central-ppo] step= 552447 ep=2762 rew=+640.831 ma=+566.453 lam=1.018 t=915s
+[central-ppo] step= 553471 ep=2767 rew=+671.623 ma=+568.017 lam=1.018 t=917s
+[central-ppo] step= 554495 ep=2772 rew=+640.185 ma=+566.264 lam=1.018 t=919s
+[central-ppo] step= 555007 ep=2775 rew=+980.592 ma=+569.549 lam=1.018 t=919s
+[central-ppo] step= 556031 ep=2780 rew=+588.550 ma=+572.514 lam=1.018 t=921s
+[central-ppo] step= 557055 ep=2785 rew=+362.404 ma=+566.160 lam=1.018 t=923s
+[central-ppo] step= 558079 ep=2790 rew=+451.301 ma=+558.109 lam=1.018 t=924s
+[central-ppo] step= 559103 ep=2795 rew=+768.661 ma=+566.185 lam=1.018 t=926s
+[central-ppo] step= 560127 ep=2800 rew=+642.184 ma=+567.944 lam=1.018 t=928s
+[central-ppo] step= 561151 ep=2805 rew=+153.114 ma=+560.844 lam=1.018 t=929s
+[central-ppo] step= 562175 ep=2810 rew=+245.239 ma=+558.644 lam=1.019 t=931s
+[central-ppo] step= 563199 ep=2816 rew=+687.182 ma=+556.638 lam=1.019 t=933s
+[central-ppo] step= 564223 ep=2821 rew=+637.964 ma=+558.252 lam=1.019 t=934s
+[central-ppo] step= 565247 ep=2826 rew=+665.171 ma=+562.726 lam=1.019 t=936s
+[central-ppo] step= 566271 ep=2831 rew=+573.088 ma=+561.732 lam=1.019 t=938s
+[central-ppo] step= 567295 ep=2836 rew=+441.038 ma=+565.708 lam=1.019 t=940s
+[central-ppo] step= 568319 ep=2841 rew=+558.758 ma=+567.581 lam=1.019 t=941s
+[central-ppo] step= 569343 ep=2846 rew=+399.874 ma=+563.422 lam=1.019 t=943s
+[central-ppo] step= 570367 ep=2851 rew=+584.178 ma=+564.894 lam=1.020 t=945s
+[central-ppo] step= 571391 ep=2856 rew=+440.613 ma=+562.440 lam=1.020 t=946s
+[central-ppo] step= 572415 ep=2862 rew=+469.281 ma=+559.490 lam=1.020 t=947s
+[central-ppo] step= 573439 ep=2867 rew=+620.714 ma=+556.964 lam=1.020 t=949s
+[central-ppo] step= 574463 ep=2872 rew=+900.337 ma=+558.873 lam=1.020 t=950s
+[central-ppo] step= 575487 ep=2877 rew=+312.526 ma=+554.569 lam=1.020 t=952s
+[central-ppo] step= 576511 ep=2882 rew=+649.309 ma=+554.479 lam=1.019 t=953s
+[central-ppo] step= 577023 ep=2885 rew=+386.698 ma=+553.318 lam=1.019 t=954s
+[central-ppo] step= 578047 ep=2890 rew=+619.990 ma=+558.884 lam=1.019 t=956s
+[central-ppo] step= 579071 ep=2895 rew=+308.258 ma=+557.322 lam=1.019 t=957s
+[central-ppo] step= 580095 ep=2900 rew=+334.446 ma=+555.716 lam=1.020 t=959s
+[central-ppo] step= 581119 ep=2905 rew=+410.989 ma=+552.918 lam=1.020 t=961s
+[central-ppo] step= 582143 ep=2910 rew=+756.996 ma=+558.055 lam=1.020 t=962s
+[central-ppo] step= 583167 ep=2915 rew=+521.950 ma=+556.825 lam=1.020 t=964s
+[central-ppo] step= 584191 ep=2920 rew=+741.081 ma=+556.992 lam=1.020 t=966s
+[central-ppo] step= 585215 ep=2926 rew=+481.957 ma=+553.076 lam=1.020 t=968s
+[central-ppo] step= 586239 ep=2931 rew=+907.538 ma=+558.317 lam=1.020 t=969s
+[central-ppo] step= 587263 ep=2936 rew=+406.143 ma=+555.765 lam=1.020 t=971s
+[central-ppo] step= 588287 ep=2941 rew=+364.604 ma=+552.542 lam=1.021 t=973s
+[central-ppo] step= 589311 ep=2946 rew=+556.864 ma=+552.948 lam=1.021 t=975s
+[central-ppo] step= 590335 ep=2951 rew=+775.085 ma=+555.739 lam=1.021 t=976s
+[central-ppo] step= 591359 ep=2956 rew=+580.243 ma=+551.528 lam=1.021 t=978s
+[central-ppo] step= 592383 ep=2961 rew=+334.015 ma=+547.577 lam=1.021 t=980s
+[central-ppo] step= 593407 ep=2967 rew=+728.057 ma=+552.643 lam=1.021 t=981s
+[central-ppo] step= 594431 ep=2972 rew=+484.567 ma=+551.850 lam=1.021 t=983s
+[central-ppo] step= 595455 ep=2977 rew=+509.872 ma=+552.908 lam=1.021 t=985s
+[central-ppo] step= 596479 ep=2982 rew=+502.455 ma=+552.705 lam=1.021 t=986s
+[central-ppo] step= 597503 ep=2987 rew=+512.001 ma=+548.427 lam=1.021 t=988s
+[central-ppo] step= 598015 ep=2990 rew=+766.769 ma=+550.911 lam=1.021 t=989s
+[central-ppo] step= 599039 ep=2995 rew=+329.188 ma=+546.771 lam=1.021 t=991s
+[central-ppo] step= 600063 ep=3000 rew=+500.526 ma=+543.695 lam=1.021 t=992s
+[central-ppo] step= 601087 ep=3005 rew=+492.175 ma=+542.118 lam=1.021 t=994s
+[central-ppo] step= 602111 ep=3010 rew=+318.878 ma=+539.134 lam=1.021 t=996s
+[central-ppo] step= 603135 ep=3015 rew=+612.098 ma=+540.314 lam=1.021 t=998s
+[central-ppo] step= 604159 ep=3020 rew=+416.819 ma=+533.165 lam=1.021 t=999s
+[central-ppo] step= 605183 ep=3025 rew=+1030.594 ma=+539.929 lam=1.021 t=1001s
+[central-ppo] step= 606207 ep=3031 rew=+487.991 ma=+536.403 lam=1.021 t=1003s
+[central-ppo] step= 607231 ep=3036 rew=+616.066 ma=+534.294 lam=1.021 t=1004s
+[central-ppo] step= 608255 ep=3041 rew=+907.750 ma=+545.130 lam=1.021 t=1006s
+[central-ppo] step= 609279 ep=3046 rew=+638.512 ma=+551.812 lam=1.021 t=1008s
+[central-ppo] step= 610303 ep=3051 rew=+378.875 ma=+546.411 lam=1.021 t=1010s
+[central-ppo] step= 611327 ep=3056 rew=+522.196 ma=+546.446 lam=1.021 t=1011s
+[central-ppo] step= 612351 ep=3061 rew=+542.974 ma=+549.420 lam=1.022 t=1013s
+[central-ppo] step= 613375 ep=3066 rew=+527.898 ma=+552.987 lam=1.022 t=1015s
+[central-ppo] step= 614399 ep=3072 rew=+566.193 ma=+553.614 lam=1.022 t=1017s
+[central-ppo] step= 615423 ep=3077 rew=+414.027 ma=+551.169 lam=1.022 t=1018s
+[central-ppo] step= 616447 ep=3082 rew=+417.942 ma=+545.309 lam=1.021 t=1020s
+[central-ppo] step= 617471 ep=3087 rew=+291.214 ma=+540.521 lam=1.021 t=1022s
+[central-ppo] step= 618495 ep=3092 rew=+737.054 ma=+539.933 lam=1.022 t=1024s
+[central-ppo] step= 619007 ep=3095 rew=+720.747 ma=+541.417 lam=1.022 t=1024s
+[central-ppo] step= 620031 ep=3100 rew=+514.164 ma=+543.209 lam=1.022 t=1026s
+[central-ppo] step= 621055 ep=3105 rew=+221.103 ma=+537.834 lam=1.022 t=1028s
+[central-ppo] step= 622079 ep=3110 rew=+557.414 ma=+533.198 lam=1.023 t=1030s
+[central-ppo] step= 623103 ep=3115 rew=+845.532 ma=+539.928 lam=1.023 t=1031s
+[central-ppo] step= 624127 ep=3120 rew=+533.128 ma=+543.788 lam=1.022 t=1033s
+[central-ppo] step= 625151 ep=3125 rew=+564.276 ma=+540.093 lam=1.022 t=1035s
+[central-ppo] step= 626175 ep=3130 rew=+645.954 ma=+535.568 lam=1.023 t=1037s
+[central-ppo] step= 627199 ep=3136 rew=+299.846 ma=+531.933 lam=1.023 t=1038s
+[central-ppo] step= 628223 ep=3141 rew=+378.968 ma=+527.768 lam=1.023 t=1040s
+[central-ppo] step= 629247 ep=3146 rew=+598.753 ma=+525.789 lam=1.023 t=1042s
+[central-ppo] step= 630271 ep=3151 rew=+621.225 ma=+529.538 lam=1.023 t=1044s
+[central-ppo] step= 631295 ep=3156 rew=+525.052 ma=+532.543 lam=1.023 t=1045s
+[central-ppo] step= 632319 ep=3161 rew=+673.946 ma=+536.677 lam=1.023 t=1047s
+[central-ppo] step= 633343 ep=3166 rew=+652.534 ma=+534.145 lam=1.023 t=1049s
+[central-ppo] step= 634367 ep=3171 rew=+304.731 ma=+532.731 lam=1.023 t=1051s
+[central-ppo] step= 635391 ep=3176 rew=+401.989 ma=+527.685 lam=1.023 t=1052s
+[central-ppo] step= 636415 ep=3182 rew=+557.530 ma=+529.948 lam=1.024 t=1054s
+[central-ppo] step= 637439 ep=3187 rew=+247.279 ma=+522.740 lam=1.024 t=1056s
+[central-ppo] step= 638463 ep=3192 rew=+503.472 ma=+524.920 lam=1.024 t=1058s
+[central-ppo] step= 639487 ep=3197 rew=+604.418 ma=+530.614 lam=1.024 t=1059s
+[central-ppo] step= 640511 ep=3202 rew=+487.525 ma=+529.021 lam=1.024 t=1061s
+[central-ppo] step= 641023 ep=3205 rew=+687.187 ma=+529.942 lam=1.024 t=1062s
+[central-ppo] step= 642047 ep=3210 rew=+476.319 ma=+529.065 lam=1.025 t=1064s
+[central-ppo] step= 643071 ep=3215 rew=+510.071 ma=+531.703 lam=1.025 t=1066s
+[central-ppo] step= 644095 ep=3220 rew=+510.062 ma=+535.159 lam=1.025 t=1067s
+[central-ppo] step= 645119 ep=3225 rew=+578.475 ma=+532.228 lam=1.025 t=1069s
+[central-ppo] step= 646143 ep=3230 rew=+390.841 ma=+526.893 lam=1.025 t=1071s
+[central-ppo] step= 647167 ep=3235 rew=+379.992 ma=+523.185 lam=1.025 t=1072s
+[central-ppo] step= 648191 ep=3240 rew=+733.786 ma=+527.404 lam=1.024 t=1074s
+[central-ppo] step= 649215 ep=3246 rew=+547.567 ma=+526.428 lam=1.024 t=1076s
+[central-ppo] step= 650239 ep=3251 rew=+572.096 ma=+531.143 lam=1.025 t=1077s
+[central-ppo] step= 651263 ep=3256 rew=+779.700 ma=+535.351 lam=1.025 t=1079s
+[central-ppo] step= 652287 ep=3261 rew=+712.345 ma=+536.727 lam=1.025 t=1081s
+[central-ppo] step= 653311 ep=3266 rew=+516.198 ma=+540.744 lam=1.025 t=1083s
+[central-ppo] step= 654335 ep=3271 rew=+462.111 ma=+538.464 lam=1.025 t=1084s
+[central-ppo] step= 655359 ep=3276 rew=+433.829 ma=+541.501 lam=1.025 t=1086s
+[central-ppo] step= 656383 ep=3281 rew=+549.548 ma=+536.312 lam=1.026 t=1088s
+[central-ppo] step= 657407 ep=3287 rew=+416.791 ma=+531.836 lam=1.026 t=1089s
+[central-ppo] step= 658431 ep=3292 rew=+400.125 ma=+532.374 lam=1.025 t=1091s
+[central-ppo] step= 659455 ep=3297 rew=+278.807 ma=+517.739 lam=1.025 t=1093s
+[central-ppo] step= 660479 ep=3302 rew=+784.505 ma=+517.107 lam=1.025 t=1094s
+[central-ppo] step= 661503 ep=3307 rew=+455.639 ma=+519.960 lam=1.025 t=1096s
+[central-ppo] step= 662015 ep=3310 rew=+727.384 ma=+521.902 lam=1.025 t=1097s
+[central-ppo] step= 663039 ep=3315 rew=+467.686 ma=+523.588 lam=1.025 t=1099s
+[central-ppo] step= 664063 ep=3320 rew=+554.480 ma=+522.778 lam=1.025 t=1100s
+[central-ppo] step= 665087 ep=3325 rew=+545.449 ma=+522.244 lam=1.025 t=1102s
+[central-ppo] step= 666111 ep=3330 rew=+545.891 ma=+522.628 lam=1.025 t=1104s
+[central-ppo] step= 667135 ep=3335 rew=+945.480 ma=+529.110 lam=1.025 t=1105s
+[central-ppo] step= 668159 ep=3340 rew=+636.152 ma=+534.925 lam=1.025 t=1107s
+[central-ppo] step= 669183 ep=3345 rew=+349.366 ma=+537.409 lam=1.025 t=1109s
+[central-ppo] step= 670207 ep=3351 rew=+413.481 ma=+530.314 lam=1.025 t=1110s
+[central-ppo] step= 671231 ep=3356 rew=+327.742 ma=+527.646 lam=1.025 t=1112s
+[central-ppo] step= 672255 ep=3361 rew=+664.500 ma=+535.180 lam=1.026 t=1114s
+[central-ppo] step= 673279 ep=3366 rew=+587.500 ma=+541.697 lam=1.026 t=1116s
+[central-ppo] step= 674303 ep=3371 rew=+335.347 ma=+536.711 lam=1.026 t=1117s
+[central-ppo] step= 675327 ep=3376 rew=+283.315 ma=+532.446 lam=1.026 t=1119s
+[central-ppo] step= 676351 ep=3381 rew=+337.847 ma=+528.999 lam=1.026 t=1121s
+[central-ppo] step= 677375 ep=3386 rew=+639.350 ma=+526.633 lam=1.026 t=1123s
+[central-ppo] step= 678399 ep=3392 rew=+936.520 ma=+536.720 lam=1.027 t=1124s
+[central-ppo] step= 679423 ep=3397 rew=+501.734 ma=+544.742 lam=1.027 t=1126s
+[central-ppo] step= 680447 ep=3402 rew=+397.733 ma=+539.689 lam=1.027 t=1128s
+[central-ppo] step= 681471 ep=3407 rew=+706.658 ma=+544.184 lam=1.027 t=1130s
+[central-ppo] step= 682495 ep=3412 rew=+315.746 ma=+543.908 lam=1.027 t=1131s
+[central-ppo] step= 683007 ep=3415 rew=+308.804 ma=+541.139 lam=1.027 t=1132s
+[central-ppo] step= 684031 ep=3420 rew=+755.316 ma=+542.909 lam=1.027 t=1134s
+[central-ppo] step= 685055 ep=3425 rew=+509.492 ma=+542.373 lam=1.027 t=1136s
+[central-ppo] step= 686079 ep=3430 rew=+689.917 ma=+548.462 lam=1.027 t=1137s
+[central-ppo] step= 687103 ep=3435 rew=+829.982 ma=+556.272 lam=1.027 t=1139s
+[central-ppo] step= 688127 ep=3440 rew=+579.248 ma=+558.525 lam=1.027 t=1141s
+[central-ppo] step= 689151 ep=3445 rew=+857.028 ma=+565.008 lam=1.027 t=1143s
+[central-ppo] step= 690175 ep=3450 rew=+482.174 ma=+561.733 lam=1.027 t=1144s
+[central-ppo] step= 691199 ep=3456 rew=+791.786 ma=+568.424 lam=1.027 t=1146s
+[central-ppo] step= 692223 ep=3461 rew=+581.739 ma=+570.022 lam=1.027 t=1148s
+[central-ppo] step= 693247 ep=3466 rew=+866.439 ma=+575.046 lam=1.027 t=1150s
+[central-ppo] step= 694271 ep=3471 rew=+486.486 ma=+575.225 lam=1.027 t=1151s
+[central-ppo] step= 695295 ep=3476 rew=+456.102 ma=+575.639 lam=1.027 t=1153s
+[central-ppo] step= 696319 ep=3481 rew=+489.291 ma=+573.047 lam=1.027 t=1155s
+[central-ppo] step= 697343 ep=3486 rew=+752.602 ma=+580.898 lam=1.027 t=1157s
+[central-ppo] step= 698367 ep=3491 rew=+433.289 ma=+582.313 lam=1.027 t=1158s
+[central-ppo] step= 699391 ep=3496 rew=+445.492 ma=+576.783 lam=1.027 t=1160s
+[central-ppo] step= 700415 ep=3502 rew=+558.285 ma=+576.001 lam=1.027 t=1162s
+[central-ppo] step= 701439 ep=3507 rew=+534.378 ma=+574.942 lam=1.027 t=1164s
+[central-ppo] step= 702463 ep=3512 rew=+560.774 ma=+568.824 lam=1.027 t=1165s
+[central-ppo] step= 703487 ep=3517 rew=+365.836 ma=+563.107 lam=1.027 t=1167s
+[central-ppo] step= 704511 ep=3522 rew=+726.128 ma=+563.902 lam=1.027 t=1169s
+[central-ppo] step= 705023 ep=3525 rew=+662.128 ma=+564.558 lam=1.027 t=1170s
+[central-ppo] step= 706047 ep=3530 rew=+524.713 ma=+562.757 lam=1.027 t=1171s
+[central-ppo] step= 707071 ep=3535 rew=+268.769 ma=+558.626 lam=1.027 t=1173s
+[central-ppo] step= 708095 ep=3540 rew=+345.541 ma=+555.616 lam=1.028 t=1175s
+[central-ppo] step= 709119 ep=3545 rew=+419.503 ma=+553.624 lam=1.028 t=1177s
+[central-ppo] step= 710143 ep=3550 rew=+477.304 ma=+557.653 lam=1.028 t=1179s
+[central-ppo] step= 711167 ep=3555 rew=+566.682 ma=+560.324 lam=1.028 t=1180s
+[central-ppo] step= 712191 ep=3560 rew=+263.592 ma=+553.180 lam=1.028 t=1182s
+[central-ppo] step= 713215 ep=3566 rew=+408.291 ma=+548.316 lam=1.028 t=1184s
+[central-ppo] step= 714239 ep=3571 rew=+934.268 ma=+552.629 lam=1.029 t=1185s
+[central-ppo] step= 715263 ep=3576 rew=+539.658 ma=+555.928 lam=1.029 t=1187s
+[central-ppo] step= 716287 ep=3581 rew=+582.070 ma=+556.110 lam=1.029 t=1189s
+[central-ppo] step= 717311 ep=3586 rew=+650.315 ma=+560.389 lam=1.029 t=1190s
+[central-ppo] step= 718335 ep=3591 rew=+669.755 ma=+557.493 lam=1.028 t=1192s
+[central-ppo] step= 719359 ep=3596 rew=+489.235 ma=+552.720 lam=1.028 t=1194s
+[central-ppo] step= 720383 ep=3601 rew=+525.721 ma=+553.717 lam=1.028 t=1195s
+[central-ppo] step= 721407 ep=3607 rew=+319.396 ma=+552.539 lam=1.028 t=1197s
+[central-ppo] step= 722431 ep=3612 rew=+406.685 ma=+552.779 lam=1.028 t=1199s
+[central-ppo] step= 723455 ep=3617 rew=+746.952 ma=+553.061 lam=1.028 t=1201s
+[central-ppo] step= 724479 ep=3622 rew=+577.894 ma=+551.428 lam=1.028 t=1202s
+[central-ppo] step= 725503 ep=3627 rew=+408.550 ma=+549.464 lam=1.028 t=1204s
+[central-ppo] step= 726015 ep=3630 rew=+432.597 ma=+548.696 lam=1.028 t=1205s
+[central-ppo] step= 727039 ep=3635 rew=+486.308 ma=+553.182 lam=1.028 t=1206s
+[central-ppo] step= 728063 ep=3640 rew=+376.838 ma=+555.215 lam=1.028 t=1208s
+[central-ppo] step= 729087 ep=3645 rew=+735.339 ma=+553.420 lam=1.028 t=1210s
+[central-ppo] step= 730111 ep=3650 rew=+1081.820 ma=+554.503 lam=1.028 t=1211s
+[central-ppo] step= 731135 ep=3655 rew=+633.187 ma=+559.694 lam=1.028 t=1213s
+[central-ppo] step= 732159 ep=3660 rew=+643.470 ma=+559.633 lam=1.028 t=1215s
+[central-ppo] step= 733183 ep=3665 rew=+600.708 ma=+557.873 lam=1.028 t=1216s
+[central-ppo] step= 734207 ep=3671 rew=+511.898 ma=+561.154 lam=1.028 t=1218s
+[central-ppo] step= 735231 ep=3676 rew=+551.287 ma=+556.308 lam=1.028 t=1220s
+[central-ppo] step= 736255 ep=3681 rew=+577.071 ma=+558.616 lam=1.028 t=1221s
+[central-ppo] step= 737279 ep=3686 rew=+733.269 ma=+560.217 lam=1.028 t=1223s
+[central-ppo] step= 738303 ep=3691 rew=+542.652 ma=+553.454 lam=1.028 t=1225s
+[central-ppo] step= 739327 ep=3696 rew=+724.473 ma=+556.625 lam=1.028 t=1226s
+[central-ppo] step= 740351 ep=3701 rew=+546.013 ma=+554.790 lam=1.028 t=1228s
+[central-ppo] step= 741375 ep=3706 rew=+530.611 ma=+556.463 lam=1.028 t=1230s
+[central-ppo] step= 742399 ep=3712 rew=+660.164 ma=+554.907 lam=1.028 t=1232s
+[central-ppo] step= 743423 ep=3717 rew=+627.352 ma=+552.072 lam=1.028 t=1233s
+[central-ppo] step= 744447 ep=3722 rew=+487.506 ma=+546.790 lam=1.027 t=1235s
+[central-ppo] step= 745471 ep=3727 rew=+940.357 ma=+553.597 lam=1.027 t=1237s
+[central-ppo] step= 746495 ep=3732 rew=+615.998 ma=+556.555 lam=1.027 t=1238s
+[central-ppo] step= 747007 ep=3735 rew=+530.539 ma=+557.134 lam=1.027 t=1239s
+[central-ppo] step= 748031 ep=3740 rew=+405.424 ma=+553.490 lam=1.027 t=1241s
+[central-ppo] step= 749055 ep=3745 rew=+635.790 ma=+551.831 lam=1.027 t=1243s
+[central-ppo] step= 750079 ep=3750 rew=+811.933 ma=+555.292 lam=1.028 t=1244s
+[central-ppo] step= 751103 ep=3755 rew=+488.300 ma=+555.495 lam=1.028 t=1246s
+[central-ppo] step= 752127 ep=3760 rew=+482.990 ma=+556.969 lam=1.028 t=1248s
+[central-ppo] step= 753151 ep=3765 rew=+398.843 ma=+556.858 lam=1.028 t=1249s
+[central-ppo] step= 754175 ep=3770 rew=+515.888 ma=+556.395 lam=1.028 t=1251s
+[central-ppo] step= 755199 ep=3776 rew=+680.849 ma=+562.444 lam=1.028 t=1253s
+[central-ppo] step= 756223 ep=3781 rew=+512.276 ma=+558.975 lam=1.028 t=1255s
+[central-ppo] step= 757247 ep=3786 rew=+698.908 ma=+561.027 lam=1.028 t=1256s
+[central-ppo] step= 758271 ep=3791 rew=+717.928 ma=+569.533 lam=1.028 t=1258s
+[central-ppo] step= 759295 ep=3796 rew=+747.966 ma=+578.380 lam=1.028 t=1260s
+[central-ppo] step= 760319 ep=3801 rew=+468.791 ma=+580.293 lam=1.028 t=1262s
+[central-ppo] step= 761343 ep=3806 rew=+260.637 ma=+578.064 lam=1.028 t=1263s
+[central-ppo] step= 762367 ep=3811 rew=+362.105 ma=+574.582 lam=1.028 t=1265s
+[central-ppo] step= 763391 ep=3816 rew=+419.857 ma=+577.340 lam=1.028 t=1267s
+[central-ppo] step= 764415 ep=3822 rew=+541.255 ma=+580.658 lam=1.028 t=1269s
+[central-ppo] step= 765439 ep=3827 rew=+635.595 ma=+576.466 lam=1.028 t=1270s
+[central-ppo] step= 766463 ep=3832 rew=+736.532 ma=+574.626 lam=1.028 t=1272s
+[central-ppo] step= 767487 ep=3837 rew=+433.996 ma=+577.872 lam=1.028 t=1274s
+[central-ppo] step= 768511 ep=3842 rew=+521.238 ma=+572.881 lam=1.028 t=1276s
+[central-ppo] step= 769023 ep=3845 rew=+683.389 ma=+574.489 lam=1.028 t=1276s
+[central-ppo] step= 770047 ep=3850 rew=+508.027 ma=+573.009 lam=1.028 t=1278s
+[central-ppo] step= 771071 ep=3855 rew=+586.856 ma=+573.669 lam=1.028 t=1280s
+[central-ppo] step= 772095 ep=3860 rew=+686.389 ma=+580.438 lam=1.028 t=1282s
+[central-ppo] step= 773119 ep=3865 rew=+202.737 ma=+578.063 lam=1.028 t=1284s
+[central-ppo] step= 774143 ep=3870 rew=+489.035 ma=+575.558 lam=1.028 t=1286s
+[central-ppo] step= 775167 ep=3875 rew=+485.212 ma=+572.161 lam=1.028 t=1287s
+[central-ppo] step= 776191 ep=3880 rew=+515.594 ma=+571.107 lam=1.028 t=1289s
+[central-ppo] step= 777215 ep=3886 rew=+896.987 ma=+577.727 lam=1.028 t=1291s
+[central-ppo] step= 778239 ep=3891 rew=+576.703 ma=+581.455 lam=1.028 t=1293s
+[central-ppo] step= 779263 ep=3896 rew=+440.722 ma=+583.689 lam=1.028 t=1295s
+[central-ppo] step= 780287 ep=3901 rew=+651.625 ma=+584.089 lam=1.028 t=1296s
+[central-ppo] step= 781311 ep=3906 rew=+934.123 ma=+581.229 lam=1.028 t=1298s
+[central-ppo] step= 782335 ep=3911 rew=+943.571 ma=+587.162 lam=1.027 t=1300s
+[central-ppo] step= 783359 ep=3916 rew=+540.637 ma=+585.917 lam=1.027 t=1302s
+[central-ppo] step= 784383 ep=3921 rew=+439.570 ma=+584.529 lam=1.028 t=1303s
+[central-ppo] step= 785407 ep=3927 rew=+238.076 ma=+580.754 lam=1.028 t=1305s
+[central-ppo] step= 786431 ep=3932 rew=+767.596 ma=+588.517 lam=1.028 t=1307s
+[central-ppo] step= 787455 ep=3937 rew=+693.907 ma=+589.479 lam=1.028 t=1308s
+[central-ppo] step= 788479 ep=3942 rew=+455.159 ma=+583.714 lam=1.028 t=1310s
+[central-ppo] step= 789503 ep=3947 rew=+641.044 ma=+586.509 lam=1.028 t=1312s
+[central-ppo] step= 790015 ep=3950 rew=+839.973 ma=+586.360 lam=1.028 t=1313s
+[central-ppo] step= 791039 ep=3955 rew=+849.890 ma=+588.498 lam=1.028 t=1314s
+[central-ppo] step= 792063 ep=3960 rew=+363.352 ma=+587.720 lam=1.028 t=1316s
+[central-ppo] step= 793087 ep=3965 rew=+328.544 ma=+581.634 lam=1.028 t=1318s
+[central-ppo] step= 794111 ep=3970 rew=+429.502 ma=+580.174 lam=1.028 t=1319s
+[central-ppo] step= 795135 ep=3975 rew=+962.558 ma=+584.901 lam=1.028 t=1321s
+[central-ppo] step= 796159 ep=3980 rew=+578.698 ma=+585.878 lam=1.028 t=1323s
+[central-ppo] step= 797183 ep=3985 rew=+531.457 ma=+579.556 lam=1.028 t=1325s
+[central-ppo] step= 798207 ep=3991 rew=+494.290 ma=+578.848 lam=1.028 t=1326s
+[central-ppo] step= 799231 ep=3996 rew=+531.489 ma=+580.940 lam=1.028 t=1328s
+[central-ppo] step= 800255 ep=4001 rew=+791.307 ma=+585.873 lam=1.028 t=1330s
+[central-ppo] step= 801279 ep=4006 rew=+573.540 ma=+587.105 lam=1.028 t=1331s
+[central-ppo] step= 802303 ep=4011 rew=+401.632 ma=+589.215 lam=1.028 t=1333s
+[central-ppo] step= 803327 ep=4016 rew=+353.799 ma=+588.163 lam=1.028 t=1335s
+[central-ppo] step= 804351 ep=4021 rew=+418.007 ma=+587.872 lam=1.029 t=1337s
+[central-ppo] step= 805375 ep=4026 rew=+632.223 ma=+590.731 lam=1.029 t=1338s
+[central-ppo] step= 806399 ep=4032 rew=+655.253 ma=+588.319 lam=1.029 t=1340s
+[central-ppo] step= 807423 ep=4037 rew=+250.946 ma=+586.373 lam=1.029 t=1342s
+[central-ppo] step= 808447 ep=4042 rew=+459.677 ma=+584.386 lam=1.029 t=1344s
+[central-ppo] step= 809471 ep=4047 rew=+440.320 ma=+578.361 lam=1.029 t=1345s
+[central-ppo] step= 810495 ep=4052 rew=+505.445 ma=+572.500 lam=1.029 t=1347s
+[central-ppo] step= 811007 ep=4055 rew=+512.898 ma=+571.901 lam=1.029 t=1348s
+[central-ppo] step= 812031 ep=4060 rew=+430.634 ma=+571.473 lam=1.029 t=1349s
+[central-ppo] step= 813055 ep=4065 rew=+376.334 ma=+573.051 lam=1.029 t=1351s
+[central-ppo] step= 814079 ep=4070 rew=+709.224 ma=+576.722 lam=1.029 t=1353s
+[central-ppo] step= 815103 ep=4075 rew=+395.360 ma=+575.870 lam=1.029 t=1355s
+[central-ppo] step= 816127 ep=4080 rew=+505.968 ma=+576.261 lam=1.029 t=1356s
+[central-ppo] step= 817151 ep=4085 rew=+467.963 ma=+574.403 lam=1.029 t=1358s
+[central-ppo] step= 818175 ep=4090 rew=+556.709 ma=+569.098 lam=1.029 t=1360s
+[central-ppo] step= 819199 ep=4096 rew=+595.064 ma=+568.806 lam=1.029 t=1361s
+[central-ppo] step= 820223 ep=4101 rew=+201.218 ma=+563.650 lam=1.030 t=1363s
+[central-ppo] step= 821247 ep=4106 rew=+966.570 ma=+569.065 lam=1.030 t=1365s
+[central-ppo] step= 822271 ep=4111 rew=+546.622 ma=+572.853 lam=1.030 t=1367s
+[central-ppo] step= 823295 ep=4116 rew=+637.155 ma=+570.727 lam=1.030 t=1368s
+[central-ppo] step= 824319 ep=4121 rew=+732.138 ma=+582.022 lam=1.030 t=1370s
+[central-ppo] step= 825343 ep=4126 rew=+392.564 ma=+584.460 lam=1.030 t=1372s
+[central-ppo] step= 826367 ep=4131 rew=+776.246 ma=+587.126 lam=1.030 t=1373s
+[central-ppo] step= 827391 ep=4136 rew=+643.699 ma=+590.131 lam=1.030 t=1375s
+[central-ppo] step= 828415 ep=4142 rew=+583.065 ma=+585.539 lam=1.030 t=1377s
+[central-ppo] step= 829439 ep=4147 rew=+383.966 ma=+581.806 lam=1.030 t=1379s
+[central-ppo] step= 830463 ep=4152 rew=+480.062 ma=+583.910 lam=1.031 t=1380s
+[central-ppo] step= 831487 ep=4157 rew=+710.884 ma=+586.795 lam=1.031 t=1382s
+[central-ppo] step= 832511 ep=4162 rew=+692.211 ma=+584.832 lam=1.031 t=1384s
+[central-ppo] step= 833023 ep=4165 rew=+472.489 ma=+580.608 lam=1.031 t=1384s
+[central-ppo] step= 834047 ep=4170 rew=+470.319 ma=+574.409 lam=1.031 t=1386s
+[central-ppo] step= 835071 ep=4175 rew=+475.448 ma=+571.471 lam=1.031 t=1388s
+[central-ppo] step= 836095 ep=4180 rew=+504.556 ma=+574.362 lam=1.031 t=1390s
+[central-ppo] step= 837119 ep=4185 rew=+403.792 ma=+572.176 lam=1.031 t=1391s
+[central-ppo] step= 838143 ep=4190 rew=+858.128 ma=+572.877 lam=1.031 t=1393s
+[central-ppo] step= 839167 ep=4195 rew=+680.773 ma=+573.932 lam=1.031 t=1395s
+[central-ppo] step= 840191 ep=4200 rew=+501.303 ma=+574.305 lam=1.031 t=1396s
+[central-ppo] step= 841215 ep=4206 rew=+506.146 ma=+569.845 lam=1.031 t=1398s
+[central-ppo] step= 842239 ep=4211 rew=+700.625 ma=+566.601 lam=1.031 t=1400s
+[central-ppo] step= 843263 ep=4216 rew=+513.472 ma=+569.418 lam=1.031 t=1402s
+[central-ppo] step= 844287 ep=4221 rew=+291.130 ma=+570.364 lam=1.031 t=1403s
+[central-ppo] step= 845311 ep=4226 rew=+423.407 ma=+569.930 lam=1.031 t=1405s
+[central-ppo] step= 846335 ep=4231 rew=+644.654 ma=+566.726 lam=1.031 t=1407s
+[central-ppo] step= 847359 ep=4236 rew=+750.709 ma=+564.138 lam=1.031 t=1408s
+[central-ppo] step= 848383 ep=4241 rew=+263.654 ma=+561.690 lam=1.031 t=1410s
+[central-ppo] step= 849407 ep=4247 rew=+483.661 ma=+557.706 lam=1.031 t=1412s
+[central-ppo] step= 850431 ep=4252 rew=+462.350 ma=+555.049 lam=1.031 t=1413s
+[central-ppo] step= 851455 ep=4257 rew=+390.269 ma=+547.822 lam=1.031 t=1415s
+[central-ppo] step= 852479 ep=4262 rew=+715.478 ma=+547.906 lam=1.031 t=1417s
+[central-ppo] step= 853503 ep=4267 rew=+560.066 ma=+551.026 lam=1.031 t=1419s
+[central-ppo] step= 854015 ep=4270 rew=+415.908 ma=+547.596 lam=1.031 t=1419s
+[central-ppo] step= 855039 ep=4275 rew=+533.661 ma=+547.915 lam=1.031 t=1421s
+[central-ppo] step= 856063 ep=4280 rew=+370.232 ma=+546.649 lam=1.031 t=1423s
+[central-ppo] step= 857087 ep=4285 rew=+846.390 ma=+549.459 lam=1.031 t=1424s
+[central-ppo] step= 858111 ep=4290 rew=+450.750 ma=+551.691 lam=1.031 t=1426s
+[central-ppo] step= 859135 ep=4295 rew=+562.237 ma=+555.854 lam=1.031 t=1428s
+[central-ppo] step= 860159 ep=4300 rew=+429.416 ma=+557.293 lam=1.031 t=1430s
+[central-ppo] step= 861183 ep=4305 rew=+720.516 ma=+564.045 lam=1.031 t=1431s
+[central-ppo] step= 862207 ep=4311 rew=+409.821 ma=+560.432 lam=1.031 t=1433s
+[central-ppo] step= 863231 ep=4316 rew=+253.350 ma=+556.935 lam=1.031 t=1435s
+[central-ppo] step= 864255 ep=4321 rew=+247.775 ma=+554.488 lam=1.031 t=1436s
+[central-ppo] step= 865279 ep=4326 rew=+181.065 ma=+545.612 lam=1.031 t=1438s
+[central-ppo] step= 866303 ep=4331 rew=+853.723 ma=+552.222 lam=1.031 t=1440s
+[central-ppo] step= 867327 ep=4336 rew=+913.001 ma=+562.560 lam=1.031 t=1442s
+[central-ppo] step= 868351 ep=4341 rew=+438.834 ma=+564.930 lam=1.031 t=1443s
+[central-ppo] step= 869375 ep=4346 rew=+605.711 ma=+563.431 lam=1.031 t=1445s
+[central-ppo] step= 870399 ep=4352 rew=+661.328 ma=+567.012 lam=1.031 t=1447s
+[central-ppo] step= 871423 ep=4357 rew=+963.496 ma=+575.979 lam=1.031 t=1448s
+[central-ppo] step= 872447 ep=4362 rew=+312.191 ma=+570.621 lam=1.031 t=1450s
+[central-ppo] step= 873471 ep=4367 rew=+592.401 ma=+568.764 lam=1.031 t=1452s
+[central-ppo] step= 874495 ep=4372 rew=+331.217 ma=+565.005 lam=1.031 t=1453s
+[central-ppo] step= 875007 ep=4375 rew=+467.626 ma=+560.410 lam=1.031 t=1454s
+[central-ppo] step= 876031 ep=4380 rew=+430.344 ma=+555.671 lam=1.031 t=1456s
+[central-ppo] step= 877055 ep=4385 rew=+440.416 ma=+556.381 lam=1.031 t=1458s
+[central-ppo] step= 878079 ep=4390 rew=+501.914 ma=+553.064 lam=1.032 t=1459s
+[central-ppo] step= 879103 ep=4395 rew=+613.907 ma=+553.743 lam=1.032 t=1461s
+[central-ppo] step= 880127 ep=4400 rew=+577.566 ma=+551.695 lam=1.032 t=1463s
+[central-ppo] step= 881151 ep=4405 rew=+657.648 ma=+551.232 lam=1.032 t=1465s
+[central-ppo] step= 882175 ep=4410 rew=+242.559 ma=+547.842 lam=1.032 t=1466s
+[central-ppo] step= 883199 ep=4416 rew=+485.570 ma=+542.619 lam=1.032 t=1468s
+[central-ppo] step= 884223 ep=4421 rew=+594.523 ma=+543.081 lam=1.033 t=1470s
+[central-ppo] step= 885247 ep=4426 rew=+564.437 ma=+547.242 lam=1.033 t=1471s
+[central-ppo] step= 886271 ep=4431 rew=+405.634 ma=+545.502 lam=1.033 t=1473s
+[central-ppo] step= 887295 ep=4436 rew=+694.514 ma=+543.946 lam=1.033 t=1475s
+[central-ppo] step= 888319 ep=4441 rew=+601.815 ma=+549.194 lam=1.034 t=1476s
+[central-ppo] step= 889343 ep=4446 rew=+694.917 ma=+544.807 lam=1.034 t=1478s
+[central-ppo] step= 890367 ep=4451 rew=+683.713 ma=+547.274 lam=1.034 t=1480s
+[central-ppo] step= 891391 ep=4456 rew=+484.156 ma=+546.747 lam=1.034 t=1482s
+[central-ppo] step= 892415 ep=4462 rew=+719.153 ma=+548.530 lam=1.034 t=1483s
+[central-ppo] step= 893439 ep=4467 rew=+911.481 ma=+553.819 lam=1.034 t=1485s
+[central-ppo] step= 894463 ep=4472 rew=+256.956 ma=+548.807 lam=1.034 t=1487s
+[central-ppo] step= 895487 ep=4477 rew=+493.574 ma=+552.304 lam=1.034 t=1488s
+[central-ppo] step= 896511 ep=4482 rew=+537.068 ma=+554.987 lam=1.034 t=1490s
+[central-ppo] step= 897023 ep=4485 rew=+711.093 ma=+554.410 lam=1.034 t=1491s
+[central-ppo] step= 898047 ep=4490 rew=+584.148 ma=+553.770 lam=1.034 t=1493s
+[central-ppo] step= 899071 ep=4495 rew=+538.450 ma=+552.598 lam=1.034 t=1495s
+[central-ppo] step= 900095 ep=4500 rew=+256.069 ma=+557.171 lam=1.034 t=1496s
+[central-ppo] step= 901119 ep=4505 rew=+480.752 ma=+557.349 lam=1.034 t=1498s
+[central-ppo] step= 902143 ep=4510 rew=+581.761 ma=+559.344 lam=1.034 t=1500s
+[central-ppo] step= 903167 ep=4515 rew=+617.312 ma=+562.535 lam=1.034 t=1502s
+[central-ppo] step= 904191 ep=4520 rew=+367.738 ma=+554.313 lam=1.034 t=1503s
+[central-ppo] step= 905215 ep=4526 rew=+398.576 ma=+553.217 lam=1.034 t=1505s
+[central-ppo] step= 906239 ep=4531 rew=+589.074 ma=+555.685 lam=1.034 t=1507s
+[central-ppo] step= 907263 ep=4536 rew=+557.991 ma=+558.681 lam=1.034 t=1508s
+[central-ppo] step= 908287 ep=4541 rew=+365.862 ma=+554.944 lam=1.034 t=1510s
+[central-ppo] step= 909311 ep=4546 rew=+752.468 ma=+556.469 lam=1.034 t=1512s
+[central-ppo] step= 910335 ep=4551 rew=+775.597 ma=+558.225 lam=1.034 t=1514s
+[central-ppo] step= 911359 ep=4556 rew=+482.928 ma=+557.592 lam=1.034 t=1515s
+[central-ppo] step= 912383 ep=4561 rew=+603.942 ma=+553.844 lam=1.034 t=1517s
+[central-ppo] step= 913407 ep=4567 rew=+615.070 ma=+558.717 lam=1.034 t=1519s
+[central-ppo] step= 914431 ep=4572 rew=+742.957 ma=+568.345 lam=1.034 t=1521s
+[central-ppo] step= 915455 ep=4577 rew=+810.574 ma=+578.210 lam=1.034 t=1522s
+[central-ppo] step= 916479 ep=4582 rew=+755.978 ma=+589.467 lam=1.034 t=1524s
+[central-ppo] step= 917503 ep=4587 rew=+658.993 ma=+586.144 lam=1.034 t=1526s
+[central-ppo] step= 918015 ep=4590 rew=+779.184 ma=+582.304 lam=1.034 t=1527s
+[central-ppo] step= 919039 ep=4595 rew=+422.550 ma=+572.741 lam=1.034 t=1528s
+[central-ppo] step= 920063 ep=4600 rew=+700.244 ma=+578.203 lam=1.033 t=1530s
+[central-ppo] step= 921087 ep=4605 rew=+930.848 ma=+583.356 lam=1.033 t=1532s
+[central-ppo] step= 922111 ep=4610 rew=+669.639 ma=+584.533 lam=1.034 t=1533s
+[central-ppo] step= 923135 ep=4615 rew=+866.766 ma=+582.100 lam=1.034 t=1535s
+[central-ppo] step= 924159 ep=4620 rew=+350.779 ma=+583.913 lam=1.034 t=1537s
+[central-ppo] step= 925183 ep=4625 rew=+451.265 ma=+582.836 lam=1.034 t=1539s
+[central-ppo] step= 926207 ep=4631 rew=+466.362 ma=+584.012 lam=1.034 t=1540s
+[central-ppo] step= 927231 ep=4636 rew=+358.214 ma=+583.540 lam=1.034 t=1542s
+[central-ppo] step= 928255 ep=4641 rew=+564.469 ma=+586.324 lam=1.034 t=1544s
+[central-ppo] step= 929279 ep=4646 rew=+361.838 ma=+587.435 lam=1.034 t=1546s
+[central-ppo] step= 930303 ep=4651 rew=+427.115 ma=+583.855 lam=1.034 t=1547s
+[central-ppo] step= 931327 ep=4656 rew=+403.538 ma=+579.496 lam=1.034 t=1549s
+[central-ppo] step= 932351 ep=4661 rew=+932.295 ma=+585.485 lam=1.035 t=1551s
+[central-ppo] step= 933375 ep=4666 rew=+701.676 ma=+590.822 lam=1.035 t=1552s
+[central-ppo] step= 934399 ep=4672 rew=+491.899 ma=+592.122 lam=1.035 t=1554s
+[central-ppo] step= 935423 ep=4677 rew=+402.125 ma=+587.077 lam=1.035 t=1556s
+[central-ppo] step= 936447 ep=4682 rew=+811.637 ma=+588.666 lam=1.035 t=1558s
+[central-ppo] step= 937471 ep=4687 rew=+474.502 ma=+594.356 lam=1.035 t=1559s
+[central-ppo] step= 938495 ep=4692 rew=+383.967 ma=+591.859 lam=1.035 t=1561s
+[central-ppo] step= 939007 ep=4695 rew=+861.227 ma=+591.691 lam=1.035 t=1562s
+[central-ppo] step= 940031 ep=4700 rew=+724.197 ma=+593.403 lam=1.036 t=1564s
+[central-ppo] step= 941055 ep=4705 rew=+607.094 ma=+589.802 lam=1.036 t=1565s
+[central-ppo] step= 942079 ep=4710 rew=+856.979 ma=+595.081 lam=1.035 t=1567s
+[central-ppo] step= 943103 ep=4715 rew=+772.055 ma=+601.158 lam=1.035 t=1569s
+[central-ppo] step= 944127 ep=4720 rew=+754.994 ma=+598.367 lam=1.035 t=1570s
+[central-ppo] step= 945151 ep=4725 rew=+534.693 ma=+596.642 lam=1.035 t=1572s
+[central-ppo] step= 946175 ep=4730 rew=+331.578 ma=+595.529 lam=1.035 t=1574s
+[central-ppo] step= 947199 ep=4736 rew=+622.818 ma=+593.505 lam=1.035 t=1575s
+[central-ppo] step= 948223 ep=4741 rew=+592.099 ma=+591.643 lam=1.036 t=1577s
+[central-ppo] step= 949247 ep=4746 rew=+538.241 ma=+591.643 lam=1.036 t=1579s
+[central-ppo] step= 950271 ep=4751 rew=+418.675 ma=+585.525 lam=1.036 t=1580s
+[central-ppo] step= 951295 ep=4756 rew=+495.271 ma=+584.091 lam=1.036 t=1582s
+[central-ppo] step= 952319 ep=4761 rew=+858.913 ma=+591.021 lam=1.036 t=1584s
+[central-ppo] step= 953343 ep=4766 rew=+414.249 ma=+588.801 lam=1.036 t=1585s
+[central-ppo] step= 954367 ep=4771 rew=+420.884 ma=+584.277 lam=1.036 t=1587s
+[central-ppo] step= 955391 ep=4776 rew=+420.230 ma=+582.987 lam=1.036 t=1589s
+[central-ppo] step= 956415 ep=4782 rew=+424.366 ma=+584.910 lam=1.036 t=1591s
+[central-ppo] step= 957439 ep=4787 rew=+165.110 ma=+580.385 lam=1.036 t=1592s
+[central-ppo] step= 958463 ep=4792 rew=+510.475 ma=+578.006 lam=1.037 t=1594s
+[central-ppo] step= 959487 ep=4797 rew=+505.778 ma=+577.184 lam=1.037 t=1596s
+[central-ppo] step= 960511 ep=4802 rew=+539.851 ma=+570.500 lam=1.037 t=1597s
+[central-ppo] step= 961023 ep=4805 rew=+621.646 ma=+571.235 lam=1.037 t=1598s
+[central-ppo] step= 962047 ep=4810 rew=+382.192 ma=+568.862 lam=1.037 t=1600s
+[central-ppo] step= 963071 ep=4815 rew=+581.475 ma=+565.677 lam=1.037 t=1602s
+[central-ppo] step= 964095 ep=4820 rew=+493.693 ma=+566.015 lam=1.037 t=1603s
+[central-ppo] step= 965119 ep=4825 rew=+780.703 ma=+565.657 lam=1.037 t=1605s
+[central-ppo] step= 966143 ep=4830 rew=+391.340 ma=+560.229 lam=1.037 t=1607s
+[central-ppo] step= 967167 ep=4835 rew=+644.841 ma=+554.072 lam=1.037 t=1609s
+[central-ppo] step= 968191 ep=4840 rew=+394.547 ma=+550.647 lam=1.037 t=1610s
+[central-ppo] step= 969215 ep=4846 rew=+884.474 ma=+552.830 lam=1.037 t=1612s
+[central-ppo] step= 970239 ep=4851 rew=+488.488 ma=+558.023 lam=1.037 t=1614s
+[central-ppo] step= 971263 ep=4856 rew=+515.187 ma=+553.923 lam=1.037 t=1615s
+[central-ppo] step= 972287 ep=4861 rew=+563.001 ma=+549.271 lam=1.037 t=1617s
+[central-ppo] step= 973311 ep=4866 rew=+492.375 ma=+548.633 lam=1.037 t=1619s
+[central-ppo] step= 974335 ep=4871 rew=+574.063 ma=+544.761 lam=1.037 t=1621s
+[central-ppo] step= 975359 ep=4876 rew=+674.735 ma=+547.300 lam=1.037 t=1622s
+[central-ppo] step= 976383 ep=4881 rew=+466.161 ma=+546.023 lam=1.037 t=1624s
+[central-ppo] step= 977407 ep=4887 rew=+667.541 ma=+547.298 lam=1.037 t=1626s
+[central-ppo] step= 978431 ep=4892 rew=+632.360 ma=+551.983 lam=1.037 t=1628s
+[central-ppo] step= 979455 ep=4897 rew=+760.914 ma=+551.914 lam=1.037 t=1630s
+[central-ppo] step= 980479 ep=4902 rew=+527.207 ma=+554.240 lam=1.037 t=1631s
+[central-ppo] step= 981503 ep=4907 rew=+674.451 ma=+558.774 lam=1.037 t=1633s
+[central-ppo] step= 982015 ep=4910 rew=+541.401 ma=+561.924 lam=1.037 t=1634s
+[central-ppo] step= 983039 ep=4915 rew=+494.096 ma=+559.417 lam=1.037 t=1636s
+[central-ppo] step= 984063 ep=4920 rew=+459.030 ma=+551.569 lam=1.037 t=1637s
+[central-ppo] step= 985087 ep=4925 rew=+733.046 ma=+552.527 lam=1.037 t=1639s
+[central-ppo] step= 986111 ep=4930 rew=+508.724 ma=+555.854 lam=1.037 t=1641s
+[central-ppo] step= 987135 ep=4935 rew=+429.969 ma=+554.896 lam=1.037 t=1643s
+[central-ppo] step= 988159 ep=4940 rew=+563.187 ma=+549.557 lam=1.037 t=1644s
+[central-ppo] step= 989183 ep=4945 rew=+981.151 ma=+558.218 lam=1.037 t=1646s
+[central-ppo] step= 990207 ep=4951 rew=+777.334 ma=+560.176 lam=1.037 t=1648s
+[central-ppo] step= 991231 ep=4956 rew=+520.136 ma=+559.184 lam=1.037 t=1650s
+[central-ppo] step= 992255 ep=4961 rew=+437.310 ma=+556.541 lam=1.037 t=1652s
+[central-ppo] step= 993279 ep=4966 rew=+764.239 ma=+550.993 lam=1.037 t=1653s
+[central-ppo] step= 994303 ep=4971 rew=+701.464 ma=+549.766 lam=1.037 t=1655s
+[central-ppo] step= 995327 ep=4976 rew=+565.276 ma=+547.297 lam=1.037 t=1657s
+[central-ppo] step= 996351 ep=4981 rew=+778.115 ma=+549.356 lam=1.037 t=1659s
+[central-ppo] step= 997375 ep=4986 rew=+467.075 ma=+550.622 lam=1.037 t=1661s
+[central-ppo] step= 998399 ep=4992 rew=+792.656 ma=+554.810 lam=1.037 t=1662s
+[central-ppo] step= 999423 ep=4997 rew=+623.417 ma=+559.123 lam=1.037 t=1664s
+[central-ppo] done -> results\logs\central-ppo_calib_seed42.csv
+[central-ppo_calib_seed42] 30 eval episodes -> C:\Users\Adaptive Network\Documents\Lung Cancer\gnn-marl-network-slicing\results\eval_calib\central-ppo_calib_seed42_eval.csv
+training central-ppo_calib_seed42: steps=1000000 config=C:\Users\Adaptive Network\Documents\Lung Cancer\gnn-marl-network-slicing\configs\experiment_config.yaml lambda_arrival=25000.0 delta=0.05
+
+GATE A -- central-ppo_calib_seed42  (delta=0.0500, lambda_arrival=25000, dual_update_every=2000)
+  [PASS] A1 violation in [0.7d, 1.0d]     4.60% vs [3.50%, 5.00%]
+  [FAIL] A2 lam_ss >= 5.0                 1.033
+  [PASS] A3 deadline:overflow >= 3:1      inf:1  (late 5.95%, overflow 0.00%)
+  [FAIL] A4 window std < 2.0pp            2.74pp over 500 windows
+
+Gate A FAIL. Adjust the operating point on TASK grounds only (goal1.md Larangan integritas #1), then re-run.

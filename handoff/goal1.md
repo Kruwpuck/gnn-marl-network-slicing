@@ -69,6 +69,40 @@ Wave v4 dinyatakan **selesai** hanya jika **semua** gate di bawah lolos. Kriteri
 
 > **BUKAN kriteria selesai:** "GNN-MARL mengungguli baseline." Klaim itu adalah *hipotesis yang diuji*, bukan target yang dikejar. Loop tidak boleh melanjutkan iterasi hanya karena hasilnya belum menguntungkan proposed.
 
+### Keputusan scoping 2026-08-15 (bukan amandemen ambang)
+
+Gate B v4 lolos B1 (11.43 % ≥ 5 %), B2 (8.70 pp ≥ 5 pp), B4 (1 dari 5 ≤ 1), dan **gagal B3** (rentang `urllc_delay_p99` 1.01 ms < 2 ms). Ambang B3 **tetap 2 ms** dan statusnya **tetap GAGAL** di setiap laporan. Ambang itu tidak diamandemen: mengubahnya sekarang berarti memindahkan tiang gawang setelah melihat hasil, yaitu larangan integritas #4. Ini berbeda dari amandemen A1 2026-08-08, yang dipilih karena kriteria lamanya mustahil dilewati secara asimtotik (SE menyusut √n, offset tunak pengendali tidak) dan ditetapkan sebelum ada hasil per-algoritma — B3 tidak mustahil, ia hanya gagal terukur.
+
+Yang berubah hanya **cakupan klaim**, karena Gate B adalah diagnostik daya diskriminasi *task*, bukan uji hipotesis tentang arsitektur. Tiga dari empat kriteria lolos, dan B4 turun dari 4/5 KPI tersaturasi (v3) ke 1/5 (v4), sehingga task v4 memang punya daya diskriminasi. Yang dikatakan B3 adalah: **`urllc_delay_p99` bukan KPI pembeda di rezim beban ini.**
+
+- Klaim dibangun di atas KPI yang lolos: `timely_throughput_mbps`, `sla_satisfaction_pct`, `embb_p5_mbps`, `cell_edge_collapse_rate`.
+- `urllc_delay_p99` **dilaporkan penuh** (tabel, CI, semua algoritma) tetapi **tidak dipakai menopang klaim apa pun**, dengan catatan eksplisit bahwa B3 gagal pra-registrasi.
+- Catatan jujur atas daftar di atas: `embb_p5_mbps` justru KPI yang B4 hitung sebagai satu-satunya yang tersaturasi (0.0000 identik pada 5 dari 8 algoritma). Klaim di atasnya karena itu hanya sah dalam bentuk diskretnya, `cell_edge_collapse_rate`; level `embb_p5_mbps` dilaporkan apa adanya beserta saturasinya, tidak diklaim.
+- Mekanisme kegagalan B3 didiagnosis terpisah di `results/B3_DELAY_CENSORING.md` (sensor deadline pada 10 ms + kuantisasi slot 1 ms). Diagnosis itu **tidak mengubah** verdict B3; ia bahan metodologi paper.
+
+Tidak ada angka, definisi metrik, atau ambang di dokumen ini yang diubah oleh keputusan ini. Diputuskan manusia (`Habb`), dicatat di `runs/2026-08-05-run01/ledger.md`.
+
+### Keputusan scoping C4 2026-08-16 (bukan amandemen ambang)
+
+Wave v4 menjalankan **5 seed** per algoritma; C4 menuntut ≥ 20 untuk KPI cell-edge bimodal. Ambang C4 **tetap ≥ 20** dan statusnya **tetap GAGAL** di setiap laporan. Klausa keduanya (proporsi binomial + CI Wilson) terpenuhi. Seperti pada B3, yang dipecah adalah **cakupan klaim**, bukan ambangnya:
+
+- **Klaim komparatif — sah, tetap dilaporkan.** "Model proposed kolaps lebih sering daripada baseline terpusat." Klaim ini hanya butuh pemisahan, bukan estimasi rate yang presisi, dan pemisahannya sudah terjadi di n = 5: `gnn-madqn_gat`, `gnn-madqn_sage`, `gnn-mappo_sage`, `idqn`, `ippo` kolaps di 5 dari 5 seed (Wilson `[0.57, 1.00]`) lawan `central-ppo` 0 dari 5 (Wilson `[0.00, 0.43]`) — interval tidak beririsan (`results/STABILITY_v4_stoch.md`).
+- **Klaim karakterisasi — tidak dibuat.** Berapa persisnya collapse rate sebuah algoritma, dan bagaimana bentuk distribusi bimodal per-seed *di dalam* satu algoritma, tidak diklaim di mana pun. Itulah yang syarat ≥ 20 ada untuk menjawab, dan 5 seed tidak bisa menjawabnya seberapa pun lebar jarak antar-algoritma.
+- **Aturan penulisan, mengikat seluruh laporan dan paper:** tulis **"kolaps di k dari 5 seed"**, jangan "kolaps X % waktu". Dengan n = 5 hanya ada 6 nilai rate yang mungkin (0, 0.2, 0.4, 0.6, 0.8, 1.0); bentuk persen menyiratkan presisi kontinu yang datanya tidak punya.
+
+**Aturan biaya perluasan seed — dideklarasikan sebelum dijalankan, atas dasar biaya keluarga, bukan hasil.** Kalau anggaran mengizinkan, keluarga budget yang **lebih murah per seed** dinaikkan ke 20 seed, keempat algoritma di dalamnya sekaligus (2 proposed + 2 baseline, tanpa kecuali), dan keluarga satunya tetap di 5 seed dengan C4-nya tetap GAGAL. Keluarga mana yang lebih murah ditentukan dari `elapsed_sec` terakhir 40 CSV training wave v4, bukan dari perkiraan:
+
+| keluarga | budget | total job-jam | rata-rata per job | biaya 1 seed (4 algoritma) | 15 seed tambahan |
+|---|---|---|---|---|---|
+| DQN | 200K langkah | 387.84 | 19.39 | 77.57 | 1163.6 |
+| PPO | 1M langkah | 41.63 | 2.08 | 8.32 | 124.8 |
+
+Yang lebih murah adalah **PPO**, 9.3× lebih murah per seed — kebalikan dari dugaan bahwa 200K langkah pasti lebih murah dari 1M. Sebabnya bukan jumlah langkah melainkan frekuensi update: DQN belajar di **setiap** langkah atas batch 64 transisi lewat loop Python per-sampel, PPO satu kali per 512 langkah. Angka ini fakta biaya implementasi, tidak menyentuh hasil algoritma mana pun.
+
+**Keputusan: perluasan dilewati.** Wave v4 sudah memakai 429.47 job-jam terhadap anggaran ±450, jadi sisa 20.5 job-jam sementara opsi termurah butuh 124.8. Dicatat jujur: dengan pembacaan anggaran sebagai *device*-jam (satu GPU, 40 job selesai 147.22 jam wall-clock pada paralelisme 6) perluasan PPO justru muat (≈43 jam wall-clock). Kedua pembacaan dilaporkan; memilih pembacaan yang kebetulan meloloskan rencana adalah bentuk lain dari memindahkan tiang gawang, jadi eksekusinya milik keputusan manusia, bukan default agent. Klaim komparatif tidak bergantung padanya. Catatan integritas: memperluas keluarga PPO **memperkuat temuan yang merugikan proposed** (`central-ppo` 0 dari 5 lawan proposed 4–5 dari 5), sehingga aturan biaya ini tidak bisa dibaca sebagai memilih keluarga yang menguntungkan proposed.
+
+Tidak ada angka, definisi metrik, atau ambang di dokumen ini yang diubah oleh keputusan ini. Diputuskan manusia (`Habb`), dicatat di `runs/2026-08-05-run01/ledger.md`.
+
 ---
 
 ## Batasan
