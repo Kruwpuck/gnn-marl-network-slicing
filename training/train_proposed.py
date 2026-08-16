@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from envs.network_slicing_env import NetworkSlicingEnv
 from gnn import BACKBONES
 from agents.dqn_agent import DQNAgent
+from agents.hparams import hparams
 from agents.ppo_agent import PPOAgent
 from training.replay_buffer import ReplayBuffer
 from training.rollout_buffer import RolloutBuffer
@@ -34,10 +35,6 @@ from training.metrics_logger import (
 )
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-BATCH_SIZE = 64
-REPLAY_START = 1000
-ROLLOUT_STEPS = 512
 
 
 def make_env(seed: int, config_path: str | None = None) -> NetworkSlicingEnv:
@@ -73,10 +70,11 @@ def train_gnn_dqn(backbone_name, steps, seed, log_path, ckpt_interval, resume,
     np.random.seed(seed)
     env = make_env(seed, config_path)
 
+    hp = hparams("dqn", config_path)
     backbone = BACKBONES[backbone_name]()
-    agent = DQNAgent(backbone).to(DEVICE)
+    agent = DQNAgent(backbone, config_path=config_path).to(DEVICE)
     print(f"[gnn-madqn/{backbone_name}] device={DEVICE}")
-    buf = ReplayBuffer(capacity=50_000)
+    buf = ReplayBuffer(capacity=hp["replay_capacity"])
 
     ckpt = CheckpointManager(run_name)
     start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, env, resume)
@@ -102,8 +100,8 @@ def train_gnn_dqn(backbone_name, steps, seed, log_path, ckpt_interval, resume,
         graph = next_graph
 
         loss = None
-        if len(buf) >= REPLAY_START:
-            loss = agent.learn(buf.sample(BATCH_SIZE))
+        if len(buf) >= hp["replay_start"]:
+            loss = agent.learn(buf.sample(hp["batch_size"]))
 
         if done:
             ep_count += 1
@@ -139,10 +137,11 @@ def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume,
     env = make_env(seed, config_path)
     n_gnb = env.n_gnb
 
+    hp = hparams("ppo", config_path)
     backbone = BACKBONES[backbone_name]()
-    agent = PPOAgent(backbone).to(DEVICE)
+    agent = PPOAgent(backbone, config_path=config_path).to(DEVICE)
     print(f"[gnn-mappo/{backbone_name}] device={DEVICE}")
-    buf = RolloutBuffer(n_steps=ROLLOUT_STEPS, n_agents=n_gnb)
+    buf = RolloutBuffer(n_steps=hp["rollout_steps"], n_agents=n_gnb)
 
     ckpt = CheckpointManager(run_name)
     start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, env, resume)
@@ -183,7 +182,7 @@ def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume,
                             value_loss=loss_info.get("value_loss"),
                             entropy=loss_info.get("entropy"), **net)
             netstats.reset()
-            if step % 1000 < ROLLOUT_STEPS:
+            if step % 1000 < hp["rollout_steps"]:
                 print(f"[gnn-mappo/{backbone_name}] step={step:>7} ep={ep_count:>4} "
                       f"rew={ep_reward:+.3f} ma={ma:+.3f} lam={env._lam:.3f} "
                       f"t={time.time()-t0:.0f}s")

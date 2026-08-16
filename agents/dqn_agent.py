@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from gnn.base_backbone import GNNBackbone
+from .hparams import resolve
 
 
 class DQNAgent(nn.Module):
@@ -13,26 +14,23 @@ class DQNAgent(nn.Module):
     One forward pass processes all N nodes simultaneously.
     """
 
-    def __init__(
-        self,
-        backbone: GNNBackbone,
-        n_actions: int = 11,
-        hidden: int = 128,
-        epsilon: float = 1.0,
-        epsilon_min: float = 0.05,
-        epsilon_decay: float = 0.9995,
-        lr: float = 1e-3,
-        gamma: float = 0.99,
-    ):
+    def __init__(self, backbone: GNNBackbone, config_path: str | None = None, **overrides):
+        """Hyperparameters come from `agent.dqn` in configs/experiment_config.yaml
+        (goal1.md C2), not from defaults here. **overrides is for tests and sweeps and
+        raises on an unknown key rather than silently ignoring it."""
         super().__init__()
+        hp = resolve("dqn", config_path, overrides)
         self.backbone = backbone
-        self.n_actions = n_actions
-        self.epsilon = epsilon
-        self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay
-        self.gamma = gamma
+        self.n_actions = hp["n_actions"]
+        self.epsilon = hp["epsilon"]
+        self.epsilon_min = hp["epsilon_min"]
+        self.epsilon_decay = hp["epsilon_decay"]
+        self.gamma = hp["gamma"]
+        self.max_grad_norm = hp["max_grad_norm"]
 
         D = backbone.output_dim
+        hidden = hp["hidden"]
+        n_actions = hp["n_actions"]
 
         # Dueling streams
         self.value_stream = nn.Sequential(
@@ -41,7 +39,7 @@ class DQNAgent(nn.Module):
         self.adv_stream = nn.Sequential(
             nn.Linear(D, hidden), nn.ReLU(), nn.Linear(hidden, n_actions)
         )
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=hp["lr"])
 
     def q_values(self, graph_dict: dict) -> torch.Tensor:
         """Return Q-values tensor shape (N, n_actions)."""
@@ -88,7 +86,7 @@ class DQNAgent(nn.Module):
         total_loss = torch.stack(losses).mean()
         self.optimizer.zero_grad()
         total_loss.backward()
-        nn.utils.clip_grad_norm_(self.parameters(), 10.0)
+        nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
         self.optimizer.step()
         self.decay_epsilon()
         return float(total_loss)

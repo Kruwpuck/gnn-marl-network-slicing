@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
 
+from .hparams import resolve
+
 
 class MLPDQNAgent(nn.Module):
     """
@@ -13,29 +15,25 @@ class MLPDQNAgent(nn.Module):
     B2 independent: obs_dim = 8          (local obs per agent)
     """
 
-    def __init__(
-        self,
-        obs_dim: int,
-        n_actions: int = 11,
-        hidden: int = 128,
-        epsilon: float = 1.0,
-        epsilon_min: float = 0.05,
-        epsilon_decay: float = 0.9995,
-        lr: float = 1e-3,
-        gamma: float = 0.99,
-    ):
+    def __init__(self, obs_dim: int, config_path: str | None = None, **overrides):
+        """Hyperparameters come from `agent.dqn` in configs/experiment_config.yaml
+        (goal1.md C2) -- the same block the GNN DQN reads, which is what makes the
+        baseline/proposed comparison a treatment contrast rather than a tuning contrast."""
         super().__init__()
+        hp = resolve("dqn", config_path, overrides)
         self.obs_dim = obs_dim
-        self.n_actions = n_actions
-        self.epsilon = epsilon
-        self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay
-        self.gamma = gamma
+        self.n_actions = hp["n_actions"]
+        self.epsilon = hp["epsilon"]
+        self.epsilon_min = hp["epsilon_min"]
+        self.epsilon_decay = hp["epsilon_decay"]
+        self.gamma = hp["gamma"]
+        self.max_grad_norm = hp["max_grad_norm"]
 
+        hidden, n_actions = hp["hidden"], hp["n_actions"]
         self.shared = nn.Sequential(nn.Linear(obs_dim, hidden), nn.ReLU())
         self.value_stream = nn.Sequential(nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, 1))
         self.adv_stream = nn.Sequential(nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, n_actions))
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=hp["lr"])
 
     def q_values(self, obs: torch.Tensor) -> torch.Tensor:
         """obs: (batch, obs_dim) or (obs_dim,) → Q: (batch, n_actions)"""
@@ -85,7 +83,7 @@ class MLPDQNAgent(nn.Module):
         loss = torch.stack(losses).mean()
         self.optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm_(self.parameters(), 10.0)
+        nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
         self.optimizer.step()
         self.decay_epsilon()
         return float(loss)
@@ -94,32 +92,26 @@ class MLPDQNAgent(nn.Module):
 class MLPPPOAgent(nn.Module):
     """B1/B2 PPO baseline with flat MLP."""
 
-    def __init__(
-        self,
-        obs_dim: int,
-        n_actions: int = 11,
-        hidden: int = 128,
-        lr: float = 3e-4,
-        clip_eps: float = 0.2,
-        entropy_coef: float = 0.01,
-        value_coef: float = 0.5,
-        max_grad_norm: float = 0.5,
-    ):
+    def __init__(self, obs_dim: int, config_path: str | None = None, **overrides):
+        """Hyperparameters come from `agent.ppo` in configs/experiment_config.yaml
+        (goal1.md C2) -- the same block the GNN PPO reads."""
         super().__init__()
+        hp = resolve("ppo", config_path, overrides)
         self.obs_dim = obs_dim
-        self.n_actions = n_actions
-        self.clip_eps = clip_eps
-        self.entropy_coef = entropy_coef
-        self.value_coef = value_coef
-        self.max_grad_norm = max_grad_norm
+        self.n_actions = hp["n_actions"]
+        self.clip_eps = hp["clip_eps"]
+        self.entropy_coef = hp["entropy_coef"]
+        self.value_coef = hp["value_coef"]
+        self.max_grad_norm = hp["max_grad_norm"]
 
+        hidden, n_actions = hp["hidden"], hp["n_actions"]
         self.actor = nn.Sequential(
             nn.Linear(obs_dim, hidden), nn.Tanh(), nn.Linear(hidden, n_actions)
         )
         self.critic = nn.Sequential(
             nn.Linear(obs_dim, hidden), nn.Tanh(), nn.Linear(hidden, 1)
         )
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=hp["lr"])
 
     @property
     def _device(self):

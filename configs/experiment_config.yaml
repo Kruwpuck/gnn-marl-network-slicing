@@ -219,6 +219,37 @@ training:
   n_steps: 1_000_000
   episode_length: 200
 
+agent:
+  # Moved here from Python defaults in agents/*.py on 2026-08-16 (goal1.md C2: every
+  # hyperparameter comes from this one file). The wave itself ran on the defaults, and
+  # every value below is bit-identical to the default it replaced -- verified by
+  # tests/test_hparams_identity.py -- so the v4 checkpoints stay reproducible from this
+  # config. Nothing was retuned; a reader of this file previously could not see the
+  # numbers the runs actually used, which is the reproducibility hole being closed.
+  #
+  # The dqn/ppo split is NOT per-algorithm tuning. It is the same structural family split
+  # as the step budget (200K vs 1M): the four algorithms inside each family share one set,
+  # and C3 already forbids pooling the two families in any statistical claim.
+  n_actions: 11
+  hidden: 128
+  dqn:
+    lr: 0.001
+    gamma: 0.99
+    epsilon: 1.0
+    epsilon_min: 0.05
+    epsilon_decay: 0.9995
+    max_grad_norm: 10.0     # was hard-coded in DQNAgent.learn / MLPDQNAgent.learn
+    batch_size: 64          # was BATCH_SIZE in training/train_*.py
+    replay_capacity: 50000  # was ReplayBuffer(50_000) at the call site
+    replay_start: 1000      # was REPLAY_START in training/train_*.py
+  ppo:
+    lr: 0.0003
+    clip_eps: 0.2
+    entropy_coef: 0.01
+    value_coef: 0.5
+    max_grad_norm: 0.5
+    rollout_steps: 512      # was ROLLOUT_STEPS in training/train_*.py
+
 noise:
   thermal_dbm_per_hz: -174.0
   noise_figure_db: 7.0

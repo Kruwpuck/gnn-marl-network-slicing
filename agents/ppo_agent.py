@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 
 from gnn.base_backbone import GNNBackbone
+from .hparams import resolve
 
 
 class PPOAgent(nn.Module):
@@ -13,33 +14,29 @@ class PPOAgent(nn.Module):
     PPO actor-critic with shared GNN backbone and parameter sharing across agents.
     """
 
-    def __init__(
-        self,
-        backbone: GNNBackbone,
-        n_actions: int = 11,
-        hidden: int = 128,
-        lr: float = 3e-4,
-        clip_eps: float = 0.2,
-        entropy_coef: float = 0.01,
-        value_coef: float = 0.5,
-        max_grad_norm: float = 0.5,
-    ):
+    def __init__(self, backbone: GNNBackbone, config_path: str | None = None, **overrides):
+        """Hyperparameters come from `agent.ppo` in configs/experiment_config.yaml
+        (goal1.md C2), not from defaults here. **overrides is for tests and sweeps and
+        raises on an unknown key rather than silently ignoring it."""
         super().__init__()
+        hp = resolve("ppo", config_path, overrides)
         self.backbone = backbone
-        self.n_actions = n_actions
-        self.clip_eps = clip_eps
-        self.entropy_coef = entropy_coef
-        self.value_coef = value_coef
-        self.max_grad_norm = max_grad_norm
+        self.n_actions = hp["n_actions"]
+        self.clip_eps = hp["clip_eps"]
+        self.entropy_coef = hp["entropy_coef"]
+        self.value_coef = hp["value_coef"]
+        self.max_grad_norm = hp["max_grad_norm"]
 
         D = backbone.output_dim
+        hidden = hp["hidden"]
+        n_actions = hp["n_actions"]
         self.actor = nn.Sequential(
             nn.Linear(D, hidden), nn.Tanh(), nn.Linear(hidden, n_actions)
         )
         self.critic = nn.Sequential(
             nn.Linear(D, hidden), nn.Tanh(), nn.Linear(hidden, 1)
         )
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=hp["lr"])
 
     def _embed(self, graph_dict: dict) -> torch.Tensor:
         x, ei, ea = graph_dict["x"], graph_dict["edge_index"], graph_dict["edge_attr"]

@@ -14,6 +14,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from envs.network_slicing_env import NetworkSlicingEnv
+from agents.hparams import hparams
 from agents.mlp_agent import MLPDQNAgent, MLPPPOAgent
 from training.replay_buffer import ReplayBuffer
 from training.rollout_buffer import RolloutBuffer
@@ -23,9 +24,6 @@ from training.metrics_logger import (
 )
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BATCH_SIZE = 64
-REPLAY_START = 1000
-ROLLOUT_STEPS = 512
 
 
 def make_env(seed, config_path=None):
@@ -78,9 +76,10 @@ def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
     env = make_env(seed, config_path)
     n_gnb = env.n_gnb
     obs_dim = n_gnb * 8 if algo == "central-dqn" else 8
-    agent = MLPDQNAgent(obs_dim).to(DEVICE)
+    hp = hparams("dqn", config_path)
+    agent = MLPDQNAgent(obs_dim, config_path=config_path).to(DEVICE)
     print(f"[{algo}] device={DEVICE}")
-    buf = ReplayBuffer(50_000)
+    buf = ReplayBuffer(hp["replay_capacity"])
 
     ckpt = CheckpointManager(run_name)
     start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, env, resume)
@@ -117,7 +116,7 @@ def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
 
         ep_reward += reward
         obs_arr = next_obs
-        loss = agent.learn(buf.sample(BATCH_SIZE)) if len(buf) >= REPLAY_START else None
+        loss = agent.learn(buf.sample(hp["batch_size"])) if len(buf) >= hp["replay_start"] else None
 
         if done:
             ep_count += 1
@@ -151,9 +150,10 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
     n_gnb = env.n_gnb
     is_central = algo == "central-ppo"
     obs_dim = n_gnb * 8 if is_central else 8
-    agent = MLPPPOAgent(obs_dim).to(DEVICE)
+    hp = hparams("ppo", config_path)
+    agent = MLPPPOAgent(obs_dim, config_path=config_path).to(DEVICE)
     print(f"[{algo}] device={DEVICE}")
-    buf = RolloutBuffer(n_steps=ROLLOUT_STEPS, n_agents=1 if is_central else n_gnb)
+    buf = RolloutBuffer(n_steps=hp["rollout_steps"], n_agents=1 if is_central else n_gnb)
 
     ckpt = CheckpointManager(run_name)
     start_step, ep_count, ma_deque, elapsed_off = _maybe_resume(ckpt, agent, env, resume)
@@ -198,7 +198,7 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
                             value_loss=loss_info.get("value_loss"),
                             entropy=loss_info.get("entropy"), **net)
             netstats.reset()
-            if step % 1000 < ROLLOUT_STEPS:
+            if step % 1000 < hp["rollout_steps"]:
                 print(f"[{algo}] step={step:>7} ep={ep_count:>4} rew={ep_reward:+.3f} "
                       f"ma={ma:+.3f} lam={env._lam:.3f} t={time.time()-t0:.0f}s")
             ep_reward = 0.0
