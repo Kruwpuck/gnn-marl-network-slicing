@@ -4,13 +4,19 @@ Held-out evaluation protocol for trained checkpoints.
 The training CSVs mix exploration noise and CMDP non-stationarity (lambda still
 moving) into the last-10%-of-training window that scripts/analyze_results.py used
 in v2 — not a fair cross-algorithm comparison. This script instead loads the final
-saved model (results/logs/{run}.pt), runs it *greedy* for N episodes on seeds that
-were never used during training, and writes one row per episode to
-results/eval/{run}_eval.csv — the input rliable_report.py expects.
+saved model (results/logs/{run}.pt), runs it for N episodes on seeds that were never
+used during training, and writes one row per episode to results/eval/{run}_eval.csv
+(greedy) or {run}_eval_stoch.csv (--stochastic).
+
+Both readouts are meant to be run. goal1.md P3 (frozen 2026-08-08, before any v4
+result existed) makes the stochastic one primary: the argmax carries only ~0.2 of the
+action mass and matches the sampled action ~20% of steps, so greedy can misread a
+policy by tens of Mbps. Greedy is reported alongside and never gates. Point
+rliable_report.py / stability_report.py at the stochastic files with --stochastic.
 
 Usage:
   python scripts/evaluate_checkpoints.py --runs results/logs/*.pt --episodes 30
-  python scripts/evaluate_checkpoints.py --run results/logs/gnn-madqn_gat_seed42.pt
+  python scripts/evaluate_checkpoints.py --runs results/logs/*.pt --episodes 30 --stochastic
 """
 from __future__ import annotations
 import argparse
@@ -72,6 +78,28 @@ def load_agent(pt_path: Path, device: torch.device):
     return agent, algo, kind
 
 
+def select_actions(agent, kind: str, obs: np.ndarray, info: dict,
+                   env: NetworkSlicingEnv, greedy: bool) -> np.ndarray:
+    """Per-gNB action vector for one step. Extracted from run_episode so diagnostics
+    (scripts/delay_censoring_diag.py) read the policy through the exact same path that
+    produced the gate numbers — a copy could drift and nobody would notice."""
+    if kind == "gnn-dqn":
+        return agent.act(info["graph"], greedy=greedy)
+    if kind == "gnn-ppo":
+        actions, _, _ = agent.act(info["graph"], greedy=greedy)
+        return actions
+    if kind == "mlp-dqn-central":
+        raw = agent.act(obs.flatten(), greedy=greedy)
+        return np.full(env.n_gnb, int(raw) if np.isscalar(raw) else int(np.asarray(raw).flat[0]))
+    if kind == "mlp-dqn":
+        return np.array([int(agent.act(obs[i], greedy=greedy)) for i in range(env.n_gnb)])
+    if kind == "mlp-ppo-central":
+        actions_c, _, _ = agent.act(obs.flatten(), greedy=greedy)
+        return np.full(env.n_gnb, int(actions_c[0]))
+    actions, _, _ = agent.act(obs, greedy=greedy)  # mlp-ppo (independent)
+    return actions
+
+
 def run_episode(env: NetworkSlicingEnv, agent, kind: str, seed: int, greedy: bool = True) -> dict:
     """greedy=True is the reporting protocol. greedy=False exists as a DIAGNOSTIC: a
     policy whose sampled behaviour is good can still have a degenerate argmax, and the
@@ -90,21 +118,7 @@ def run_episode(env: NetworkSlicingEnv, agent, kind: str, seed: int, greedy: boo
     n_steps = 0
 
     while not done:
-        if kind == "gnn-dqn":
-            actions = agent.act(info["graph"], greedy=greedy)
-        elif kind == "gnn-ppo":
-            actions, _, _ = agent.act(info["graph"], greedy=greedy)
-        elif kind == "mlp-dqn-central":
-            raw = agent.act(obs.flatten(), greedy=greedy)
-            actions = np.full(env.n_gnb, int(raw) if np.isscalar(raw) else int(np.asarray(raw).flat[0]))
-        elif kind == "mlp-dqn":
-            actions = np.array([int(agent.act(obs[i], greedy=greedy)) for i in range(env.n_gnb)])
-        elif kind == "mlp-ppo-central":
-            actions_c, _, _ = agent.act(obs.flatten(), greedy=greedy)
-            actions = np.full(env.n_gnb, int(actions_c[0]))
-        else:  # mlp-ppo (independent)
-            actions, _, _ = agent.act(obs, greedy=greedy)
-
+        actions = select_actions(agent, kind, obs, info, env, greedy)
         obs, reward, terminated, truncated, info = env.step(actions)
         done = terminated or truncated
         ep_reward += reward
@@ -186,10 +200,11 @@ def main() -> None:
     p.add_argument("--config", type=str, default=None)
     p.add_argument("--out-dir", type=str, default="results/eval")
     p.add_argument("--stochastic", action="store_true",
-                   help="DIAGNOSTIC ONLY: sample actions instead of taking the argmax, and write "
-                        "to <run>_eval_stoch.csv so the reporting file is never overwritten. Use "
-                        "it to check whether a bad held-out number is a bad policy or a degenerate "
-                        "argmax -- the wave protocol stays greedy")
+                   help="sample actions instead of taking the argmax, writing to "
+                        "<run>_eval_stoch.csv so the greedy file is never overwritten. Since "
+                        "goal1.md P3 (frozen 2026-08-08) this is the PRIMARY gating readout, not "
+                        "a diagnostic; greedy is still produced and reported alongside, never "
+                        "used to gate. Run both.")
     args = p.parse_args()
 
     paths: list[Path] = []

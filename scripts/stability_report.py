@@ -43,15 +43,21 @@ def main() -> None:
     p.add_argument("--tag", type=str, default="")
     p.add_argument("--out", type=str, default="results/STABILITY.md")
     p.add_argument("--collapse-threshold", type=float, default=0.01)  # Mbps
+    p.add_argument("--stochastic", action="store_true",
+                   help="read *_eval_stoch.csv instead of *_eval.csv -- P3 primary readout "
+                        "(goal1.md). collapse_rate is a primary metric, so it is read the "
+                        "same way every other gating number is")
     args = p.parse_args()
 
-    df = load_eval_dir(Path(args.eval_dir))
+    suffix = "_eval_stoch" if args.stochastic else "_eval"
+    df = load_eval_dir(Path(args.eval_dir), suffix=suffix)
     df = df[df.tag == args.tag]
     if df.empty:
         raise SystemExit(f"no rows with tag={args.tag!r} under {args.eval_dir}")
 
     lines = [
         "# Stability Report — collapse rate over embb_p5_mbps\n",
+        f"Readout: `{'stochastic (P3 primary)' if args.stochastic else 'greedy (report-only, not gate)'}`.\n",
         f"Tag filter: `{args.tag or '(main wave)'}`. Collapse threshold: "
         f"{args.collapse_threshold} Mbps. Unit of collapse is the seed "
         f"(mean over its held-out episodes), not the episode.\n",

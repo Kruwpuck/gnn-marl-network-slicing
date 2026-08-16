@@ -56,11 +56,11 @@ def parse_run_name(stem: str) -> tuple[str, str, int]:
     return m.group("algo"), (m.group("tag") or ""), int(m.group("seed"))
 
 
-def load_eval_dir(eval_dir: Path) -> pd.DataFrame:
+def load_eval_dir(eval_dir: Path, suffix: str = "_eval") -> pd.DataFrame:
     frames = []
-    for path in sorted(glob.glob(str(eval_dir / "*_eval.csv"))):
+    for path in sorted(glob.glob(str(eval_dir / f"*{suffix}.csv"))):
         df = pd.read_csv(path)
-        stem = Path(path).stem.replace("_eval", "")
+        stem = Path(path).stem.replace(suffix, "")
         algo_key, tag, seed = parse_run_name(stem)
         df["algo_key"] = algo_key
         df["tag"] = tag
@@ -167,10 +167,14 @@ def main() -> None:
     p.add_argument("--tag", type=str, default="", help="only report runs with this --tag suffix (default: main wave, tag='')")
     p.add_argument("--out", type=str, default="results/RLIABLE.md")
     p.add_argument("--reps", type=int, default=50_000)
+    p.add_argument("--stochastic", action="store_true",
+                    help="read *_eval_stoch.csv instead of *_eval.csv -- P3 primary readout (goal1.md)")
     args = p.parse_args()
 
-    df = load_eval_dir(Path(args.eval_dir))
+    suffix = "_eval_stoch" if args.stochastic else "_eval"
+    df = load_eval_dir(Path(args.eval_dir), suffix=suffix)
     lines = ["# rliable Report — IQM + Stratified Bootstrap 95% CI\n",
+             f"Readout: `{'stochastic (P3 primary)' if args.stochastic else 'greedy (report-only, not gate)'}`.\n",
              f"Tag filter: `{args.tag or '(main wave)'}`. DQN (200K steps) and PPO "
              f"(1M steps) families are never pooled. A CI overlap means "
              f"'comparable', not 'proposed wins' — report accordingly.\n"]
