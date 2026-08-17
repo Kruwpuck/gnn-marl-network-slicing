@@ -18,9 +18,42 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.rliable_report import load_eval_dir
+from scripts.rliable_report import load_eval_dir, primary_suffix
 
 KPI = "embb_p5_mbps"
+
+def readout_name(suffix_used: str, is_dqn: bool) -> str:
+    """The non-greedy readout is not the same quantity in the two families."""
+    if suffix_used == "_eval":
+        return "argmax (greedy)"
+    return "epsilon-greedy (epsilon from --eval-dir)" if is_dqn else "sampled (P3)"
+
+
+def provenance_block(algos: list[str], eval_dir: str, suffix: str) -> list[str]:
+    """Say, per family, exactly which file produced each row.
+
+    A single "Readout:" line at the top stopped being enough once the two families
+    stopped sharing a readout: the same word means sampled actions for PPO and argmax
+    for DQN, and the discarded epsilon=1.0 files were *also* called stochastic. Every
+    collapse number in this project now names its own protocol and source
+    (results/READOUT_PROVENANCE.md).
+    """
+    lines = ["\n## Readout provenance — which file each row came from\n",
+             "| algo | family | readout | source |", "|---|---|---|---|"]
+    for algo in algos:
+        used = primary_suffix(algo) if suffix == "primary" else suffix
+        is_dqn = "dqn" in algo
+        lines.append(f"| `{algo}` | {'DQN' if is_dqn else 'PPO'} | "
+                     f"{readout_name(used, is_dqn)} | `{eval_dir}/{algo}_*{used}.csv` |")
+    if any("dqn" in a for a in algos):
+        lines.append(
+            "\nFor the DQN family the **primary** column is argmax, not the non-greedy one "
+            "(determination 2026-08-16, after a pre-registered degeneracy test). Its valid "
+            "non-greedy reading is epsilon=0.05 and lives in a separate file, "
+            "`results/STABILITY_v4_dqn_eps005.md`. The epsilon=1.0 files that used to fill "
+            "that column were uniform random actions and are quarantined "
+            "(`results/quarantine_eps1.0/README.md`).")
+    return lines
 
 
 def wilson_ci(k: int, n: int, z: float = 1.959963984540054) -> tuple[float, float]:
@@ -88,7 +121,8 @@ def main() -> None:
 
     lines = [
         "# Stability Report — collapse rate over embb_p5_mbps\n",
-        f"Readout: `{ {'greedy': 'greedy (report-only, not gate)', 'stochastic': 'stochastic (P3 primary; for DQN this is the discarded epsilon=1.0 column)', 'primary': 'primary per family — sampled for PPO (P3), argmax for DQN (2026-08-16)'}[readout] }`.\n",
+        f"Readout: `{ {'greedy': 'greedy (report-only, not gate)', 'stochastic': 'non-greedy (P3 primary for PPO; for DQN it depends on the epsilon in --eval-dir, see provenance below)', 'primary': 'primary per family — sampled for PPO (P3), argmax for DQN (2026-08-16)'}[readout] }`. "
+        f"Source directory: `{args.eval_dir}`.\n",
         f"Tag filter: `{args.tag or '(main wave)'}`. Collapse threshold: "
         f"{args.collapse_threshold} Mbps. Unit of collapse is the seed "
         f"(mean over its held-out episodes), not the episode.\n",
@@ -161,6 +195,8 @@ def main() -> None:
            ". Not every algorithm's tail falls below the collapse threshold, so the two "
            "statistics are separating different things here — read them together.")
     )
+
+    lines += provenance_block(sorted(df.algo_key.unique()), args.eval_dir, suffix)
 
     Path(args.out).write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {args.out}")

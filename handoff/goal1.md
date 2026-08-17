@@ -151,6 +151,8 @@ Konsekuensi yang mengikat, dua-duanya diterima di muka:
 | `gnn-madqn_sage` | 5 dari 5 | 0 dari 5 | 0 dari 5 |
 | `idqn` | 5 dari 5 | 2 dari 5 | 2 dari 5 |
 
+> **Sumber, ditambahkan 2026-08-17.** Kolom **greedy (primer)** dari `results/STABILITY_v4_primary.md`; kolom **ε = 0.05** dari `results/STABILITY_v4_dqn_eps005.md`, yang sebelumnya tidak punya file di belakangnya — angkanya lahir dari diagnostik ad hoc dan baru sekarang di-generate. Keduanya cocok persis dengan tabel ini. Kolom ε = 1.0 tidak punya file yang sah karena datanya dikarantina; ia dicantumkan hanya sebagai catatan atas apa yang pernah dilaporkan. Perlu ditegaskan supaya tidak ada ambiguitas: **angka collapse rate DQN yang dipakai di seluruh klaim adalah kolom greedy**, bukan ε = 1.0 dan bukan ε = 0.05. Kontra-contoh `gnn-madqn_sage` 0 dari 5 berdiri di kedua pembacaan yang sah. Provenance seluruh laporan yang memuat angka collapse ada di `results/READOUT_PROVENANCE.md`, di-generate `scripts/readout_audit.py` yang gagal (exit non-zero) kalau ada laporan tanpa label protokol.
+
 Angka keluarga PPO tidak tersentuh cacat ini dan tetap berlaku. Yang bertahan dari temuan lama: baseline terpusat tidak pernah kolaps (0 dari 5 di kedua keluarga). Yang **tidak** bertahan: pernyataan bahwa seluruh varian proposed kolaps — itu benar untuk keluarga PPO dan salah untuk keluarga DQN, dengan `gnn-madqn_sage` 0 dari 5. Seluruh laporan yang memuat angka lama wajib dihitung ulang, dan bagian §Keputusan scoping C4 2026-08-15 di dokumen ini dikoreksi di tempat oleh catatan ini, bukan dihapus.
 
 **Gate B dihitung ulang di bawah pembacaan yang sah** (`scripts/gate_b_report.py`, baru — sebelumnya Gate B dihitung manual dan satu-satunya jejaknya baris ledger, sehingga tidak bisa diturunkan ulang ketika pembacaannya berubah). Skrip itu lebih dulu diverifikasi mereproduksi angka yang tercatat di bawah pembacaan lama, persis sampai dua desimal:
@@ -176,6 +178,30 @@ Kebijakan ini **tidak boleh ditinjau ulang per-keputusan**. Ia berlaku sama keti
 - Perluasan seed keluarga PPO (aturan biaya 2026-08-16, ≈ 43 device-jam) **muat**. Dikerjakan setelah zero-shot, karena nilai per GPU-jam zero-shot lebih tinggi.
 - Baseline adaptasi k-NN keluarga PPO (§Fallback poin 2, ≈ 4.5 job-jam) **muat**.
 - Kalau kelak sebuah eksperimen yang kita inginkan melewati sisa 303 device-jam, ia ditolak dengan kebijakan yang sama ini, bukan dihitung ulang dengan pembacaan lain.
+
+Diputuskan manusia (`Habb`), dicatat di `runs/2026-08-05-run01/ledger.md`.
+
+### Eksekusi perluasan seed keluarga PPO 2026-08-17 (dideklarasikan SEBELUM training jalan)
+
+Aturan biayanya sudah ditetapkan 2026-08-16 atas dasar biaya keluarga, bukan hasil; section ini menetapkan **eksekusinya**, dan ditulis sebelum satu job pun dijalankan supaya tidak ada keputusan cakupan yang lahir setelah melihat angka.
+
+**Dasar keputusan.** Keluarga yang lebih murah per seed dinaikkan. Terukur dari `elapsed_sec` 40 CSV training wave v4, itu **PPO**: 8.32 job-jam per seed untuk empat algoritmanya lawan 77.57 untuk DQN, yaitu 9.3× lebih murah. Ini fakta biaya implementasi (DQN belajar tiap langkah, PPO sekali per 512), tidak menyentuh hasil algoritma mana pun.
+
+**Cakupan — empat algoritma pra-registrasi, tanpa kecuali:** `gnn-mappo_gat`, `gnn-mappo_sage`, `ippo`, `central-ppo`. Seed **47–61** (15 tambahan, total 20). `mlp-knn-ppo` **tidak** ikut: ia ditambahkan setelah hasil v4 dilihat dan bukan bagian himpunan yang aturan biaya 2026-08-16 sebutkan, jadi memasukkannya berarti memperluas himpunan yang dideklarasikan setelah melihat hasil. Ia tetap 5 seed dan tetap dilaporkan di tingkat 2 struktur paper, yang klaimnya soal retensi bukan collapse rate.
+
+**Anggaran.** ≈ 124.8 job-jam ≈ **43 device-jam** dari sisa ≈ 303 (kebijakan device-jam 2026-08-16). Muat, dan dihitung dengan kebijakan yang sudah ditetapkan sebelum konsekuensinya dipakai.
+
+**Perlakuan identik (integritas #2).** `--floor-mode none` dan `--tag _v4` diberikan eksplisit, bukan dibiarkan jatuh ke default, supaya 15 seed baru menerima perlakuan yang persis sama dengan 5 seed pertama. Titik operasi tidak disentuh dan kuncinya tidak berubah sejak `aad4198` (C6).
+
+**Gate B dibekukan di 5 seed untuk kedelapan algoritma.** B1–B4 didefinisikan sebagai rentang mean lintas 8 algoritma; menghitungnya dengan n = 20 untuk PPO dan n = 5 untuk DQN mencampur presisi estimasi yang berbeda, sehingga rentangnya bisa bergeser karena alasan statistik alih-alih karena daya diskriminasi task berubah. Angka Gate B tetap seperti tercatat (B1 16.33%, B2 11.98 pp, B3 1.01 ms, B4 0 dari 5). Seed tambahan dipakai **hanya** untuk karakterisasi C4 keluarga PPO.
+
+**Catatan integritas.** Memperluas keluarga PPO hanya bisa membuat kesimpulan **lebih merugikan proposed**: `central-ppo` kolaps 0 dari 5 lawan proposed 4–5 dari 5, dan n yang lebih besar mempersempit Wilson di kedua sisi. Aturan biaya ini karena itu tidak bisa dibaca sebagai memilih keluarga yang menguntungkan proposed.
+
+**Konsekuensi yang diterima di muka, dua arah:**
+
+- Kalau di n = 20 pemisahan bertahan → klaim **karakterisasi** keluarga PPO boleh dibuat, dalam bentuk "kolaps k dari 20 seed". Itu yang C4 minta, dan C4 jadi LOLOS untuk keluarga PPO saja.
+- Kalau di n = 20 Wilson `central-ppo` mulai beririsan dengan proposed → **klaim komparatif keluarga PPO dicabut**, bukan dipertahankan dengan angka n = 5. Tidak ada opsi memakai n yang lebih menguntungkan.
+- Keluarga DQN tetap 5 seed dan C4-nya tetap GAGAL. Tidak ada klaim karakterisasi di sana.
 
 Diputuskan manusia (`Habb`), dicatat di `runs/2026-08-05-run01/ledger.md`.
 

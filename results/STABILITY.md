@@ -1,5 +1,12 @@
 # Stability Report — collapse rate over embb_p5_mbps
 
+> **Readout: `greedy` (wave v3).** Label added 2026-08-17 by the provenance audit
+> (`scripts/readout_audit.py`), and verified rather than assumed: rerunning
+> `stability_report.py --tag "" --readout greedy` reproduces every number in the table
+> below exactly, while `--readout stochastic` finds no rows at all for this tag — wave v3
+> was evaluated greedy-only, before protocol P3 was frozen on 2026-08-08. v3 is reported
+> as a calibration pilot (D1), not as a gate.
+
 Tag filter: `(main wave)`. Collapse threshold: 0.01 Mbps. Unit of collapse is the seed (mean over its held-out episodes), not the episode.
 
 | algo | seeds collapsed | rate | 95% Wilson CI | worst seed mean | CVaR@20% |

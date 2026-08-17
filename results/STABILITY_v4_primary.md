@@ -1,6 +1,6 @@
 # Stability Report — collapse rate over embb_p5_mbps
 
-Readout: `primary per family — sampled for PPO (P3), argmax for DQN (2026-08-16)`.
+Readout: `primary per family — sampled for PPO (P3), argmax for DQN (2026-08-16)`. Source directory: `results/eval`.
 
 Tag filter: `_v4`. Collapse threshold: 0.01 Mbps. Unit of collapse is the seed (mean over its held-out episodes), not the episode.
 
@@ -54,3 +54,19 @@ Collapse rate answers *how often* a seed lands in the bad mode; CVaR answers *ho
 | `mlp-knn-ppo` | `sla_satisfaction_pct` | 72.741462 | [70.190475, 75.327748] | 89.367647 | 90.261533 |
 
 On `embb_p5_mbps` the episode-level tail spans 0.000001 (`ippo`) to 0.247377 (`gnn-madqn_sage`). Not every algorithm's tail falls below the collapse threshold, so the two statistics are separating different things here — read them together.
+
+## Readout provenance — which file each row came from
+
+| algo | family | readout | source |
+|---|---|---|---|
+| `central-dqn` | DQN | argmax (greedy) | `results/eval/central-dqn_*_eval.csv` |
+| `central-ppo` | PPO | non-greedy — sampled for PPO, epsilon from the checkpoint for DQN | `results/eval/central-ppo_*_eval_stoch.csv` |
+| `gnn-madqn_gat` | DQN | argmax (greedy) | `results/eval/gnn-madqn_gat_*_eval.csv` |
+| `gnn-madqn_sage` | DQN | argmax (greedy) | `results/eval/gnn-madqn_sage_*_eval.csv` |
+| `gnn-mappo_gat` | PPO | non-greedy — sampled for PPO, epsilon from the checkpoint for DQN | `results/eval/gnn-mappo_gat_*_eval_stoch.csv` |
+| `gnn-mappo_sage` | PPO | non-greedy — sampled for PPO, epsilon from the checkpoint for DQN | `results/eval/gnn-mappo_sage_*_eval_stoch.csv` |
+| `idqn` | DQN | argmax (greedy) | `results/eval/idqn_*_eval.csv` |
+| `ippo` | PPO | non-greedy — sampled for PPO, epsilon from the checkpoint for DQN | `results/eval/ippo_*_eval_stoch.csv` |
+| `mlp-knn-ppo` | PPO | non-greedy — sampled for PPO, epsilon from the checkpoint for DQN | `results/eval/mlp-knn-ppo_*_eval_stoch.csv` |
+
+For the DQN family the **primary** column is argmax, not the non-greedy one (determination 2026-08-16, after a pre-registered degeneracy test). Its valid non-greedy reading is epsilon=0.05 and lives in a separate file, `results/STABILITY_v4_dqn_eps005.md`. The epsilon=1.0 files that used to fill that column were uniform random actions and are quarantined (`results/quarantine_eps1.0/README.md`).

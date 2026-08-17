@@ -1,5 +1,10 @@
 # Stability Report — collapse rate over embb_p5_mbps
 
+> **Readout: `greedy` (wave v3). Superseded — cite `results/STABILITY.md` instead.** Label
+> added 2026-08-17 by the provenance audit (`scripts/readout_audit.py`). This file is the
+> bare generated table for the same v3 data; `STABILITY.md` carries identical numbers plus
+> the seed-count power analysis. Kept so earlier references do not dangle.
+
 Tag filter: `(main wave)`. Collapse threshold: 0.01 Mbps. Unit of collapse is the seed (mean over its held-out episodes), not the episode.
 
 | algo | seeds collapsed | rate | 95% Wilson CI | worst seed mean | CVaR@20% |

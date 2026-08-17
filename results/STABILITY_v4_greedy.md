@@ -1,6 +1,6 @@
 # Stability Report — collapse rate over embb_p5_mbps
 
-Readout: `greedy (report-only, not gate)`.
+Readout: `greedy (report-only, not gate)`. Source directory: `results/eval`.
 
 Tag filter: `_v4`. Collapse threshold: 0.01 Mbps. Unit of collapse is the seed (mean over its held-out episodes), not the episode.
 
@@ -14,6 +14,7 @@ Tag filter: `_v4`. Collapse threshold: 0.01 Mbps. Unit of collapse is the seed (
 | `gnn-mappo_sage` | 1/5 | 0.20 | [0.04, 0.62] | 0.000036 | 0.000032 |
 | `idqn` | 2/5 | 0.40 | [0.12, 0.77] | 0.000004 | 0.000003 |
 | `ippo` | 5/5 | 1.00 | [0.57, 1.00] | 0.000002 | 0.000001 |
+| `mlp-knn-ppo` | 2/5 | 0.40 | [0.12, 0.77] | 0.000028 | 0.000003 |
 
 ## CVaR@20% — tail risk beside the collapse rate
 
@@ -48,5 +49,24 @@ Collapse rate answers *how often* a seed lands in the bad mode; CVaR answers *ho
 | `ippo` | `embb_p5_mbps` | 0.000001 | [0.000000, 0.000016] | 0.000002 | 0.000020 |
 | `ippo` | `timely_throughput_mbps` | 49.950339 | [46.988198, 54.159959] | 65.296274 | 68.151875 |
 | `ippo` | `sla_satisfaction_pct` | 67.796929 | [64.109280, 72.922607] | 86.325955 | 89.848357 |
+| `mlp-knn-ppo` | `embb_p5_mbps` | 0.000003 | [0.000001, 0.000033] | 0.000028 | 0.685794 |
+| `mlp-knn-ppo` | `timely_throughput_mbps` | 3.247581 | [1.260833, 43.466965] | 8.837067 | 42.112346 |
+| `mlp-knn-ppo` | `sla_satisfaction_pct` | 9.639458 | [7.155366, 59.817329] | 16.757866 | 58.039794 |
 
 On `embb_p5_mbps` the episode-level tail spans 0.000001 (`ippo`) to 0.990243 (`central-ppo`). Not every algorithm's tail falls below the collapse threshold, so the two statistics are separating different things here — read them together.
+
+## Readout provenance — which file each row came from
+
+| algo | family | readout | source |
+|---|---|---|---|
+| `central-dqn` | DQN | argmax (greedy) | `results/eval/central-dqn_*_eval.csv` |
+| `central-ppo` | PPO | argmax (greedy) | `results/eval/central-ppo_*_eval.csv` |
+| `gnn-madqn_gat` | DQN | argmax (greedy) | `results/eval/gnn-madqn_gat_*_eval.csv` |
+| `gnn-madqn_sage` | DQN | argmax (greedy) | `results/eval/gnn-madqn_sage_*_eval.csv` |
+| `gnn-mappo_gat` | PPO | argmax (greedy) | `results/eval/gnn-mappo_gat_*_eval.csv` |
+| `gnn-mappo_sage` | PPO | argmax (greedy) | `results/eval/gnn-mappo_sage_*_eval.csv` |
+| `idqn` | DQN | argmax (greedy) | `results/eval/idqn_*_eval.csv` |
+| `ippo` | PPO | argmax (greedy) | `results/eval/ippo_*_eval.csv` |
+| `mlp-knn-ppo` | PPO | argmax (greedy) | `results/eval/mlp-knn-ppo_*_eval.csv` |
+
+For the DQN family the **primary** column is argmax, not the non-greedy one (determination 2026-08-16, after a pre-registered degeneracy test). Its valid non-greedy reading is epsilon=0.05 and lives in a separate file, `results/STABILITY_v4_dqn_eps005.md`. The epsilon=1.0 files that used to fill that column were uniform random actions and are quarantined (`results/quarantine_eps1.0/README.md`).
