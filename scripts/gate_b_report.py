@@ -38,20 +38,42 @@ PRIMARY_KPIS = ["timely_throughput_mbps", "sla_satisfaction_pct", "urllc_delay_p
 SATURATION_QUORUM = 5   # "identical on 5 of 8 algorithms" (ledger 2026-08-14)
 ROUND_DP = 4
 
+# Gate B is frozen at the 5 seeds the wave pre-registered (goal1.md, "Eksekusi perluasan
+# seed keluarga PPO 2026-08-17"). The PPO family now has 20 seeds and the DQN family still
+# has 5; B1-B4 are ranges of means *across* the 8 algorithms, so unequal n would mix
+# estimates of different precision and move a pre-registered range for a statistical reason
+# rather than because the task's discriminating power changed. Enforced here rather than
+# remembered: without it, re-running this script after the extension silently produces
+# mixed-n gate numbers.
+GATE_SEEDS = [42, 43, 44, 45, 46]
+
 
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--eval-dir", type=str, default="results/eval")
     p.add_argument("--tag", type=str, default="_v4")
     p.add_argument("--readout", choices=["greedy", "stochastic", "primary"], default="primary")
+    p.add_argument("--seeds", type=str, default=",".join(map(str, GATE_SEEDS)),
+                   help="seeds the gate is computed over. Frozen at the pre-registered five; "
+                        "overriding this changes what a pre-registered range measures, so it "
+                        "is a decision to record, not a convenience flag.")
     p.add_argument("--out", type=str, default="results/GATE_B_v4.md")
     args = p.parse_args()
 
     suffix = {"greedy": "_eval", "stochastic": "_eval_stoch", "primary": "primary"}[args.readout]
+    seeds = [int(s) for s in args.seeds.split(",")]
     df = load_eval_dir(Path(args.eval_dir), suffix=suffix)
     df = df[(df.tag == args.tag) & (df.algo_key.isin(PREREGISTERED))]
+    dropped = int((~df.seed_parsed.isin(seeds)).sum())
+    df = df[df.seed_parsed.isin(seeds)]
     if df.empty:
         raise SystemExit(f"no rows for tag={args.tag!r} among the pre-registered algorithms")
+
+    per_algo_seeds = {a: sorted(df[df.algo_key == a].seed_parsed.unique()) for a in df.algo_key.unique()}
+    if len({len(v) for v in per_algo_seeds.values()}) != 1:
+        # Never silently: an unequal-n Gate B is not the gate that was pre-registered.
+        raise SystemExit(f"unequal seed counts across algorithms, refusing to compute a "
+                         f"pre-registered range: { {a: len(v) for a, v in per_algo_seeds.items()} }")
 
     means = {kpi: {a: float(df[df.algo_key == a][kpi].mean()) for a in sorted(df.algo_key.unique())}
              for kpi in PRIMARY_KPIS}
@@ -59,10 +81,16 @@ def main() -> None:
 
     lines = [
         "# Gate B — discrimination, recomputed\n",
-        f"Readout: `{args.readout}`. Tag `{args.tag}`. {n_algos} pre-registered algorithms; "
-        "later additions such as `mlp-knn-ppo` are excluded because Gate B is a "
-        "pre-registration and widening its algorithm set after seeing results would change "
-        "the range it measures.\n",
+        f"Readout: `{args.readout}`. Tag `{args.tag}`. {n_algos} pre-registered algorithms, "
+        f"seeds `{args.seeds}`; later additions such as `mlp-knn-ppo` are excluded because "
+        "Gate B is a pre-registration and widening its algorithm set after seeing results "
+        "would change the range it measures.\n",
+        (f"**Seed freeze.** {dropped} eval rows from seeds outside the pre-registered set were "
+         "excluded. The PPO family was extended to 20 seeds on 2026-08-17 while the DQN family "
+         "stayed at 5; B1-B4 are ranges *across* the 8 algorithms, so unequal n would shift a "
+         "pre-registered range for a statistical reason rather than a change in the task. The "
+         "extra seeds are used for the C4 characterisation of the PPO family instead "
+         "(`results/STABILITY_v4_primary.md`).\n") if dropped else "",
         "| # | KPI | min | max | range | threshold | verdict |",
         "|---|---|---|---|---|---|---|",
     ]

@@ -1,6 +1,7 @@
 # Gate B — discrimination, recomputed
 
-Readout: `primary`. Tag `_v4`. 8 pre-registered algorithms; later additions such as `mlp-knn-ppo` are excluded because Gate B is a pre-registration and widening its algorithm set after seeing results would change the range it measures.
+Readout: `primary`. Tag `_v4`. 8 pre-registered algorithms, seeds `42,43,44,45,46`; later additions such as `mlp-knn-ppo` are excluded because Gate B is a pre-registration and widening its algorithm set after seeing results would change the range it measures.
+
 
 | # | KPI | min | max | range | threshold | verdict |
 |---|---|---|---|---|---|---|
