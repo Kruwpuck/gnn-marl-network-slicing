@@ -222,7 +222,14 @@ def _save_ckpt(ckpt, agent, env, step, episode, logger, run_name, **meta) -> Non
 
 def _save_model(log_path, agent, **meta) -> None:
     model_path = Path(log_path).with_suffix(".pt")
-    torch.save({"state_dict": agent.state_dict(), **meta}, model_path)
+    state = {"state_dict": agent.state_dict(), **meta}
+    if hasattr(agent, "epsilon"):
+        # epsilon is not part of state_dict, so leaving it out made every reloaded DQN
+        # start at 1.0 -- i.e. a non-greedy readout that samples uniformly at random
+        # instead of running the policy. Saved for provenance; the readout convention
+        # itself lives in configs/experiment_config.yaml (goal1.md 2026-08-16).
+        state["epsilon"] = float(agent.epsilon)
+    torch.save(state, model_path)
 
 
 if __name__ == "__main__":

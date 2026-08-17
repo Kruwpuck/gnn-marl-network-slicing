@@ -1,5 +1,11 @@
 # rliable Report — IQM + Stratified Bootstrap 95% CI
 
+> **VOID FOR THE DQN FAMILY — do not cite this file.** The `central-dqn`, `idqn`, `gnn-madqn_gat` and `gnn-madqn_sage` rows were produced by the
+> epsilon=1.0 readout, i.e. uniform random actions rather than the trained policy
+> (`results/quarantine_eps1.0/README.md`). The source CSVs have been quarantined, so this
+> file cannot be regenerated as-is and is kept only as a record of what was reported before
+> the fault was found. Valid replacement: `results/RLIABLE_v4_primary.md`.
+
 Readout: `stochastic (P3 primary)`.
 
 Tag filter: `_v4`. DQN (200K steps) and PPO (1M steps) families are never pooled. A CI overlap means 'comparable', not 'proposed wins' — report accordingly.

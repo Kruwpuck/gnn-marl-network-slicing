@@ -33,8 +33,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from envs.network_slicing_env import NetworkSlicingEnv
 from gnn import BACKBONES
 from agents.dqn_agent import DQNAgent
+from agents.hparams import hparams
 from agents.ppo_agent import PPOAgent
-from agents.mlp_agent import MLPDQNAgent, MLPPPOAgent
+from agents.mlp_agent import MLPDQNAgent, MLPKNNPPOAgent, MLPPPOAgent
 
 EVAL_SEED_BASE = 10_000  # disjoint from training seeds (42-46) and smoke seeds (999)
 
@@ -55,7 +56,16 @@ def jains_fairness(rates: np.ndarray) -> float:
     return float((rates.sum() ** 2) / (len(rates) * (rates ** 2).sum()))
 
 
-def load_agent(pt_path: Path, device: torch.device):
+def load_agent(pt_path: Path, device: torch.device, dqn_epsilon: float | None = None):
+    """dqn_epsilon: exploration rate for the DQN non-greedy readout.
+
+    _save_model() does not store epsilon and it is not part of state_dict, so a freshly
+    constructed agent sits at epsilon=1.0 -- every non-greedy DQN reading was therefore
+    uniform random action selection, not the policy (measured agreement with argmax
+    0.097-0.100 against 1/11 = 0.091 for pure chance). goal1.md 2026-08-16 fixes the DQN
+    stochastic readout at epsilon_min, the exploration floor the policy actually behaved
+    under at the end of training; None means use that declared value.
+    """
     ckpt = torch.load(pt_path, map_location=device, weights_only=False)
     algo = ckpt["algo"]
     if algo.startswith("gnn-madqn"):
@@ -70,10 +80,18 @@ def load_agent(pt_path: Path, device: torch.device):
         agent = MLPDQNAgent(ckpt["obs_dim"]).to(device)
         agent.load_state_dict(ckpt["state_dict"])
         kind = "mlp-dqn-central" if algo == "central-dqn" else "mlp-dqn"
+    elif algo == "mlp-knn-ppo":
+        # obs_dim comes from the config's knn_k, not from the checkpoint's n_gnb — that
+        # independence is the reason this baseline can be evaluated at other topologies.
+        agent = MLPKNNPPOAgent().to(device)
+        agent.load_state_dict(ckpt["state_dict"])
+        kind = "mlp-knn-ppo"
     else:
         agent = MLPPPOAgent(ckpt["obs_dim"]).to(device)
         agent.load_state_dict(ckpt["state_dict"])
         kind = "mlp-ppo-central" if algo == "central-ppo" else "mlp-ppo"
+    if hasattr(agent, "epsilon"):
+        agent.epsilon = (hparams("dqn")["epsilon_min"] if dqn_epsilon is None else dqn_epsilon)
     agent.eval()
     return agent, algo, kind
 
@@ -93,6 +111,9 @@ def select_actions(agent, kind: str, obs: np.ndarray, info: dict,
         return np.full(env.n_gnb, int(raw) if np.isscalar(raw) else int(np.asarray(raw).flat[0]))
     if kind == "mlp-dqn":
         return np.array([int(agent.act(obs[i], greedy=greedy)) for i in range(env.n_gnb)])
+    if kind == "mlp-knn-ppo":
+        actions, _, _ = agent.act(agent.features(info["graph"]), greedy=greedy)
+        return actions
     if kind == "mlp-ppo-central":
         actions_c, _, _ = agent.act(obs.flatten(), greedy=greedy)
         return np.full(env.n_gnb, int(actions_c[0]))
@@ -162,9 +183,10 @@ def run_episode(env: NetworkSlicingEnv, agent, kind: str, seed: int, greedy: boo
 
 
 def evaluate_run(pt_path: Path, episodes: int, config_path: str | None, out_dir: Path,
-                 greedy: bool = True, suffix: str = "_eval") -> None:
+                 greedy: bool = True, suffix: str = "_eval",
+                 dqn_epsilon: float | None = None) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    agent, algo, kind = load_agent(pt_path, device)
+    agent, algo, kind = load_agent(pt_path, device, dqn_epsilon=dqn_epsilon)
     run_name = pt_path.stem
     seed = None
     ckpt = torch.load(pt_path, map_location="cpu", weights_only=False)
@@ -175,6 +197,20 @@ def evaluate_run(pt_path: Path, episodes: int, config_path: str | None, out_dir:
 
     out_path = out_dir / f"{run_name}{suffix}.csv"
     out_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        _write_episodes(out_path, run_name, algo, seed, episodes, env, agent, kind, greedy)
+    except Exception:
+        # A header-only CSV left behind by a failed run claims an evaluation happened. It
+        # then reads back as "empty result" instead of "this architecture cannot run at this
+        # topology" -- the CANNOT_RUN finding turns into a blank cell. Remove it.
+        out_path.unlink(missing_ok=True)
+        env.close()
+        raise
+    env.close()
+    print(f"[{run_name}] {episodes} eval episodes -> {out_path}")
+
+
+def _write_episodes(out_path, run_name, algo, seed, episodes, env, agent, kind, greedy) -> None:
     with open(out_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=EVAL_COLUMNS)
         writer.writeheader()
@@ -188,8 +224,6 @@ def evaluate_run(pt_path: Path, episodes: int, config_path: str | None, out_dir:
             metrics = run_episode(env, agent, kind, seed=EVAL_SEED_BASE + ep, greedy=greedy)
             row = {"run_name": run_name, "algo": algo, "seed": seed, "episode": ep, **metrics}
             writer.writerow(row)
-    env.close()
-    print(f"[{run_name}] {episodes} eval episodes -> {out_path}")
 
 
 def main() -> None:
@@ -199,6 +233,10 @@ def main() -> None:
     p.add_argument("--episodes", type=int, default=30)
     p.add_argument("--config", type=str, default=None)
     p.add_argument("--out-dir", type=str, default="results/eval")
+    p.add_argument("--dqn-epsilon", type=float, default=None,
+                   help="exploration rate for the DQN non-greedy readout; default is "
+                        "agent.dqn.epsilon_min from the config, the convention goal1.md "
+                        "declared on 2026-08-16. Has no effect on greedy runs or on PPO.")
     p.add_argument("--stochastic", action="store_true",
                    help="sample actions instead of taking the argmax, writing to "
                         "<run>_eval_stoch.csv so the greedy file is never overwritten. Since "
@@ -219,7 +257,8 @@ def main() -> None:
         try:
             evaluate_run(pt_path, args.episodes, args.config, Path(args.out_dir),
                          greedy=not args.stochastic,
-                         suffix="_eval_stoch" if args.stochastic else "_eval")
+                         suffix="_eval_stoch" if args.stochastic else "_eval",
+                         dqn_epsilon=args.dqn_epsilon)
         except RuntimeError as e:
             # shape mismatch (e.g. central-* checkpoint evaluated at a different n_gnb
             # than it was trained on) — that's data (CANNOT_RUN), not a crash.

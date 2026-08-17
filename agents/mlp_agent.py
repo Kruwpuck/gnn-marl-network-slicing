@@ -5,7 +5,38 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
 
-from .hparams import resolve
+from .hparams import hparams, resolve
+
+OBS_FEATURES = 8  # per-gNB observation width, fixed by envs/network_slicing_env.py
+
+
+def knn_features(graph: dict, k: int) -> np.ndarray:
+    """(N, 8*(k+1)) — each gNB's own features followed by its k strongest interferers'.
+
+    Neighbours are ranked by path-loss (`edge_attr`, dB, lower = stronger interferer), so
+    the ordering is a physical quantity, not node index. Fixing k makes the observation
+    width independent of N, which is the whole point of this baseline: it can be evaluated
+    at 10 or 20 gNB like the GNN can, while still using neighbour information — but through
+    concatenation rather than message passing.
+
+    If a topology has fewer than k neighbours the tail is zero-padded; that cannot happen
+    at n_gnb >= 5 with the fully-connected interference graph, and padding beats silently
+    returning a different width.
+    """
+    x = np.asarray(graph["x"], dtype=np.float32)
+    ei = np.asarray(graph["edge_index"])
+    ea = np.asarray(graph["edge_attr"], dtype=np.float32).reshape(-1)
+    n, f = x.shape
+    assert f == OBS_FEATURES, f"expected {OBS_FEATURES} features per gNB, got {f}"
+    out = np.zeros((n, f * (k + 1)), dtype=np.float32)
+    out[:, :f] = x
+    for i in range(n):
+        mask = ei[0] == i
+        nbrs, loss = ei[1][mask], ea[mask]
+        order = np.argsort(loss)[:k]
+        for slot, j in enumerate(nbrs[order]):
+            out[i, f * (slot + 1): f * (slot + 2)] = x[j]
+    return out
 
 
 class MLPDQNAgent(nn.Module):
@@ -181,3 +212,28 @@ class MLPPPOAgent(nn.Module):
             "value_loss": float(value_loss),
             "entropy": float(entropy),
         }
+
+
+class MLPKNNPPOAgent(MLPPPOAgent):
+    """Adaptation baseline: per-agent MLP, parameter-shared, that also sees its k strongest
+    interferers -- concatenated, not message-passed.
+
+    Why it exists: the zero-shot comparison would otherwise be GNN-vs-nothing. `ippo`/`idqn`
+    transfer to other topologies but are blind to neighbours (purely local 8-feature obs),
+    and `central-*` cannot transfer at all. This baseline uses neighbour information and
+    still transfers, which is the honest control for "does message passing help at scale".
+
+    Added 2026-08-16, AFTER the v4 results were seen, so it is barred from every
+    pre-registered gate (goal1.md integritas #4). It exists only to make the transfer
+    comparison fair, and its result is reported whichever way it falls.
+    """
+
+    def __init__(self, config_path: str | None = None, **overrides):
+        k = int(overrides.get("knn_k", hparams("ppo", config_path)["knn_k"]))
+        super().__init__(obs_dim=OBS_FEATURES * (k + 1), config_path=config_path, **overrides)
+        self.k = k
+
+    def features(self, graph: dict) -> np.ndarray:
+        """Graph -> (N, obs_dim). Width does not depend on N, which is what lets the same
+        weights run at 5, 10 and 20 gNB."""
+        return knn_features(graph, self.k)

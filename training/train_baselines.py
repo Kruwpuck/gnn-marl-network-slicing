@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from envs.network_slicing_env import NetworkSlicingEnv
 from agents.hparams import hparams
-from agents.mlp_agent import MLPDQNAgent, MLPPPOAgent
+from agents.mlp_agent import MLPDQNAgent, MLPKNNPPOAgent, MLPPPOAgent
 from training.replay_buffer import ReplayBuffer
 from training.rollout_buffer import RolloutBuffer
 from training.metrics_logger import (
@@ -67,8 +67,12 @@ def _save_ckpt(ckpt, agent, env, step, episode, logger, run_name, **meta):
 
 
 def _save_model(log_path, agent, **meta):
-    torch.save({"state_dict": agent.state_dict(), **meta},
-               Path(log_path).with_suffix(".pt"))
+    state = {"state_dict": agent.state_dict(), **meta}
+    if hasattr(agent, "epsilon"):
+        # See train_proposed._save_model: without this a reloaded DQN sits at epsilon=1.0
+        # and every non-greedy readout is uniform random action selection, not the policy.
+        state["epsilon"] = float(agent.epsilon)
+    torch.save(state, Path(log_path).with_suffix(".pt"))
 
 
 def train_dqn(algo, steps, seed, log_path, ckpt_interval, resume, config_path, run_name):
@@ -149,9 +153,14 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
     env = make_env(seed, config_path)
     n_gnb = env.n_gnb
     is_central = algo == "central-ppo"
-    obs_dim = n_gnb * 8 if is_central else 8
+    is_knn = algo == "mlp-knn-ppo"
     hp = hparams("ppo", config_path)
-    agent = MLPPPOAgent(obs_dim, config_path=config_path).to(DEVICE)
+    if is_knn:
+        agent = MLPKNNPPOAgent(config_path=config_path).to(DEVICE)
+        obs_dim = agent.obs_dim   # 8*(k+1), deliberately independent of n_gnb
+    else:
+        obs_dim = n_gnb * 8 if is_central else 8
+        agent = MLPPPOAgent(obs_dim, config_path=config_path).to(DEVICE)
     print(f"[{algo}] device={DEVICE}")
     buf = RolloutBuffer(n_steps=hp["rollout_steps"], n_agents=1 if is_central else n_gnb)
 
@@ -161,7 +170,7 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
     logger.set_elapsed_offset(elapsed_off)
     netstats = EpisodeNetworkStats()
 
-    obs_arr, _ = env.reset(seed=seed + ep_count)
+    obs_arr, info = env.reset(seed=seed + ep_count)
     ep_reward = 0.0
     t0 = time.time()
 
@@ -171,6 +180,11 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
             actions, log_probs, values = agent.act(obs_in)   # each (1,)
             actions_env = np.full(n_gnb, int(actions[0]))
             stored_state = obs_in.reshape(1, -1)             # (1, obs_dim)
+        elif is_knn:
+            obs_in = agent.features(info["graph"])           # (N, 8*(k+1))
+            actions, log_probs, values = agent.act(obs_in)
+            actions_env = actions
+            stored_state = obs_in
         else:
             actions, log_probs, values = agent.act(obs_arr)  # each (N,)
             actions_env = actions
@@ -184,7 +198,7 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
 
         if done:
             ep_count += 1
-            obs_arr, _ = env.reset(seed=seed + ep_count)
+            obs_arr, info = env.reset(seed=seed + ep_count)
         else:
             obs_arr = next_obs
 
@@ -217,7 +231,10 @@ def train_ppo(algo, steps, seed, log_path, ckpt_interval, resume, config_path, r
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--algo", choices=["idqn", "central-dqn", "ippo", "central-ppo"], default="idqn")
+    # mlp-knn-ppo is the adaptation baseline for the zero-shot claim (goal1.md §Fallback
+    # poin 2), added after the wave. It is NOT part of the pre-registered 8-algorithm wave.
+    p.add_argument("--algo", choices=["idqn", "central-dqn", "ippo", "central-ppo",
+                                      "mlp-knn-ppo"], default="idqn")
     p.add_argument("--steps", type=int, default=1_000_000)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--ckpt-interval", type=int, default=25_000)

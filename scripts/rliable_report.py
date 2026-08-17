@@ -56,18 +56,44 @@ def parse_run_name(stem: str) -> tuple[str, str, int]:
     return m.group("algo"), (m.group("tag") or ""), int(m.group("seed"))
 
 
+def primary_suffix(algo_key: str) -> str:
+    """Which readout gates, per budget family (goal1.md, two separate determinations).
+
+    PPO: sampled actions (P3, frozen 2026-08-08) -- the argmax carries ~0.2 of the action
+    mass and misreads a policy by tens of Mbps.
+    DQN: argmax (determination of 2026-08-16). Measured, not assumed: the pre-registered
+    degeneracy test gave sd_greedy/sd_(eps=0.05) = 1.01-1.10 against a 2.0 threshold, where
+    the degenerate PPO cases sat at 3.17 and 3.62. The old DQN "stochastic" column was
+    epsilon=1.0, i.e. uniform random actions, and is discarded as an instrument fault.
+    """
+    return "_eval" if "dqn" in algo_key else "_eval_stoch"
+
+
 def load_eval_dir(eval_dir: Path, suffix: str = "_eval") -> pd.DataFrame:
+    """suffix='primary' picks the gating readout per algorithm; anything else is literal."""
+    patterns = ["_eval", "_eval_stoch"] if suffix == "primary" else [suffix]
     frames = []
-    for path in sorted(glob.glob(str(eval_dir / f"*{suffix}.csv"))):
-        df = pd.read_csv(path)
-        stem = Path(path).stem.replace(suffix, "")
-        algo_key, tag, seed = parse_run_name(stem)
-        df["algo_key"] = algo_key
-        df["tag"] = tag
-        df["seed_parsed"] = seed
-        frames.append(df)
+    seen = set()
+    for pat in patterns:
+        for path in sorted(glob.glob(str(eval_dir / f"*{pat}.csv"))):
+            stem = Path(path).stem
+            if pat == "_eval" and stem.endswith("_eval_stoch"):
+                continue  # the *_eval glob also matches *_eval_stoch
+            stem = stem[: -len(pat)]
+            algo_key, tag, seed = parse_run_name(stem)
+            if suffix == "primary" and pat != primary_suffix(algo_key):
+                continue
+            if (algo_key, tag, seed) in seen:
+                continue
+            seen.add((algo_key, tag, seed))
+            df = pd.read_csv(path)
+            df["algo_key"] = algo_key
+            df["tag"] = tag
+            df["seed_parsed"] = seed
+            df["readout"] = pat
+            frames.append(df)
     if not frames:
-        raise SystemExit(f"No *_eval.csv files found under {eval_dir}")
+        raise SystemExit(f"No {'|'.join(patterns)} .csv files found under {eval_dir}")
     return pd.concat(frames, ignore_index=True)
 
 
@@ -169,12 +195,22 @@ def main() -> None:
     p.add_argument("--reps", type=int, default=50_000)
     p.add_argument("--stochastic", action="store_true",
                     help="read *_eval_stoch.csv instead of *_eval.csv -- P3 primary readout (goal1.md)")
+    p.add_argument("--readout", choices=["greedy", "stochastic", "primary"], default=None,
+                   help="'primary' is the gating readout per family: sampled for PPO (P3), "
+                        "argmax for DQN (determination 2026-08-16, measured). Overrides "
+                        "--stochastic when given.")
     args = p.parse_args()
 
-    suffix = "_eval_stoch" if args.stochastic else "_eval"
+    readout = args.readout or ("stochastic" if args.stochastic else "greedy")
+    suffix = {"greedy": "_eval", "stochastic": "_eval_stoch", "primary": "primary"}[readout]
+    readout_label = {
+        "greedy": "greedy (report-only, not gate)",
+        "stochastic": "stochastic (P3 primary; for DQN this is the discarded epsilon=1.0 column)",
+        "primary": "primary per family — sampled for PPO (P3), argmax for DQN (2026-08-16)",
+    }[readout]
     df = load_eval_dir(Path(args.eval_dir), suffix=suffix)
     lines = ["# rliable Report — IQM + Stratified Bootstrap 95% CI\n",
-             f"Readout: `{'stochastic (P3 primary)' if args.stochastic else 'greedy (report-only, not gate)'}`.\n",
+             f"Readout: `{readout_label}`.\n",
              f"Tag filter: `{args.tag or '(main wave)'}`. DQN (200K steps) and PPO "
              f"(1M steps) families are never pooled. A CI overlap means "
              f"'comparable', not 'proposed wins' — report accordingly.\n"]

@@ -232,6 +232,12 @@ agent:
   # and C3 already forbids pooling the two families in any statistical claim.
   n_actions: 11
   hidden: 128
+  # Neighbourhood size for the mlp-knn-ppo adaptation baseline (goal1.md §Fallback poin 2).
+  # Not a free knob: 4 is the node degree every agent saw during training, since the
+  # inter-gNB interference graph is fully connected at n_gnb=5 (envs/channel_model.py).
+  # Keeping it fixed is what makes that baseline's obs_dim independent of n_gnb, so it can
+  # transfer to 10/20 gNB the way the GNN can.
+  knn_k: 4
   dqn:
     lr: 0.001
     gamma: 0.99

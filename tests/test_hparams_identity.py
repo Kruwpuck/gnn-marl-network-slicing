@@ -33,9 +33,17 @@ PRE_MOVE_PPO = {
 }
 
 
+# Keys added to the YAML after the move. Each one must be listed here deliberately, so a
+# stray addition still fails the test below instead of slipping in unnoticed.
+POST_MOVE_ADDITIONS = {"knn_k"}  # mlp-knn-ppo neighbourhood size, added 2026-08-16
+
+
 @pytest.mark.parametrize("family,expected", [("dqn", PRE_MOVE_DQN), ("ppo", PRE_MOVE_PPO)])
 def test_yaml_matches_pre_move_defaults(family, expected):
-    assert hparams(family) == expected
+    hp = hparams(family)
+    for key, value in expected.items():
+        assert hp[key] == value, f"{family}.{key} drifted from the value the wave ran on"
+    assert set(hp) - set(expected) == POST_MOVE_ADDITIONS
 
 
 def test_dqn_agents_built_from_yaml():

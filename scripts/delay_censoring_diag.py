@@ -15,7 +15,9 @@ says as much), and additionally quantised: delay = (age in slots) *
 with its upper tail amputated, has little room to separate algorithms -- and
 the p99 of any policy whose queue backs up is pinned at the top point.
 
-Measured per algorithm (all seeds, stochastic readout = P3 primary):
+Measured per algorithm over the 8 pre-registered algorithms (all seeds), under the
+per-family primary readout: sampled for PPO (P3), argmax for DQN (determination
+2026-08-16). The earlier pass read DQN at epsilon=1.0, which was random actions.
   p99          mean per-episode p99, ms  (matches results/eval/*_eval_stoch.csv)
   mass@dl      % of delivered packets sitting exactly on the deadline bin
   mass>=dl-1   % within one slot of the deadline
@@ -29,6 +31,7 @@ Usage:
 from __future__ import annotations
 import argparse
 import glob
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -40,15 +43,42 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from envs.network_slicing_env import NetworkSlicingEnv
 from scripts.evaluate_checkpoints import EVAL_SEED_BASE, load_agent, select_actions
-from scripts.rliable_report import parse_run_name
+from scripts.gate_b_report import PREREGISTERED
+from scripts.rliable_report import parse_run_name, primary_suffix
+
+READOUTS = ("greedy", "stochastic", "primary")
 
 
-def measure(pt_path: Path, episodes: int, config_path: str | None) -> dict:
+def is_greedy(algo: str, readout: str) -> bool:
+    """Whether this algorithm is read by argmax under the chosen readout.
+
+    'primary' defers to rliable_report.primary_suffix so the family rule lives in one
+    place: sampled for PPO (P3), argmax for DQN (human determination 2026-08-16). A second
+    copy of `"dqn" in algo` here would be free to drift out of step with the gate numbers.
+    """
+    return readout == "greedy" or (readout == "primary" and primary_suffix(algo) == "_eval")
+
+
+def gate_b_value(path: Path, row: str, unit: str) -> str:
+    """Pull one gate number out of the generated Gate B report rather than retyping it.
+
+    B2 moved from 8.70 pp to 11.98 pp when the DQN readout was corrected; a hard-coded copy
+    in this file's prose would have gone on quoting the old one (docs/HANDOVER.md 11).
+    """
+    text = path.read_text(encoding="utf-8")
+    m = re.search(rf"\|\s*{row}\s*\|.*?\|\s*([\d.]+)\s*{unit}\s*\|", text)
+    if not m:
+        raise SystemExit(f"could not read {row} from {path} — regenerate it with gate_b_report.py")
+    return f"{float(m.group(1)):.2f} {unit}"
+
+
+def measure(pt_path: Path, episodes: int, config_path: str | None, readout: str) -> dict:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     agent, _, kind = load_agent(pt_path, device)
     # from the run name, not ckpt["algo"]: the checkpoint field drops the backbone, which
     # would merge gnn-madqn_gat with gnn-madqn_sage and hide exactly what B3 is about.
     algo, _, _ = parse_run_name(pt_path.stem)
+    greedy = is_greedy(algo, readout)
     env = NetworkSlicingEnv(config_path=config_path)
     env.cmdp_enabled = False  # same as evaluate_checkpoints: no lambda drift during readout
 
@@ -63,7 +93,7 @@ def measure(pt_path: Path, episodes: int, config_path: str | None) -> dict:
         done = False
         ep_delays: list[float] = []
         while not done:
-            actions = select_actions(agent, kind, obs, info, env, greedy=False)
+            actions = select_actions(agent, kind, obs, info, env, greedy=greedy)
             obs, _, terminated, truncated, info = env.step(actions)
             done = terminated or truncated
             for gnb_delays in info["urllc_delivered_delays"]:
@@ -79,7 +109,7 @@ def measure(pt_path: Path, episodes: int, config_path: str | None) -> dict:
     delivered = int(hist.sum())
     resolved = delivered + late + ovf
     return {
-        "algo": algo, "run": pt_path.stem,
+        "algo": algo, "run": pt_path.stem, "greedy": greedy,
         "p99": float(np.mean(p99_per_ep)),
         "hist": hist, "delivered": delivered,
         "late": late, "ovf": ovf, "resolved": resolved,
@@ -92,14 +122,25 @@ def main() -> None:
     p.add_argument("--runs", type=str, required=True, help="glob for .pt checkpoints")
     p.add_argument("--episodes", type=int, default=5)
     p.add_argument("--config", type=str, default=None)
+    p.add_argument("--readout", choices=READOUTS, default="primary",
+                   help="'primary' is the gating readout per family: sampled for PPO (P3), "
+                        "argmax for DQN (2026-08-16). The old hard-coded behaviour was "
+                        "'stochastic', which for DQN meant epsilon=1.0 random actions.")
+    p.add_argument("--gate-b", type=str, default="results/GATE_B_v4_primary.md")
     p.add_argument("--out", type=str, default="results/B3_DELAY_CENSORING.md")
     args = p.parse_args()
 
     per_algo: dict[str, list[dict]] = defaultdict(list)
     for path in sorted(glob.glob(args.runs)):
-        r = measure(Path(path), args.episodes, args.config)
+        algo, _, _ = parse_run_name(Path(path).stem)
+        if algo not in PREREGISTERED:
+            # The spread reported here is Gate B3's spread, measured over the same 8
+            # pre-registered algorithms. Adding a baseline introduced later (mlp-knn-ppo)
+            # would change the range the gate is about.
+            continue
+        r = measure(Path(path), args.episodes, args.config, args.readout)
         per_algo[r["algo"]].append(r)
-        print(f"  {r['run']}: p99={r['p99']:.3f} delivered={r['delivered']}")
+        print(f"  {r['run']}: p99={r['p99']:.3f} delivered={r['delivered']} greedy={r['greedy']}")
 
     if not per_algo:
         raise SystemExit(f"no checkpoints matched {args.runs}")
@@ -107,12 +148,23 @@ def main() -> None:
     any_r = next(iter(per_algo.values()))[0]
     deadline, slot, n_bins = any_r["deadline_ms"], any_r["slot_ms"], any_r["n_bins"]
 
+    gate_b = Path(args.gate_b)
+    b2, b3 = gate_b_value(gate_b, "B2", "pp"), gate_b_value(gate_b, "B3", "ms")
+    readout_note = {
+        "primary": "primary per family — sampled for PPO (P3), argmax for DQN (2026-08-16)",
+        "stochastic": "non-greedy — sampled for PPO, epsilon=0.05 for DQN",
+        "greedy": "greedy (reported, never gates)",
+    }[args.readout]
+
     lines = [
         "# B3 diagnostic — is `urllc_delay_p99` censored by the deadline drop?\n",
-        f"Readout: stochastic (P3 primary), {args.episodes} held-out episodes per checkpoint, "
+        f"Readout: {readout_note}. {args.episodes} held-out episodes per checkpoint, "
         f"seeds from `EVAL_SEED_BASE={EVAL_SEED_BASE}`.\n",
-        "**This does not change Gate B3.** The threshold stays >= 2 ms and B3 stays FAILED "
-        "(measured range 1.01 ms). This file only explains the mechanism.\n",
+        "The previous version of this file read the DQN family at epsilon=1.0, i.e. uniform "
+        "random actions rather than the policy; those four rows were void and have been "
+        "recomputed here (`results/quarantine_eps1.0/README.md`).\n",
+        f"**This does not change Gate B3.** The threshold stays >= 2 ms and B3 stays FAILED "
+        f"(measured range {b3}, from `{gate_b}`). This file only explains the mechanism.\n",
         f"\nDeadline `slices.urllc.max_delay_ms` = {deadline} ms, slot = {slot} ms, so a delivered "
         f"packet's delay can only take **{n_bins} values** ({{0, {slot:g}, ..., {deadline:g}}} ms) and "
         f"nothing above {deadline:g} ms can ever be observed: `envs/network_slicing_env.py:333` pops "
@@ -146,8 +198,8 @@ def main() -> None:
         "\nRead the `censored` column together with the p99 column: the packets that would have "
         "formed the discriminating tail are exactly the ones removed from the sample. Two policies "
         "with very different queueing behaviour report near-identical p99 while differing on "
-        "`sla_satisfaction_pct` (which counts the drops) -- that is B2 passing at 8.70 pp while "
-        "B3 fails at 1.01 ms, and it is one phenomenon seen through two metrics.\n",
+        f"`sla_satisfaction_pct` (which counts the drops) -- that is B2 passing at {b2} while "
+        f"B3 fails at {b3}, and it is one phenomenon seen through two metrics.\n",
         "\nMethodological consequence for the paper: at this operating point `urllc_delay_p99` "
         "of delivered packets is not a discriminating KPI, and the honest latency statement lives "
         "in the drop/SLA metrics instead. Reported, not claimed (`handoff/goal1.md`, scoping "

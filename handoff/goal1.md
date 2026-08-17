@@ -86,7 +86,8 @@ Tidak ada angka, definisi metrik, atau ambang di dokumen ini yang diubah oleh ke
 
 Wave v4 menjalankan **5 seed** per algoritma; C4 menuntut ≥ 20 untuk KPI cell-edge bimodal. Ambang C4 **tetap ≥ 20** dan statusnya **tetap GAGAL** di setiap laporan. Klausa keduanya (proporsi binomial + CI Wilson) terpenuhi. Seperti pada B3, yang dipecah adalah **cakupan klaim**, bukan ambangnya:
 
-- **Klaim komparatif — sah, tetap dilaporkan.** "Model proposed kolaps lebih sering daripada baseline terpusat." Klaim ini hanya butuh pemisahan, bukan estimasi rate yang presisi, dan pemisahannya sudah terjadi di n = 5: `gnn-madqn_gat`, `gnn-madqn_sage`, `gnn-mappo_sage`, `idqn`, `ippo` kolaps di 5 dari 5 seed (Wilson `[0.57, 1.00]`) lawan `central-ppo` 0 dari 5 (Wilson `[0.00, 0.43]`) — interval tidak beririsan (`results/STABILITY_v4_stoch.md`).
+- **Klaim komparatif — sah, tetap dilaporkan, tetapi hanya di keluarga PPO.** "Model proposed kolaps lebih sering daripada baseline terpusat." Klaim ini hanya butuh pemisahan, bukan estimasi rate yang presisi.
+  > **Dikoreksi 2026-08-17.** Bukti yang dikutip di sini semula `results/STABILITY_v4_stoch.md` — pembacaan yang untuk keluarga DQN ternyata aksi acak ε = 1.0 (lihat §Penetapan protokol pembacaan keluarga DQN 2026-08-16). Di bawah pembacaan primer per keluarga (`results/STABILITY_v4_primary.md`): **keluarga PPO** `gnn-mappo_sage`, `ippo`, `mlp-knn-ppo` kolaps 5 dari 5 (Wilson `[0.57, 1.00]`) dan `gnn-mappo_gat` 4 dari 5 (`[0.38, 0.96]`) lawan `central-ppo` 0 dari 5 (`[0.00, 0.43]`) — interval tidak beririsan, klaim bertahan. **Keluarga DQN** seluruh intervalnya beririsan (`[0.00, 0.43]` lawan `[0.12, 0.77]`) dan `gnn-madqn_sage` justru 0 dari 5, jadi klaim komparatif **tidak dibuat** di keluarga itu. Ambang C4 tidak disentuh dan statusnya tetap GAGAL. Perlu ikut tercetak bahwa di keluarga PPO garis pemisahnya terpusat lawan per-agen, bukan GNN lawan baseline: `ippo` dan `mlp-knn-ppo` kolaps 5 dari 5 sama seperti varian GNN.
 - **Klaim karakterisasi — tidak dibuat.** Berapa persisnya collapse rate sebuah algoritma, dan bagaimana bentuk distribusi bimodal per-seed *di dalam* satu algoritma, tidak diklaim di mana pun. Itulah yang syarat ≥ 20 ada untuk menjawab, dan 5 seed tidak bisa menjawabnya seberapa pun lebar jarak antar-algoritma.
 - **Aturan penulisan, mengikat seluruh laporan dan paper:** tulis **"kolaps di k dari 5 seed"**, jangan "kolaps X % waktu". Dengan n = 5 hanya ada 6 nilai rate yang mungkin (0, 0.2, 0.4, 0.6, 0.8, 1.0); bentuk persen menyiratkan presisi kontinu yang datanya tidak punya.
 
@@ -101,7 +102,108 @@ Yang lebih murah adalah **PPO**, 9.3× lebih murah per seed — kebalikan dari d
 
 **Keputusan: perluasan dilewati.** Wave v4 sudah memakai 429.47 job-jam terhadap anggaran ±450, jadi sisa 20.5 job-jam sementara opsi termurah butuh 124.8. Dicatat jujur: dengan pembacaan anggaran sebagai *device*-jam (satu GPU, 40 job selesai 147.22 jam wall-clock pada paralelisme 6) perluasan PPO justru muat (≈43 jam wall-clock). Kedua pembacaan dilaporkan; memilih pembacaan yang kebetulan meloloskan rencana adalah bentuk lain dari memindahkan tiang gawang, jadi eksekusinya milik keputusan manusia, bukan default agent. Klaim komparatif tidak bergantung padanya. Catatan integritas: memperluas keluarga PPO **memperkuat temuan yang merugikan proposed** (`central-ppo` 0 dari 5 lawan proposed 4–5 dari 5), sehingga aturan biaya ini tidak bisa dibaca sebagai memilih keluarga yang menguntungkan proposed.
 
+> **Diperbarui 2026-08-16 oleh §Kebijakan akuntansi anggaran.** Pembacaan anggaran sudah ditetapkan tetap sebagai device-jam, jadi ambiguitas dua pembacaan di atas tidak lagi terbuka: perluasan PPO (≈ 43 device-jam dari sisa ≈ 303) **muat**, dan statusnya **ditunda**, bukan dilewati — manusia menetapkan zero-shot dikerjakan lebih dulu atas dasar nilai per GPU-jam. Kebijakan itu dipilih sebelum konsekuensinya dipakai dan berlaku dua arah.
+
 Tidak ada angka, definisi metrik, atau ambang di dokumen ini yang diubah oleh keputusan ini. Diputuskan manusia (`Habb`), dicatat di `runs/2026-08-05-run01/ledger.md`.
+
+### Penetapan protokol pembacaan keluarga DQN 2026-08-16 (dideklarasikan SEBELUM diukur)
+
+P3 (beku 2026-08-08) menetapkan pembacaan stokastik sebagai primer, tetapi seluruh buktinya PPO: `p_max`, entropi, dan `agree` hanya terdefinisi bila ada distribusi aksi, dan `results/READOUT_COMPARISON.md` sendiri mencetak "(DQN: no action distribution)". Arti "pembacaan stokastik" untuk DQN tidak pernah ditetapkan manusia; kode diam-diam menghasilkan `epsilon = 1.0`, yaitu aksi acak seragam (kesepakatan dengan argmax 0.097–0.100 lawan 1/11 = 0.091 untuk acak murni). Angka DQN di kolom stokastik karena itu bukan pembacaan policy sama sekali.
+
+**Konvensi (ditetapkan sebelum hasil diagnostik dilihat).** Pembacaan stokastik keluarga DQN adalah **ε = 0.05**, yaitu `epsilon_min`, lantai eksplorasi yang benar-benar dipakai policy di akhir training. Alasannya konsistensi behaviour policy, bukan biaya: itu satu-satunya nilai ε yang benar-benar dialami agen saat perilakunya terbentuk. Nilainya dibaca dari `agent.dqn.epsilon_min` di `configs/experiment_config.yaml`, bukan konstanta baru.
+
+**Yang TIDAK boleh diasumsikan.** "Argmax adalah policy DQN, ε cuma eksplorasi" ditolak sebagai premis. Kolaps yang terukur pada PPO bukan soal stokastisitas policy melainkan lintasan deterministik yang terkunci di rezim degenerat tanpa derau untuk keluar — CI greedy `gnn-mappo_gat` `[0.0002, 53.9184]` adalah dua rezim episode yang dirata-ratakan, dengan sd antar-episode 34.95 pp lawan 11.04 pp stokastik. Mekanisme itu berlaku sama untuk kebijakan greedy DQN di lingkungan multi-agen berkopling. Bedanya hanya PPO sudah diukur dan DQN belum, dan **belum diukur bukan berarti aman**. Ketiadaan diagnostik murah (entropi/`p_max`) justru memperkuat kehati-hatian, karena entropi sudah terbukti tidak memprediksi model mana yang dirusak argmax (rentang 0.100 nat lawan celah pembacaan 46.28 Mbps).
+
+**Aturan keputusan, dikunci sebelum angka DQN yang baru dihitung.** Tanda degenerasi yang dipakai adalah sd antar-episode `sla_violation_pct`, karena ia tidak butuh distribusi aksi — hanya varians hasil — dan sudah terbukti memisahkan kasus PPO. Ambangnya diturunkan dari data PPO yang sudah ada, bukan dari DQN:
+
+| pembacaan PPO | sd greedy | sd stokastik | rasio |
+|---|---|---|---|
+| `central-ppo` | 13.80 | 14.25 | 0.97 |
+| `ippo` | 13.42 | 11.37 | 1.18 |
+| `gnn-mappo_gat` | 34.95 | 11.04 | 3.17 |
+| `gnn-mappo_sage` | 37.82 | 10.45 | 3.62 |
+
+- **Rasio `sd_greedy / sd_(ε=0.05)` > 2.0** → pembacaan greedy dinyatakan degenerat. (PPO memisah bersih di 1.18 lawan 3.17.)
+- Uji absolut penyerta: **sd greedy > 25 pp** (titik tengah 13.80 dan 34.95). Dicatat jujur bahwa sd greedy DQN sudah terlihat di `results/READOUT_COMPARISON.md` (14.16–19.66 pp) dan semuanya di bawah 25 pp, jadi uji yang benar-benar mengikat adalah **rasio**, yang penyebutnya belum ada saat aturan ini ditulis.
+
+Konsekuensi yang mengikat, dua-duanya diterima di muka:
+
+- **Rasio ≤ 2.0** → tidak ada kolaps greedy pada DQN; argmax ditetapkan sebagai pembacaan primer keluarga DQN, sekarang dengan bukti dan bukan asumsi. Kolom stokastik DQN yang lama (ε = 1.0) dibuang sebagai cacat instrumen.
+- **Rasio > 2.0** → argmax tidak sah sebagai pembacaan primer DQN; kedua pembacaan (argmax dan ε = 0.05) dilaporkan berdampingan seperti PPO, dan seluruh eval stokastik DQN dijalankan ulang di ε = 0.05.
+
+**Hasil diagnostik (dijalankan setelah aturan di atas dikunci), 20 checkpoint × 150 episode:**
+
+| algo | sd greedy | sd (ε = 0.05) | rasio | verdict |
+|---|---|---|---|---|
+| `central-dqn` | 15.51 | 15.39 | 1.01 | ok |
+| `gnn-madqn_gat` | 15.41 | 15.22 | 1.01 | ok |
+| `gnn-madqn_sage` | 14.16 | 14.04 | 1.01 | ok |
+| `idqn` | 19.66 | 17.85 | 1.10 | ok |
+
+0 dari 4 melewati ambang, dan jaraknya tidak marginal: 1.01–1.10 lawan ambang 2.0, sementara kasus PPO yang degenerat duduk di 3.17 dan 3.62. **Argmax ditetapkan sebagai pembacaan primer keluarga DQN**, dengan bukti. Kolom stokastik DQN yang lama (ε = 1.0) dibuang sebagai cacat instrumen, bukan sebagai hasil.
+
+**Konsekuensi yang jauh lebih besar dari soal protokol.** Collapse rate `embb_p5_mbps` keluarga DQN di bawah pembacaan yang sah berbeda tajam dari yang pernah dilaporkan:
+
+| algo | ε = 1.0 (cacat, pernah dilaporkan) | greedy (primer) | ε = 0.05 |
+|---|---|---|---|
+| `central-dqn` | 1 dari 5 | 0 dari 5 | 0 dari 5 |
+| `gnn-madqn_gat` | 5 dari 5 | 2 dari 5 | 3 dari 5 |
+| `gnn-madqn_sage` | 5 dari 5 | 0 dari 5 | 0 dari 5 |
+| `idqn` | 5 dari 5 | 2 dari 5 | 2 dari 5 |
+
+Angka keluarga PPO tidak tersentuh cacat ini dan tetap berlaku. Yang bertahan dari temuan lama: baseline terpusat tidak pernah kolaps (0 dari 5 di kedua keluarga). Yang **tidak** bertahan: pernyataan bahwa seluruh varian proposed kolaps — itu benar untuk keluarga PPO dan salah untuk keluarga DQN, dengan `gnn-madqn_sage` 0 dari 5. Seluruh laporan yang memuat angka lama wajib dihitung ulang, dan bagian §Keputusan scoping C4 2026-08-15 di dokumen ini dikoreksi di tempat oleh catatan ini, bukan dihapus.
+
+**Gate B dihitung ulang di bawah pembacaan yang sah** (`scripts/gate_b_report.py`, baru — sebelumnya Gate B dihitung manual dan satu-satunya jejaknya baris ledger, sehingga tidak bisa diturunkan ulang ketika pembacaannya berubah). Skrip itu lebih dulu diverifikasi mereproduksi angka yang tercatat di bawah pembacaan lama, persis sampai dua desimal:
+
+| pembacaan | B1 (≥ 5%) | B2 (≥ 5 pp) | B3 (≥ 2 ms) | B4 (≤ 1 dari 5) |
+|---|---|---|---|---|
+| stokastik lama (DQN cacat, angka yang tercatat) | 11.43% | 8.70 pp | 1.01 ms | 1 dari 5 |
+| **primer per keluarga (sah)** | **16.33%** | **11.98 pp** | **1.01 ms** | **0 dari 5** |
+| greedy semua algoritma (pembanding) | 200.30% | 56.05 pp | 3.59 ms | 0 dari 5 |
+
+**Tidak ada verdict Gate B yang berbalik**: B1, B2, B4 tetap LOLOS dan B3 tetap GAGAL, jadi §Keputusan scoping 2026-08-15 berdiri utuh. Dua hal berubah dan dua-duanya wajib ikut tercetak. Pertama, B1 dan B2 justru **menguat** — daya diskriminasi task lebih besar dari yang dilaporkan, bukan lebih kecil. Kedua, **B4 turun ke 0 dari 5**: `embb_p5_mbps` tidak lagi tersaturasi, karena nilai 0.0000 identik pada 5 algoritma itu sebagian artefak aksi acak. Karena itu catatan jujur di §Keputusan scoping 2026-08-15 — bahwa klaim atas `embb_p5_mbps` hanya sah dalam bentuk diskretnya — **tidak lagi berlaku**; level `embb_p5_mbps` sekarang KPI yang tidak tersaturasi dan boleh diklaim seperti KPI lolos lainnya. Baris greedy dicantumkan hanya sebagai pembanding dan tidak dipakai apa pun: angkanya meledak justru karena kolaps argmax pada keluarga PPO, yang persis alasan P3 ada.
+
+Tidak ada ambang gate atau definisi metrik yang diubah oleh penetapan ini. Diputuskan manusia (`Habb`), dicatat di `runs/2026-08-05-run01/ledger.md`.
+
+### Kebijakan akuntansi anggaran 2026-08-16 (tetap, berlaku dua arah)
+
+Anggaran `± 450 GPU-jam` di §Batasan dibaca sebagai **device-jam**: jam okupansi GPU, yaitu wall-clock mesin ini yang punya satu GPU. Bukan penjumlahan jam tiap job.
+
+Alasannya properti pengukuran, bukan hasil: menjumlahkan job-jam menghitung ganda satu perangkat yang dipakai 6 job paralel. Wave v4 yang sama terbaca 429.47 job-jam tetapi hanya **147.22 device-jam** — selisihnya bukan pekerjaan tambahan, hanya cara menghitung. Terpakai sejauh ini **147.22 dari ± 450**, sisa ≈ 303.
+
+Kebijakan ini **tidak boleh ditinjau ulang per-keputusan**. Ia berlaku sama ketika ia mengizinkan sesuatu yang kita inginkan dan ketika ia melarangnya; memilih pembacaan per kasus adalah bentuk lain dari memindahkan tiang gawang. Konsekuensi yang sudah diketahui saat kebijakan ini ditetapkan, dan tetap ditetapkan:
+
+- Perluasan seed keluarga PPO (aturan biaya 2026-08-16, ≈ 43 device-jam) **muat**. Dikerjakan setelah zero-shot, karena nilai per GPU-jam zero-shot lebih tinggi.
+- Baseline adaptasi k-NN keluarga PPO (§Fallback poin 2, ≈ 4.5 job-jam) **muat**.
+- Kalau kelak sebuah eksperimen yang kita inginkan melewati sisa 303 device-jam, ia ditolak dengan kebijakan yang sama ini, bukan dihitung ulang dengan pembacaan lain.
+
+Diputuskan manusia (`Habb`), dicatat di `runs/2026-08-05-run01/ledger.md`.
+
+### Status Gate G4 2026-08-17 — diturunkan ulang dari file, bukan dari ingatan
+
+Setiap kriteria di §Kriteria selesai diturunkan ulang terhadap file yang di-generate hari ini, di bawah pembacaan primer per keluarga. Kolom "diverifikasi" menyebut apa yang benar-benar dijalankan ulang, bukan apa yang dulu dilaporkan.
+
+| # | Verdict | Bukti (file yang di-generate) | Diverifikasi 2026-08-17 |
+|---|---|---|---|
+| A1–A4 | **LOLOS** | ledger 2026-08-08T15:00 di titik operasi beku; A1 CI `[8.58, 9.66]` ⊂ pita `[6.88, 10.12]`, A2a margin 3.01 pp, A2b 2.13 pp, A3 `inf:1`, A4 1.62 pp | tidak dijalankan ulang — Gate A properti kalibrasi pra-wave dan tidak tersentuh cacat pembacaan DQN (diukur pada `ippo`) |
+| B1 | **LOLOS** 16.33% (≥ 5%) | `results/GATE_B_v4_primary.md` | dihitung ulang |
+| B2 | **LOLOS** 11.98 pp (≥ 5 pp) | `results/GATE_B_v4_primary.md` | dihitung ulang |
+| B3 | **GAGAL** 1.01 ms (< 2 ms) | `results/GATE_B_v4_primary.md`, mekanisme di `results/B3_DELAY_CENSORING.md` | dihitung ulang; B3 dijalankan ulang di bawah pembacaan primer |
+| B4 | **LOLOS** 0 dari 5 (≤ 1) | `results/GATE_B_v4_primary.md` | dihitung ulang |
+| C1 | **LOLOS** | `scripts/test_treatment_identity.py` | dijalankan ulang hari ini, **9/9** (seed 42/43/44 × floor `none`/`static`/`dynamic`, 200 langkah) |
+| C2 | **PARSIAL** | `results/GATE_C.md`; remediasi di `configs/experiment_config.yaml` §`agent` + `agents/hparams.py` | `pytest tests/ -q` hijau 92/92, termasuk `tests/test_hparams_identity.py`. Verdict untuk wave sebagaimana dijalankan tetap PARSIAL — biner yang menghasilkan checkpoint ini tidak membaca YAML. Menaikkannya keputusan manusia |
+| C3 | **LOLOS**, satu kasus ditandai | `results/GATE_B_v4_primary.md` §"C3 supplement" | split per keluarga sekarang **di-generate**, bukan disalin tangan; tidak ada verdict B yang berbalik di set mana pun |
+| C4 | **GAGAL** | `results/STABILITY_v4_primary.md` (5 seed, bukan ≥ 20) | klaim di-scoping ulang: komparatif hanya di keluarga PPO, lihat koreksi 2026-08-17 di atas |
+| C5 | **LOLOS** | `EVAL_SEED_BASE = 10_000` (`scripts/evaluate_checkpoints.py`), seed training 42–46 | dibaca ulang dari kode |
+| C6 | **LOLOS** | `git diff aad4198 HEAD -- configs/experiment_config.yaml` hanya menyentuh blok `agent:` yang ditambahkan setelah wave | pemeriksaan per-kunci, bukan per-file |
+| D1 | **LOLOS** | `results/RLIABLE.md` (v3) tetap ada berdampingan dengan `results/RLIABLE_v4_primary.md` | v3 tidak ditimpa |
+| D2 | **LOLOS** | `results/RLIABLE_v4_primary.md` — verdict tegas turun 23 → 14 setelah koreksi pembacaan, seluruhnya mengikuti CI | — |
+| D3 | **LOLOS** | `handoff/paper_structure.md` menulis kekalahan proposed dengan aturan yang sama, termasuk koreksi diri yang melemahkan narasi | — |
+| D4 | **berlaku** | §Fallback poin 2, 3, 4 dikerjakan: `results/ZEROSHOT_v4_primary.md`, `results/STABILITY_v4_primary.md` (collapse + CVaR), `results/ATTENTION_v4_stoch.md` | — |
+
+**Status: `wave tuntas dengan dua gate gagal tercatat dan klaim ter-scoping` — bukan `done`.** §Kriteria selesai menyatakan selesai hanya kalau **semua** gate lolos; B3 dan C4 GAGAL dan C2 PARSIAL. Ketiganya tercatat apa adanya dengan klaim yang sudah dipersempit, dan tidak satu pun ambang disentuh. Keputusan akhir "selesai atau tidak" milik manusia, bukan agent (`Plan_escalation_loop.md`).
+
+Temuan G4 yang ikut diperbaiki hari ini, karena verifikasi ini menemukannya alih-alih mengasumsikannya: `results/GATE_C.md` masih mengutip angka Gate B pembacaan lama (B1 11.43%, B2 8.70 pp, B4 1 dari 5) dan collapse rate ε = 1.0, dua-duanya sudah dikoreksi di tempat dengan sumbernya ditunjuk.
 
 ---
 
