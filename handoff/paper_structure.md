@@ -37,9 +37,10 @@ Instansi 3 yang paling tajam, dan ia bukan sisipan dari instansi 2: cacat yang s
 menghasilkan **dua kegagalan berbeda jenis** — satu merusak angka, satu memalsukan
 keberadaan hasil. Yang kedua lebih berbahaya karena tidak ada nilai yang bisa dicurigai.
 
-Ukuran kegagalan diagnostik murah, terukur: entropi keempat algoritma PPO merentang hanya
-**0.100 nat** (2.191–2.291 terhadap plafon `ln 11` = 2.398) sementara celah pembacaan
-throughput-nya merentang **46.28 Mbps** (`results/READOUT_COMPARISON.md`). Degenerasi argmax
+Ukuran kegagalan diagnostik murah, terukur di 20 seed: entropi keempat algoritma PPO
+merentang hanya **0.100 nat** (2.191–2.291 terhadap plafon `ln 11` = 2.398) sementara celah
+pembacaan throughput-nya merentang **29.45 Mbps**, dari −0.87 (`central-ppo`) sampai +28.58
+(`gnn-mappo_gat`) (`results/READOUT_COMPARISON.md`). Degenerasi argmax
 seragam; akibatnya pada KPI bergantung arsitektur. Entropi karena itu **tidak** memprediksi
 model mana yang dirusak argmax — menyaring angka "yang kelihatan wajar" bukan pengaman.
 
@@ -48,13 +49,23 @@ model mana yang dirusak argmax — menyaring angka "yang kelihatan wajar" bukan 
 Bukan latihan berandai-andai. Ketiganya adalah kesimpulan yang **sudah tertulis** di draf
 laporan sebelum cacatnya ditemukan.
 
-**Kontrafaktual 1 — arsitektur yang salah dinyatakan kalah.**
-Dibaca greedy (`results/RLIABLE_v4_greedy.md`): `gnn-mappo_gat` IQM =
-**16.7700** [0.0002, 53.9184] lawan `ippo` **68.0649** [65.6590, 70.9259] →
-**proposed WORSE, CI terpisah**. Dibaca dengan protokol yang sah atas bobot yang **sama
-persis** (`results/RLIABLE_v4_primary.md`): **67.9627** [67.3482, 68.5825] lawan
-**68.5563** [68.2290, 69.0997] → **COMPARABLE**. Lebar CI greedy sendiri sudah jadi tanda:
-[0.0002, 53.9184] bukan pengukuran, itu dua rezim episode yang dirata-ratakan.
+**Kontrafaktual 1 — besaran temuan salah sebesar dua ordo.**
+Checkpoint yang **sama persis**, 20 seed, `timely_throughput_mbps` `gnn-mappo_gat` lawan
+`ippo`:
+
+| pembacaan | `gnn-mappo_gat` IQM [95% CI] | `ippo` IQM [95% CI] | selisih | verdict |
+|---|---|---|---|---|
+| greedy (`results/RLIABLE_v4_greedy.md`) | **51.2943** [27.7198, 61.2809] | 66.9602 [65.9201, 68.2920] | **15.67 Mbps** | proposed WORSE |
+| primer (`results/RLIABLE_v4_primary.md`) | **68.0590** [67.5845, 68.6119] | 68.8749 [68.6587, 69.0634] | **0.82 Mbps** | proposed WORSE |
+
+Ditulis apa adanya: di **n = 20 kedua pembacaan sampai pada verdict yang sama**, jadi
+kontrafaktual ini lebih lemah daripada versi n = 5 yang pernah dilaporkan (di sana primer
+memberi COMPARABLE sementara greedy memberi WORSE). Yang tetap berdiri, dan justru
+lebih penting untuk paper: pembacaan greedy salah menyatakan **besaran** kekalahan sebesar
+19×, dan lebar CI-nya [27.72, 61.28] terhadap [67.58, 68.61] menunjukkan ia bukan
+pengukuran melainkan dua rezim episode yang dirata-ratakan. Sebuah verdict yang kebetulan
+benar dari instrumen yang salah bukan pembenaran instrumennya — di n = 5 instrumen yang
+sama memberi verdict yang salah.
 
 **Kontrafaktual 2 — temuan dinyatakan universal padahal spesifik-keluarga.**
 Di bawah ε=1.0 seluruh keluarga DQN terbaca kolaps 5 dari 5 seed, sehingga trade-off
@@ -150,37 +161,51 @@ message passing tidak memberi ketahanan tambahan bahkan di rezim yang lebih mena
 ### Tingkat 3 — Trade-off keluarga PPO (turunan, spesifik-keluarga)
 
 > Di keluarga PPO, kami mengamati trade-off antara proteksi cell-edge dan transferabilitas:
-> `central-ppo` satu-satunya yang tidak pernah kolaps tetapi secara struktural tidak dapat
-> dievaluasi di luar topologi latihnya, sementara seluruh varian per-agen transfer pada
-> retensi ~0.95 dengan collapse rate 4–5 dari 5 seed. Trade-off ini **tidak berlaku di
-> keluarga DQN**: `gnn-madqn_sage` mencapai 0 dari 5 seed kolaps dan retensi 0.955 secara
-> bersamaan. Kami melaporkan trade-off sebagai temuan spesifik-keluarga, bukan properti umum
-> arsitektur.
+> `central-ppo` kolaps jauh lebih jarang daripada varian per-agen mana pun (3 dari 20 seed
+> lawan 14–20 dari 20) tetapi secara struktural tidak dapat dievaluasi di luar topologi
+> latihnya, sementara seluruh varian per-agen transfer pada retensi ~0.95. Trade-off ini
+> **tidak berlaku di keluarga DQN**: `gnn-madqn_sage` mencapai 0 dari 5 seed kolaps dan
+> retensi 0.955 secara bersamaan. Kami melaporkan trade-off sebagai temuan
+> spesifik-keluarga, bukan properti umum arsitektur.
 
 Collapse rate, pembacaan primer per keluarga, ambang 0.01 Mbps pada `embb_p5_mbps`, unit =
 seed (`results/STABILITY_v4_primary.md`); retensi dari `results/ZEROSHOT_v4_primary.md`:
 
 | keluarga | algoritma | kolaps | Wilson 95% | retensi n=20 |
 |---|---|---|---|---|
-| PPO | `central-ppo` | 0 dari 5 | [0.00, 0.43] | CANNOT_RUN |
-| PPO | `gnn-mappo_gat` | 4 dari 5 | [0.38, 0.96] | 0.942 |
-| PPO | `gnn-mappo_sage` | 5 dari 5 | [0.57, 1.00] | 0.950 |
-| PPO | `ippo` | 5 dari 5 | [0.57, 1.00] | 0.954 |
-| PPO | `mlp-knn-ppo` | 5 dari 5 | [0.57, 1.00] | 0.949 |
-| DQN | `central-dqn` | 0 dari 5 | [0.00, 0.43] | CANNOT_RUN |
-| DQN | `gnn-madqn_gat` | 2 dari 5 | [0.12, 0.77] | 0.951 |
-| DQN | `gnn-madqn_sage` | 0 dari 5 | [0.00, 0.43] | 0.955 |
-| DQN | `idqn` | 2 dari 5 | [0.12, 0.77] | 0.952 |
+| PPO, n=20 | `central-ppo` | 3 dari 20 | [0.05, 0.36] | CANNOT_RUN |
+| PPO, n=20 | `gnn-mappo_gat` | 14 dari 20 | [0.48, 0.85] | 0.942 |
+| PPO, n=20 | `gnn-mappo_sage` | 19 dari 20 | [0.76, 0.99] | 0.950 |
+| PPO, n=20 | `ippo` | 20 dari 20 | [0.84, 1.00] | 0.954 |
+| PPO, n=5 (post-hoc) | `mlp-knn-ppo` | 5 dari 5 | [0.57, 1.00] | 0.949 |
+| DQN, n=5 | `central-dqn` | 0 dari 5 | [0.00, 0.43] | CANNOT_RUN |
+| DQN, n=5 | `gnn-madqn_gat` | 2 dari 5 | [0.12, 0.77] | 0.951 |
+| DQN, n=5 | `gnn-madqn_sage` | 0 dari 5 | [0.00, 0.43] | 0.955 |
+| DQN, n=5 | `idqn` | 2 dari 5 | [0.12, 0.77] | 0.952 |
 
 Bentuk penulisan wajib "kolaps k dari N seed", tidak pernah "kolaps X% waktu".
 
-**Keluarga PPO: terpisah.** Wilson `central-ppo` [0.00, 0.43] lepas dari [0.38, 0.96] dan
-[0.57, 1.00]. Agregatnya dibayar ke arah sebaliknya (`results/RLIABLE_v4_primary.md`):
-`gnn-mappo_gat` 67.9627 [67.3482, 68.5825] dan `gnn-mappo_sage` 68.8968 [67.7281, 70.1377]
-keduanya **proposed BETTER, CI terpisah** terhadap `central-ppo` 64.2827 [64.1337, 64.3955].
-Jadi model per-agen membeli throughput dan SLA agregat dengan mengorbankan UE cell-edge.
-**Bukan kemenangan message passing:** `ippo` dan `mlp-knn-ppo` kolaps 5 dari 5 seperti varian
-GNN, jadi garis pemisahnya terpusat lawan per-agen.
+> **Dua koreksi 2026-08-18 setelah keluarga PPO diperluas ke 20 seed, dua-duanya melawan
+> versi yang lebih rapi (D3).** (1) `central-ppo` **bukan** "tidak pernah kolaps": angka 0
+> dari 5 adalah artefak sampel kecil, dan di 20 seed ia kolaps 3 kali. Kalimat "satu-satunya
+> arsitektur yang melindungi cell-edge" batal; yang bertahan adalah "kolaps jauh lebih
+> jarang". (2) `gnn-mappo_gat` lawan `ippo` pada throughput berubah dari COMPARABLE jadi
+> **proposed WORSE dengan CI terpisah** — CI yang menyempit membuka celah yang sebelumnya
+> tertutup derau. Perluasan ini dijalankan atas aturan biaya keluarga yang dideklarasikan
+> sebelum hasilnya dilihat, dan konsekuensinya diterima di muka.
+
+**Keluarga PPO: terpisah, dan sekarang di n yang bisa menopangnya.** Wilson `central-ppo`
+[0.05, 0.36] lepas dari [0.48, 0.85], [0.76, 0.99], dan [0.84, 1.00]. Agregatnya dibayar ke
+arah sebaliknya (`results/RLIABLE_v4_primary.md`): `gnn-mappo_gat` 68.0590
+[67.5845, 68.6119] dan `gnn-mappo_sage` 68.4151 [67.8628, 69.1112] keduanya **proposed
+BETTER, CI terpisah** terhadap `central-ppo` 64.2213 [64.1621, 64.2690]. Jadi model per-agen
+membeli throughput dan SLA agregat dengan mengorbankan UE cell-edge.
+
+**Bukan kemenangan message passing, dan di n=20 ini makin jelas:** `ippo` kolaps **20 dari
+20** — lebih sering daripada kedua varian GNN — sementara pada throughput ia justru
+mengalahkan `gnn-mappo_gat` dengan CI terpisah (68.8749 [68.6587, 69.0634]). Garis
+pemisahnya terpusat lawan per-agen, dan di dalam kelompok per-agen message passing tidak
+membeli apa pun di kedua sumbu.
 
 **Keluarga DQN: patah.** `gnn-madqn_sage` 0 dari 5 dan retensi 0.955 sekaligus, dan tidak
 kalah dari `central-dqn` (juga 0 dari 5) pada cell-edge sementara `central-dqn` tidak bisa
@@ -190,11 +215,11 @@ statistik — `gnn-madqn_sage` membantah trade-off sebagai klaim universal, buka
 klaim tandingan. Kontra-contoh itu berdiri di **kedua** pembacaan yang sah: 0 dari 5 pada
 argmax (primer) dan 0 dari 5 pada ε=0.05 (`results/STABILITY_v4_dqn_eps005.md`).
 
-**Batas klaim:** komparatif saja. Karakterisasi — berapa persis rate-nya, bagaimana bentuk
-bimodalitas per-seed — belum diklaim; C4 (≥ 20 seed) GAGAL di 5 seed. **Perluasan seed
-keluarga PPO ke 20 sedang berjalan** (dideklarasikan 2026-08-17 atas dasar biaya keluarga);
-setelah selesai, klaim karakterisasi boleh dibuat **untuk keluarga PPO saja**, dan keluarga
-DQN tetap komparatif-saja. Bagian ini wajib ditulis ulang dengan angka n=20 saat itu.
+**Batas klaim, per keluarga.** Keluarga PPO memenuhi C4 di n = 20, jadi klaim
+**karakterisasi** boleh dibuat di sana — rate persisnya boleh disebut. Keluarga DQN dan
+baseline post-hoc `mlp-knn-ppo` tetap di 5 seed: komparatif saja, tanpa klaim karakterisasi.
+Gate B **tidak** dihitung ulang dengan n campuran; ia beku di lima seed pra-registrasi dan
+`scripts/gate_b_report.py` menolak menghitung kalau n antar-algoritma tidak sama.
 
 ---
 

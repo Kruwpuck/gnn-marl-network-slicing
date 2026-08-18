@@ -24,7 +24,7 @@ Tag filter: `_v4`. DQN (200K steps) and PPO (1M steps) families are never pooled
     -> vs `idqn`: COMPARABLE (CIs overlap)
     -> vs `central-dqn`: COMPARABLE (CIs overlap)
     -> P(`gnn-madqn_gat` > `idqn`) = 0.400  95% CI=[0.040, 0.800]
-    -> P(`gnn-madqn_gat` > `central-dqn`) = 0.360  95% CI=[0.040, 0.760]
+    -> P(`gnn-madqn_gat` > `central-dqn`) = 0.360  95% CI=[0.040, 0.800]
     -> performance profile @ tau=median(idqn)=85.5092: P(`gnn-madqn_gat` at least as good as tau)=0.400  P(`idqn` at least as good as tau)=0.400
     -> performance profile @ tau=median(central-dqn)=85.2443: P(`gnn-madqn_gat` at least as good as tau)=0.400  P(`central-dqn` at least as good as tau)=0.400
 - **embb_p5_mbps** (higher is better):
@@ -53,8 +53,8 @@ Tag filter: `_v4`. DQN (200K steps) and PPO (1M steps) families are never pooled
   - `central-dqn`: IQM=7.9356  95% CI=[6.8756, 9.4622]
     -> vs `idqn`: COMPARABLE (CIs overlap)
     -> vs `central-dqn`: COMPARABLE (CIs overlap)
-    -> P(`gnn-madqn_gat` > `idqn`) = 0.460  95% CI=[0.080, 0.840]
-    -> P(`gnn-madqn_gat` > `central-dqn`) = 0.520  95% CI=[0.160, 0.920]
+    -> P(`gnn-madqn_gat` > `idqn`) = 0.460  95% CI=[0.060, 0.840]
+    -> P(`gnn-madqn_gat` > `central-dqn`) = 0.520  95% CI=[0.160, 1.000]
     -> performance profile @ tau=median(idqn)=8.1067: P(`gnn-madqn_gat` at least as good as tau)=0.200  P(`idqn` at least as good as tau)=0.400
     -> performance profile @ tau=median(central-dqn)=8.4333: P(`gnn-madqn_gat` at least as good as tau)=0.800  P(`central-dqn` at least as good as tau)=0.400
 
@@ -66,7 +66,7 @@ Tag filter: `_v4`. DQN (200K steps) and PPO (1M steps) families are never pooled
   - `central-dqn`: IQM=64.9157  95% CI=[61.9786, 66.1307]
     -> vs `idqn`: COMPARABLE (CIs overlap)
     -> vs `central-dqn`: COMPARABLE (CIs overlap)
-    -> P(`gnn-madqn_sage` > `idqn`) = 0.520  95% CI=[0.120, 0.960]
+    -> P(`gnn-madqn_sage` > `idqn`) = 0.520  95% CI=[0.120, 0.920]
     -> P(`gnn-madqn_sage` > `central-dqn`) = 0.440  95% CI=[0.080, 0.840]
     -> performance profile @ tau=median(idqn)=64.6010: P(`gnn-madqn_sage` at least as good as tau)=0.600  P(`idqn` at least as good as tau)=0.400
     -> performance profile @ tau=median(central-dqn)=64.3137: P(`gnn-madqn_sage` at least as good as tau)=0.600  P(`central-dqn` at least as good as tau)=0.400
@@ -76,7 +76,7 @@ Tag filter: `_v4`. DQN (200K steps) and PPO (1M steps) families are never pooled
   - `central-dqn`: IQM=85.8358  95% CI=[82.3766, 87.2544]
     -> vs `idqn`: COMPARABLE (CIs overlap)
     -> vs `central-dqn`: COMPARABLE (CIs overlap)
-    -> P(`gnn-madqn_sage` > `idqn`) = 0.520  95% CI=[0.120, 0.920]
+    -> P(`gnn-madqn_sage` > `idqn`) = 0.520  95% CI=[0.080, 0.960]
     -> P(`gnn-madqn_sage` > `central-dqn`) = 0.440  95% CI=[0.080, 0.840]
     -> performance profile @ tau=median(idqn)=85.5092: P(`gnn-madqn_sage` at least as good as tau)=0.600  P(`idqn` at least as good as tau)=0.400
     -> performance profile @ tau=median(central-dqn)=85.2443: P(`gnn-madqn_sage` at least as good as tau)=0.600  P(`central-dqn` at least as good as tau)=0.400
@@ -86,7 +86,7 @@ Tag filter: `_v4`. DQN (200K steps) and PPO (1M steps) families are never pooled
   - `central-dqn`: IQM=0.7194  95% CI=[0.2884, 1.6126]
     -> vs `idqn`: COMPARABLE (CIs overlap)
     -> vs `central-dqn`: COMPARABLE (CIs overlap)
-    -> P(`gnn-madqn_sage` > `idqn`) = 0.480  95% CI=[0.039, 0.840]
+    -> P(`gnn-madqn_sage` > `idqn`) = 0.480  95% CI=[0.000, 0.840]
     -> P(`gnn-madqn_sage` > `central-dqn`) = 0.920  95% CI=[0.680, 1.000]
     -> performance profile @ tau=median(idqn)=1.7644: P(`gnn-madqn_sage` at least as good as tau)=0.200  P(`idqn` at least as good as tau)=0.400
     -> performance profile @ tau=median(central-dqn)=0.3978: P(`gnn-madqn_sage` at least as good as tau)=1.000  P(`central-dqn` at least as good as tau)=0.400
@@ -107,112 +107,112 @@ Tag filter: `_v4`. DQN (200K steps) and PPO (1M steps) families are never pooled
     -> vs `idqn`: COMPARABLE (CIs overlap)
     -> vs `central-dqn`: COMPARABLE (CIs overlap)
     -> P(`gnn-madqn_sage` > `idqn`) = 0.540  95% CI=[0.160, 0.900]
-    -> P(`gnn-madqn_sage` > `central-dqn`) = 0.520  95% CI=[0.160, 0.960]
+    -> P(`gnn-madqn_sage` > `central-dqn`) = 0.520  95% CI=[0.120, 0.920]
     -> performance profile @ tau=median(idqn)=8.1067: P(`gnn-madqn_sage` at least as good as tau)=0.600  P(`idqn` at least as good as tau)=0.400
     -> performance profile @ tau=median(central-dqn)=8.4333: P(`gnn-madqn_sage` at least as good as tau)=0.800  P(`central-dqn` at least as good as tau)=0.400
 
 ## gnn-mappo_gat vs ippo, central-ppo (PPO family)
 
 - **timely_throughput_mbps** (higher is better):
-  - `gnn-mappo_gat` (proposed): IQM=67.9627  95% CI=[67.3482, 68.5825]
-  - `ippo`: IQM=68.5563  95% CI=[68.2290, 69.0997]
-  - `central-ppo`: IQM=64.2827  95% CI=[64.1337, 64.3955]
-    -> vs `ippo`: COMPARABLE (CIs overlap)
+  - `gnn-mappo_gat` (proposed): IQM=68.0590  95% CI=[67.5845, 68.6119]
+  - `ippo`: IQM=68.8749  95% CI=[68.6587, 69.0634]
+  - `central-ppo`: IQM=64.2213  95% CI=[64.1621, 64.2690]
+    -> vs `ippo`: proposed WORSE (CIs disjoint)
     -> vs `central-ppo`: proposed BETTER (CIs disjoint)
-    -> P(`gnn-mappo_gat` > `ippo`) = 0.240  95% CI=[0.000, 0.600]
+    -> P(`gnn-mappo_gat` > `ippo`) = 0.258  95% CI=[0.100, 0.443]
     -> P(`gnn-mappo_gat` > `central-ppo`) = 1.000  95% CI=[1.000, 1.000]
-    -> performance profile @ tau=median(ippo)=68.4658: P(`gnn-mappo_gat` at least as good as tau)=0.400  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=64.2606: P(`gnn-mappo_gat` at least as good as tau)=1.000  P(`central-ppo` at least as good as tau)=0.400
+    -> performance profile @ tau=median(ippo)=68.8932: P(`gnn-mappo_gat` at least as good as tau)=0.250  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=64.2203: P(`gnn-mappo_gat` at least as good as tau)=1.000  P(`central-ppo` at least as good as tau)=0.500
 - **sla_satisfaction_pct** (higher is better):
-  - `gnn-mappo_gat` (proposed): IQM=90.0586  95% CI=[89.1603, 90.9524]
-  - `ippo`: IQM=90.5660  95% CI=[90.1481, 91.2718]
-  - `central-ppo`: IQM=85.1478  95% CI=[84.9784, 85.2832]
+  - `gnn-mappo_gat` (proposed): IQM=90.1125  95% CI=[89.4455, 90.8109]
+  - `ippo`: IQM=90.9987  95% CI=[90.7165, 91.2269]
+  - `central-ppo`: IQM=85.0759  95% CI=[85.0072, 85.1328]
     -> vs `ippo`: COMPARABLE (CIs overlap)
     -> vs `central-ppo`: proposed BETTER (CIs disjoint)
-    -> P(`gnn-mappo_gat` > `ippo`) = 0.360  95% CI=[0.040, 0.760]
+    -> P(`gnn-mappo_gat` > `ippo`) = 0.295  95% CI=[0.130, 0.477]
     -> P(`gnn-mappo_gat` > `central-ppo`) = 1.000  95% CI=[1.000, 1.000]
-    -> performance profile @ tau=median(ippo)=90.4575: P(`gnn-mappo_gat` at least as good as tau)=0.400  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=85.1160: P(`gnn-mappo_gat` at least as good as tau)=1.000  P(`central-ppo` at least as good as tau)=0.400
+    -> performance profile @ tau=median(ippo)=91.0094: P(`gnn-mappo_gat` at least as good as tau)=0.300  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=85.0767: P(`gnn-mappo_gat` at least as good as tau)=1.000  P(`central-ppo` at least as good as tau)=0.500
 - **embb_p5_mbps** (higher is better):
-  - `gnn-mappo_gat` (proposed): IQM=0.0000  95% CI=[0.0000, 0.9351]
+  - `gnn-mappo_gat` (proposed): IQM=0.0069  95% CI=[0.0000, 0.3423]
   - `ippo`: IQM=0.0000  95% CI=[0.0000, 0.0000]
-  - `central-ppo`: IQM=0.3470  95% CI=[0.0716, 0.8771]
+  - `central-ppo`: IQM=0.3041  95% CI=[0.0706, 0.7192]
     -> vs `ippo`: proposed BETTER (CIs disjoint)
     -> vs `central-ppo`: COMPARABLE (CIs overlap)
-    -> P(`gnn-mappo_gat` > `ippo`) = 1.000  95% CI=[1.000, 1.000]
-    -> P(`gnn-mappo_gat` > `central-ppo`) = 0.200  95% CI=[0.000, 0.600]
-    -> performance profile @ tau=median(ippo)=0.0000: P(`gnn-mappo_gat` at least as good as tau)=1.000  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=0.4505: P(`gnn-mappo_gat` at least as good as tau)=0.200  P(`central-ppo` at least as good as tau)=0.400
+    -> P(`gnn-mappo_gat` > `ippo`) = 0.950  95% CI=[0.848, 1.000]
+    -> P(`gnn-mappo_gat` > `central-ppo`) = 0.228  95% CI=[0.083, 0.398]
+    -> performance profile @ tau=median(ippo)=0.0000: P(`gnn-mappo_gat` at least as good as tau)=0.950  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=0.1978: P(`gnn-mappo_gat` at least as good as tau)=0.250  P(`central-ppo` at least as good as tau)=0.500
 - **jains_fairness** (higher is better):
-  - `gnn-mappo_gat` (proposed): IQM=0.5313  95% CI=[0.5182, 0.5543]
-  - `ippo`: IQM=0.4876  95% CI=[0.4800, 0.4936]
-  - `central-ppo`: IQM=0.6673  95% CI=[0.6530, 0.6689]
+  - `gnn-mappo_gat` (proposed): IQM=0.5356  95% CI=[0.5268, 0.5447]
+  - `ippo`: IQM=0.4854  95% CI=[0.4784, 0.4913]
+  - `central-ppo`: IQM=0.6633  95% CI=[0.6555, 0.6686]
     -> vs `ippo`: proposed BETTER (CIs disjoint)
     -> vs `central-ppo`: proposed WORSE (CIs disjoint)
-    -> P(`gnn-mappo_gat` > `ippo`) = 1.000  95% CI=[1.000, 1.000]
+    -> P(`gnn-mappo_gat` > `ippo`) = 0.953  95% CI=[0.850, 1.000]
     -> P(`gnn-mappo_gat` > `central-ppo`) = 0.000  95% CI=[0.000, 0.000]
-    -> performance profile @ tau=median(ippo)=0.4910: P(`gnn-mappo_gat` at least as good as tau)=1.000  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=0.6682: P(`gnn-mappo_gat` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.400
+    -> performance profile @ tau=median(ippo)=0.4868: P(`gnn-mappo_gat` at least as good as tau)=0.950  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=0.6648: P(`gnn-mappo_gat` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.500
 - **urllc_delay_p99** (lower is better):
-  - `gnn-mappo_gat` (proposed): IQM=8.9522  95% CI=[8.6022, 9.5333]
-  - `ippo`: IQM=8.2533  95% CI=[8.2089, 8.2933]
-  - `central-ppo`: IQM=7.9622  95% CI=[7.9067, 8.0889]
+  - `gnn-mappo_gat` (proposed): IQM=8.7183  95% CI=[8.6213, 8.8768]
+  - `ippo`: IQM=8.2712  95% CI=[8.2373, 8.3027]
+  - `central-ppo`: IQM=8.0340  95% CI=[7.9887, 8.0713]
     -> vs `ippo`: proposed WORSE (CIs disjoint)
     -> vs `central-ppo`: proposed WORSE (CIs disjoint)
-    -> P(`gnn-mappo_gat` > `ippo`) = 0.000  95% CI=[0.000, 0.000]
-    -> P(`gnn-mappo_gat` > `central-ppo`) = 0.000  95% CI=[0.000, 0.000]
-    -> performance profile @ tau=median(ippo)=8.2533: P(`gnn-mappo_gat` at least as good as tau)=0.000  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=7.9533: P(`gnn-mappo_gat` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.400
+    -> P(`gnn-mappo_gat` > `ippo`) = 0.070  95% CI=[0.000, 0.185]
+    -> P(`gnn-mappo_gat` > `central-ppo`) = 0.005  95% CI=[0.000, 0.022]
+    -> performance profile @ tau=median(ippo)=8.2700: P(`gnn-mappo_gat` at least as good as tau)=0.050  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=8.0400: P(`gnn-mappo_gat` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.500
 
 ## gnn-mappo_sage vs ippo, central-ppo (PPO family)
 
 - **timely_throughput_mbps** (higher is better):
-  - `gnn-mappo_sage` (proposed): IQM=68.8968  95% CI=[67.7281, 70.1377]
-  - `ippo`: IQM=68.5563  95% CI=[68.2290, 69.0997]
-  - `central-ppo`: IQM=64.2827  95% CI=[64.1337, 64.3955]
+  - `gnn-mappo_sage` (proposed): IQM=68.4151  95% CI=[67.8628, 69.1112]
+  - `ippo`: IQM=68.8749  95% CI=[68.6595, 69.0618]
+  - `central-ppo`: IQM=64.2213  95% CI=[64.1619, 64.2686]
     -> vs `ippo`: COMPARABLE (CIs overlap)
     -> vs `central-ppo`: proposed BETTER (CIs disjoint)
-    -> P(`gnn-mappo_sage` > `ippo`) = 0.560  95% CI=[0.200, 1.000]
+    -> P(`gnn-mappo_sage` > `ippo`) = 0.388  95% CI=[0.195, 0.583]
     -> P(`gnn-mappo_sage` > `central-ppo`) = 1.000  95% CI=[1.000, 1.000]
-    -> performance profile @ tau=median(ippo)=68.4658: P(`gnn-mappo_sage` at least as good as tau)=0.600  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=64.2606: P(`gnn-mappo_sage` at least as good as tau)=1.000  P(`central-ppo` at least as good as tau)=0.400
+    -> performance profile @ tau=median(ippo)=68.8932: P(`gnn-mappo_sage` at least as good as tau)=0.400  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=64.2203: P(`gnn-mappo_sage` at least as good as tau)=1.000  P(`central-ppo` at least as good as tau)=0.500
 - **sla_satisfaction_pct** (higher is better):
-  - `gnn-mappo_sage` (proposed): IQM=91.0831  95% CI=[89.6116, 92.5848]
-  - `ippo`: IQM=90.5660  95% CI=[90.1481, 91.2718]
-  - `central-ppo`: IQM=85.1478  95% CI=[84.9784, 85.2832]
+  - `gnn-mappo_sage` (proposed): IQM=90.5030  95% CI=[89.8139, 91.3691]
+  - `ippo`: IQM=90.9987  95% CI=[90.7197, 91.2270]
+  - `central-ppo`: IQM=85.0759  95% CI=[85.0064, 85.1319]
     -> vs `ippo`: COMPARABLE (CIs overlap)
     -> vs `central-ppo`: proposed BETTER (CIs disjoint)
-    -> P(`gnn-mappo_sage` > `ippo`) = 0.560  95% CI=[0.160, 1.000]
+    -> P(`gnn-mappo_sage` > `ippo`) = 0.405  95% CI=[0.212, 0.600]
     -> P(`gnn-mappo_sage` > `central-ppo`) = 1.000  95% CI=[1.000, 1.000]
-    -> performance profile @ tau=median(ippo)=90.4575: P(`gnn-mappo_sage` at least as good as tau)=0.600  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=85.1160: P(`gnn-mappo_sage` at least as good as tau)=1.000  P(`central-ppo` at least as good as tau)=0.400
+    -> performance profile @ tau=median(ippo)=91.0094: P(`gnn-mappo_sage` at least as good as tau)=0.450  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=85.0767: P(`gnn-mappo_sage` at least as good as tau)=1.000  P(`central-ppo` at least as good as tau)=0.500
 - **embb_p5_mbps** (higher is better):
-  - `gnn-mappo_sage` (proposed): IQM=0.0000  95% CI=[0.0000, 0.0000]
+  - `gnn-mappo_sage` (proposed): IQM=0.0000  95% CI=[0.0000, 0.0009]
   - `ippo`: IQM=0.0000  95% CI=[0.0000, 0.0000]
-  - `central-ppo`: IQM=0.3470  95% CI=[0.0716, 0.8771]
-    -> vs `ippo`: COMPARABLE (CIs overlap)
+  - `central-ppo`: IQM=0.3041  95% CI=[0.0722, 0.7151]
+    -> vs `ippo`: proposed BETTER (CIs disjoint)
     -> vs `central-ppo`: proposed WORSE (CIs disjoint)
-    -> P(`gnn-mappo_sage` > `ippo`) = 0.800  95% CI=[0.400, 1.000]
-    -> P(`gnn-mappo_sage` > `central-ppo`) = 0.000  95% CI=[0.000, 0.000]
-    -> performance profile @ tau=median(ippo)=0.0000: P(`gnn-mappo_sage` at least as good as tau)=0.800  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=0.4505: P(`gnn-mappo_sage` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.400
+    -> P(`gnn-mappo_sage` > `ippo`) = 0.902  95% CI=[0.785, 0.995]
+    -> P(`gnn-mappo_sage` > `central-ppo`) = 0.068  95% CI=[0.005, 0.170]
+    -> performance profile @ tau=median(ippo)=0.0000: P(`gnn-mappo_sage` at least as good as tau)=0.900  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=0.1978: P(`gnn-mappo_sage` at least as good as tau)=0.050  P(`central-ppo` at least as good as tau)=0.500
 - **jains_fairness** (higher is better):
-  - `gnn-mappo_sage` (proposed): IQM=0.5105  95% CI=[0.4651, 0.5285]
-  - `ippo`: IQM=0.4876  95% CI=[0.4800, 0.4936]
-  - `central-ppo`: IQM=0.6673  95% CI=[0.6530, 0.6689]
-    -> vs `ippo`: COMPARABLE (CIs overlap)
+  - `gnn-mappo_sage` (proposed): IQM=0.5130  95% CI=[0.5039, 0.5207]
+  - `ippo`: IQM=0.4854  95% CI=[0.4785, 0.4913]
+  - `central-ppo`: IQM=0.6633  95% CI=[0.6555, 0.6686]
+    -> vs `ippo`: proposed BETTER (CIs disjoint)
     -> vs `central-ppo`: proposed WORSE (CIs disjoint)
-    -> P(`gnn-mappo_sage` > `ippo`) = 0.800  95% CI=[0.400, 1.000]
+    -> P(`gnn-mappo_sage` > `ippo`) = 0.865  95% CI=[0.728, 0.975]
     -> P(`gnn-mappo_sage` > `central-ppo`) = 0.000  95% CI=[0.000, 0.000]
-    -> performance profile @ tau=median(ippo)=0.4910: P(`gnn-mappo_sage` at least as good as tau)=0.800  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=0.6682: P(`gnn-mappo_sage` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.400
+    -> performance profile @ tau=median(ippo)=0.4868: P(`gnn-mappo_sage` at least as good as tau)=0.850  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=0.6648: P(`gnn-mappo_sage` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.500
 - **urllc_delay_p99** (lower is better):
-  - `gnn-mappo_sage` (proposed): IQM=8.5867  95% CI=[8.3645, 8.7082]
-  - `ippo`: IQM=8.2533  95% CI=[8.2089, 8.2933]
-  - `central-ppo`: IQM=7.9622  95% CI=[7.9067, 8.0889]
+  - `gnn-mappo_sage` (proposed): IQM=8.7402  95% CI=[8.6182, 8.8660]
+  - `ippo`: IQM=8.2712  95% CI=[8.2372, 8.3033]
+  - `central-ppo`: IQM=8.0340  95% CI=[7.9893, 8.0713]
     -> vs `ippo`: proposed WORSE (CIs disjoint)
     -> vs `central-ppo`: proposed WORSE (CIs disjoint)
-    -> P(`gnn-mappo_sage` > `ippo`) = 0.040  95% CI=[0.000, 0.240]
+    -> P(`gnn-mappo_sage` > `ippo`) = 0.043  95% CI=[0.000, 0.107]
     -> P(`gnn-mappo_sage` > `central-ppo`) = 0.000  95% CI=[0.000, 0.000]
-    -> performance profile @ tau=median(ippo)=8.2533: P(`gnn-mappo_sage` at least as good as tau)=0.000  P(`ippo` at least as good as tau)=0.400
-    -> performance profile @ tau=median(central-ppo)=7.9533: P(`gnn-mappo_sage` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.400
+    -> performance profile @ tau=median(ippo)=8.2700: P(`gnn-mappo_sage` at least as good as tau)=0.000  P(`ippo` at least as good as tau)=0.500
+    -> performance profile @ tau=median(central-ppo)=8.0400: P(`gnn-mappo_sage` at least as good as tau)=0.000  P(`central-ppo` at least as good as tau)=0.500

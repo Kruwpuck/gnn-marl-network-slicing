@@ -126,6 +126,8 @@ P3 (beku 2026-08-08) menetapkan pembacaan stokastik sebagai primer, tetapi selur
 - **Rasio `sd_greedy / sd_(ε=0.05)` > 2.0** → pembacaan greedy dinyatakan degenerat. (PPO memisah bersih di 1.18 lawan 3.17.)
 - Uji absolut penyerta: **sd greedy > 25 pp** (titik tengah 13.80 dan 34.95). Dicatat jujur bahwa sd greedy DQN sudah terlihat di `results/READOUT_COMPARISON.md` (14.16–19.66 pp) dan semuanya di bawah 25 pp, jadi uji yang benar-benar mengikat adalah **rasio**, yang penyebutnya belum ada saat aturan ini ditulis.
 
+> **Catatan 2026-08-18: angka di tabel ini sengaja TIDAK diperbarui.** Ia merekam data yang benar-benar dipakai saat ambang dideklarasikan (n = 5, sebelum perluasan seed), dan menulis ulangnya sama dengan mengubah pra-registrasi setelah fakta. Untuk transparansi, rasio yang sama dihitung ulang di n = 20 (`results/READOUT_COMPARISON.md`): `central-ppo` 0.98, `ippo` 1.31, `gnn-mappo_gat` 3.24, `gnn-mappo_sage` 3.50. Pemisahannya tetap bersih terhadap ambang 2.0 dan **tidak ada verdict yang berubah** — aturan yang dideklarasikan tetap berlaku sebagaimana ditulis.
+
 Konsekuensi yang mengikat, dua-duanya diterima di muka:
 
 - **Rasio ≤ 2.0** → tidak ada kolaps greedy pada DQN; argmax ditetapkan sebagai pembacaan primer keluarga DQN, sekarang dengan bukti dan bukan asumsi. Kolom stokastik DQN yang lama (ε = 1.0) dibuang sebagai cacat instrumen.
@@ -205,6 +207,27 @@ Aturan biayanya sudah ditetapkan 2026-08-16 atas dasar biaya keluarga, bukan has
 
 Diputuskan manusia (`Habb`), dicatat di `runs/2026-08-05-run01/ledger.md`.
 
+#### Hasil perluasan 2026-08-18 — aturan keputusan diterapkan apa adanya
+
+60 run tuntas seluruhnya di 1953 baris tanpa job mati; 60 checkpoint dievaluasi dua pembacaan 150 episode, nol anomali. Keluarga PPO pra-registrasi kini n = 20 (seed 42–61), keluarga DQN dan `mlp-knn-ppo` tetap n = 5 — diverifikasi dari isi `results/eval`, bukan dari perintah yang dikirim.
+
+**Aturan Wilson diterapkan:** `central-ppo` [0.05, 0.36] tetap **terpisah** dari `gnn-mappo_gat` [0.48, 0.85], `gnn-mappo_sage` [0.76, 0.99], dan `ippo` [0.84, 1.00]. Klaim komparatif keluarga PPO **bertahan**, tidak dicabut.
+
+**C4:** LOLOS untuk keluarga PPO (n = 20 ≥ 20), tetap GAGAL untuk keluarga DQN (n = 5). Klaim karakterisasi karena itu boleh dibuat **untuk keluarga PPO saja**.
+
+**Dua koreksi yang melemahkan cerita, dan wajib ikut tercetak (D3):**
+
+| yang dulu dilaporkan (n = 5) | yang benar (n = 20) | akibatnya |
+|---|---|---|
+| `central-ppo` kolaps **0 dari 5** | **3 dari 20** (rate 0.15) | kalimat "satu-satunya arsitektur yang tidak pernah kolaps / melindungi cell-edge" **batal**. Yang benar: kolaps jauh lebih jarang, bukan tidak pernah. 0 dari 5 adalah artefak sampel kecil |
+| `gnn-mappo_gat` vs `ippo` throughput **COMPARABLE** | **proposed WORSE, CI terpisah** (68.0590 [67.5845, 68.6119] lawan 68.8749 [68.6587, 69.0634]) | CI yang menyempit membuka celah yang sebelumnya tertutup derau |
+
+Angka lain yang bergerak (`results/STABILITY_v4_primary.md`, `results/RLIABLE_v4_primary.md`): `gnn-mappo_gat` 4 dari 5 → **14 dari 20**, `gnn-mappo_sage` 5 dari 5 → **19 dari 20**, `ippo` 5 dari 5 → **20 dari 20** (satu-satunya yang selalu kolaps), verdict tegas 14 → 17.
+
+**Gate B diverifikasi tidak bergerak** di bawah pembekuan yang kini ditegakkan kode (`scripts/gate_b_report.py`, `GATE_SEEDS`, plus penolakan menghitung kalau n antar-algoritma tidak sama): B1 16.33%, B2 11.98 pp, B3 1.01 ms, B4 0 dari 5.
+
+Catatan integritas 2026-08-17 terbukti benar: perluasan ini hanya bisa membuat kesimpulan lebih merugikan proposed, dan memang begitu — kedua koreksi di atas melemahkan versi yang lebih rapi.
+
 ### Status Gate G4 2026-08-17 — diturunkan ulang dari file, bukan dari ingatan
 
 Setiap kriteria di §Kriteria selesai diturunkan ulang terhadap file yang di-generate hari ini, di bawah pembacaan primer per keluarga. Kolom "diverifikasi" menyebut apa yang benar-benar dijalankan ulang, bukan apa yang dulu dilaporkan.
@@ -219,7 +242,7 @@ Setiap kriteria di §Kriteria selesai diturunkan ulang terhadap file yang di-gen
 | C1 | **LOLOS** | `scripts/test_treatment_identity.py` | dijalankan ulang hari ini, **9/9** (seed 42/43/44 × floor `none`/`static`/`dynamic`, 200 langkah) |
 | C2 | **PARSIAL** | `results/GATE_C.md`; remediasi di `configs/experiment_config.yaml` §`agent` + `agents/hparams.py` | `pytest tests/ -q` hijau 92/92, termasuk `tests/test_hparams_identity.py`. Verdict untuk wave sebagaimana dijalankan tetap PARSIAL — biner yang menghasilkan checkpoint ini tidak membaca YAML. Menaikkannya keputusan manusia |
 | C3 | **LOLOS**, satu kasus ditandai | `results/GATE_B_v4_primary.md` §"C3 supplement" | split per keluarga sekarang **di-generate**, bukan disalin tangan; tidak ada verdict B yang berbalik di set mana pun |
-| C4 | **GAGAL** | `results/STABILITY_v4_primary.md` (5 seed, bukan ≥ 20) | klaim di-scoping ulang: komparatif hanya di keluarga PPO, lihat koreksi 2026-08-17 di atas |
+| C4 | **LOLOS (PPO) / GAGAL (DQN)** | `results/STABILITY_v4_primary.md` — keluarga PPO n = 20, keluarga DQN n = 5 | diperbarui 2026-08-18 setelah perluasan seed. Klaim karakterisasi kini boleh dibuat untuk keluarga PPO; keluarga DQN tetap komparatif-saja dan C4-nya tetap GAGAL |
 | C5 | **LOLOS** | `EVAL_SEED_BASE = 10_000` (`scripts/evaluate_checkpoints.py`), seed training 42–46 | dibaca ulang dari kode |
 | C6 | **LOLOS** | `git diff aad4198 HEAD -- configs/experiment_config.yaml` hanya menyentuh blok `agent:` yang ditambahkan setelah wave | pemeriksaan per-kunci, bukan per-file |
 | D1 | **LOLOS** | `results/RLIABLE.md` (v3) tetap ada berdampingan dengan `results/RLIABLE_v4_primary.md` | v3 tidak ditimpa |

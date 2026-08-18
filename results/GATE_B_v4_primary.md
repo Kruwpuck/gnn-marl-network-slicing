@@ -2,6 +2,7 @@
 
 Readout: `primary`. Tag `_v4`. 8 pre-registered algorithms, seeds `42,43,44,45,46`; later additions such as `mlp-knn-ppo` are excluded because Gate B is a pre-registration and widening its algorithm set after seeing results would change the range it measures.
 
+**Seed freeze.** 9000 eval rows from seeds outside the pre-registered set were excluded. The PPO family was extended to 20 seeds on 2026-08-17 while the DQN family stayed at 5; B1-B4 are ranges *across* the 8 algorithms, so unequal n would shift a pre-registered range for a statistical reason rather than a change in the task. The extra seeds are used for the C4 characterisation of the PPO family instead (`results/STABILITY_v4_primary.md`).
 
 | # | KPI | min | max | range | threshold | verdict |
 |---|---|---|---|---|---|---|
