@@ -7,81 +7,516 @@
 % \cite{...} di main.tex ter-resolve dan template langsung ter-compile. Ganti/hapus
 % dengan referensi paper-mu yang sebenarnya (idealnya lewat Zotero).
 
-@misc{ref1,
-  title        = {Mathematics Into Type},
-  author       = {{American Mathematical Society}},
-  howpublished = {[Online]},
-  note         = {Available: https://www.ams.org/arc/styleguide/mit-2.pdf}
-}
+% =====================================================================
+%  references.bib
+%  Bibliography for: "Graph-Based Multi-Agent Reinforcement Learning for
+%  Dynamic PRB Allocation in SDN/O-RAN-Enabled 5G/6G Network Slicing"
+%
+%  NOTE ON VERIFICATION
+%  --------------------
+%  Entries marked "% [VERIFIED]" have had their bibliographic metadata and
+%  DOI confirmed against the publisher record or an authoritative index.
+%  Entries marked "% [CHECK DOI]" have correct title/venue/volume/pages but
+%  the DOI string was reconstructed and MUST be confirmed on IEEE Xplore /
+%  the publisher site before submission.
+%  Entries marked "% [PRE-2021 FOUNDATIONAL]" are older than the 2021 cut-off
+%  but are unavoidable primary sources for the algorithms used (GCN,
+%  GraphSAGE, GAT, DQN, Dueling DQN, PPO).
+% =====================================================================
 
-@book{ref2,
-  author    = {Chaundy, T. W. and Barrett, P. R. and Batey, C.},
-  title     = {The Printing of Mathematics},
-  publisher = {Oxford Univ. Press},
-  address   = {London, U.K.},
-  year      = {1954}
-}
 
-@book{ref3,
-  author    = {Mittelbach, F. and Goossens, M.},
-  title     = {The {\LaTeX} Companion},
-  edition   = {2nd},
-  publisher = {Pearson},
-  address   = {Boston, MA, USA},
-  year      = {2004}
-}
+% ---------------------------------------------------------------------
+% A. GNN + (MULTI-AGENT) REINFORCEMENT LEARNING FOR RADIO RESOURCES
+% ---------------------------------------------------------------------
 
-@book{ref4,
-  author    = {Gr\"atzer, G.},
-  title     = {More Math Into LaTeX},
-  publisher = {Springer},
-  address   = {New York, NY, USA},
-  year      = {2007}
-}
+@article{shao2021gat,
+  author  = {Shao, Yan and Li, Rongpeng and Hu, Bing and Wu, Yingxiao and Zhao, Zhifeng and Zhang, Honggang},
+  title   = {Graph Attention Network-Based Multi-Agent Reinforcement Learning for Slicing Resource Management in Dense Cellular Network},
+  journal = {IEEE Transactions on Vehicular Technology},
+  volume  = {70},
+  number  = {10},
+  pages   = {10792--10803},
+  year    = {2021},
+  doi     = {10.1109/TVT.2021.3103416}
+} % [VERIFIED]
 
-@misc{ref5,
-  author       = {Letourneau, M. and Sharp, J. W.},
-  title        = {AMS-StyleGuide-online.pdf},
-  organization = {American Mathematical Society},
-  address      = {Providence, RI, USA},
-  howpublished = {[Online]},
-  note         = {Available: http://www.ams.org/arc/styleguide/index.html}
-}
+@article{xu2026graphsage,
+  author  = {Xu, Lei and Han, Shu and Fu, Wei and Zhu, Ziran and Wu, Jing and Zhu, Xiaorong},
+  title   = {{GNN-DRL}-Based Intelligent Routing and Resource Allocation Algorithms for Multi-Layer Wireless Mesh Network},
+  journal = {Sensors},
+  volume  = {26},
+  number  = {4},
+  pages   = {1170},
+  year    = {2026},
+  doi     = {10.3390/s26041170}
+} % [VERIFIED]
 
-@article{ref6,
-  author  = {Sira-Ramirez, H.},
-  title   = {On the sliding mode control of nonlinear systems},
-  journal = {Syst. Control Lett.},
-  volume  = {19},
-  pages   = {303--312},
-  year    = {1992}
-}
-
-@inproceedings{ref7,
-  author    = {Levant, A.},
-  title     = {Exact differentiation of signals with unbounded higher derivatives},
-  booktitle = {Proc. 45th IEEE Conf. Decis. Control},
-  address   = {San Diego, CA, USA},
-  pages     = {5585--5590},
-  year      = {2006},
-  doi       = {10.1109/CDC.2006.377165}
-}
-
-@article{ref8,
-  author  = {Fliess, M. and Join, C. and Sira-Ramirez, H.},
-  title   = {Non-linear estimation is easy},
-  journal = {Int. J. Model., Ident. Control},
-  volume  = {4},
+@article{shen2021gnnrrm,
+  author  = {Shen, Yifei and Shi, Yuanming and Zhang, Jun and Letaief, Khaled B.},
+  title   = {Graph Neural Networks for Scalable Radio Resource Management: Architecture Design and Theoretical Analysis},
+  journal = {IEEE Journal on Selected Areas in Communications},
+  volume  = {39},
   number  = {1},
-  pages   = {12--27},
-  year    = {2008}
+  pages   = {101--115},
+  year    = {2021},
+  doi     = {10.1109/JSAC.2020.3036965}
+} % [VERIFIED]
+
+@article{shen2023theory,
+  author  = {Shen, Yifei and Zhang, Jun and Song, S. H. and Letaief, Khaled B.},
+  title   = {Graph Neural Networks for Wireless Communications: From Theory to Practice},
+  journal = {IEEE Transactions on Wireless Communications},
+  volume  = {22},
+  number  = {5},
+  pages   = {3554--3569},
+  year    = {2023},
+  doi     = {10.1109/TWC.2022.3219840}
+} % [CHECK DOI]
+
+@article{he2021gnnoverview,
+  author  = {He, Shiwen and Xiong, Shaowen and Ou, Yeyu and Zhang, Jian and Wang, Jiaheng and Huang, Yongming and Zhang, Yaoxue},
+  title   = {An Overview on the Application of Graph Neural Networks in Wireless Networks},
+  journal = {IEEE Open Journal of the Communications Society},
+  volume  = {2},
+  pages   = {2547--2565},
+  year    = {2021},
+  doi     = {10.1109/OJCOMS.2021.3128637}
+} % [CHECK DOI]
+
+@article{naderializadeh2021marl,
+  author  = {Naderializadeh, Navid and Sydir, Jaroslaw J. and Simsek, Meryem and Nikopour, Hosein},
+  title   = {Resource Management in Wireless Networks via Multi-Agent Deep Reinforcement Learning},
+  journal = {IEEE Transactions on Wireless Communications},
+  volume  = {20},
+  number  = {6},
+  pages   = {3507--3523},
+  year    = {2021},
+  doi     = {10.1109/TWC.2021.3051163}
+} % [CHECK DOI]
+
+@article{suarez2023gnncomm,
+  author  = {Su{\'a}rez-Varela, Jos{\'e} and Almasan, Paul and Ferriol-Galm{\'e}s, Miquel and Rusek, Krzysztof and Geyer, Fabien and Cheng, Xiangle and Shi, Xiang and Xiao, Shihan and Scarselli, Franco and Cabellos-Aparicio, Albert and Barlet-Ros, Pere},
+  title   = {Graph Neural Networks for Communication Networks: Context, Use Cases and Opportunities},
+  journal = {IEEE Network},
+  volume  = {37},
+  number  = {3},
+  pages   = {146--153},
+  year    = {2023},
+  doi     = {10.1109/MNET.123.2100773}
+} % [CHECK DOI]
+
+@article{ferriol2023routenetfermi,
+  author  = {Ferriol-Galm{\'e}s, Miquel and Paillisse, Jordi and Su{\'a}rez-Varela, Jos{\'e} and Rusek, Krzysztof and Xiao, Shihan and Shi, Xiang and Cheng, Xiangle and Barlet-Ros, Pere and Cabellos-Aparicio, Albert},
+  title   = {{RouteNet-Fermi}: Network Modeling With Graph Neural Networks},
+  journal = {IEEE/ACM Transactions on Networking},
+  volume  = {31},
+  number  = {6},
+  pages   = {3080--3095},
+  year    = {2023},
+  doi     = {10.1109/TNET.2023.3269983}
+} % [CHECK DOI]
+
+@article{wang2022gnndt,
+  author  = {Wang, Haozhe and Wu, Yulei and Min, Geyong and Miao, Wang},
+  title   = {A Graph Neural Network-Based Digital Twin for Network Slicing Management},
+  journal = {IEEE Transactions on Industrial Informatics},
+  volume  = {18},
+  number  = {2},
+  pages   = {1367--1376},
+  year    = {2022},
+  doi     = {10.1109/TII.2020.3047843}
+} % [VERIFIED]
+
+@misc{du2024gnnmarl,
+  author       = {Du, Yang and Deng, Yansha and Nallanathan, Arumugam},
+  title        = {Graph Neural Network Meets Multi-Agent Reinforcement Learning: Fundamentals, Applications, and Future Directions},
+  howpublished = {arXiv:2404.04898},
+  year         = {2024},
+  doi          = {10.48550/arXiv.2404.04898}
+} % [CHECK DOI] - confirm author list and whether a journal version exists
+
+@article{dong2022gcnslicing,
+  author  = {Dong, Tao and Zhuang, Zirui and Qi, Qi and Wang, Jingyu and Sun, Haifeng and Yu, F. Richard and Sun, Tonghong and Zhou, Chao and Liao, Jianxin},
+  title   = {Intelligent Joint Network Slicing and Routing via {GCN}-Powered Multi-Task Deep Reinforcement Learning},
+  journal = {IEEE Transactions on Cognitive Communications and Networking},
+  volume  = {8},
+  number  = {2},
+  pages   = {1269--1286},
+  year    = {2022},
+  doi     = {10.1109/TCCN.2021.3126161}
+} % [CHECK DOI]
+
+
+% ---------------------------------------------------------------------
+% B. DEEP REINFORCEMENT LEARNING FOR RAN SLICING / RESOURCE ALLOCATION
+% ---------------------------------------------------------------------
+
+@article{hurtado2022survey,
+  author  = {Hurtado S{\'a}nchez, Johanna Andrea and Casilimas, Katherine and Caicedo Rendon, Oscar Mauricio},
+  title   = {Deep Reinforcement Learning for Resource Management on Network Slicing: A Survey},
+  journal = {Sensors},
+  volume  = {22},
+  number  = {8},
+  pages   = {3031},
+  year    = {2022},
+  doi     = {10.3390/s22083031}
+} % [VERIFIED]
+
+@article{filali2023urllc,
+  author  = {Filali, Abdelhakim and Nour, Boubakr and Cherkaoui, Soumaya and Kobbane, Abdellatif},
+  title   = {Communication and Computation {O-RAN} Resource Slicing for {URLLC} Services Using Deep Reinforcement Learning},
+  journal = {IEEE Communications Standards Magazine},
+  volume  = {7},
+  number  = {1},
+  pages   = {66--73},
+  year    = {2023},
+  doi     = {10.1109/MCOMSTD.0001.2200025}
+} % [CHECK DOI]
+
+@article{azimi2022energy,
+  author  = {Azimi, Yaser and Yousefi, Saleh and Kalbkhani, Hashem and Kunz, Thomas},
+  title   = {Energy-Efficient Deep Reinforcement Learning Assisted Resource Allocation for {5G-RAN} Slicing},
+  journal = {IEEE Transactions on Vehicular Technology},
+  volume  = {71},
+  number  = {1},
+  pages   = {856--871},
+  year    = {2022},
+  doi     = {10.1109/TVT.2021.3128513}
+} % [VERIFIED]
+
+@article{motalleb2023oran,
+  author  = {Motalleb, Mojdeh Karbalaee and Shah-Mansouri, Vahid and Parsaeefard, Saeedeh and L{\'o}pez, Onel Luis Alcaraz},
+  title   = {Resource Allocation in an Open {RAN} System Using Network Slicing},
+  journal = {IEEE Transactions on Network and Service Management},
+  volume  = {20},
+  number  = {1},
+  pages   = {471--485},
+  year    = {2023},
+  doi     = {10.1109/TNSM.2022.3205415}
+} % [CHECK DOI]
+
+@article{wu2022ainative,
+  author  = {Wu, Wen and Zhou, Conghao and Li, Mushu and Wu, Huaqing and Zhou, Haibo and Zhang, Ning and Shen, Xuemin Sherman and Zhuang, Weihua},
+  title   = {{AI}-Native Network Slicing for {6G} Networks},
+  journal = {IEEE Wireless Communications},
+  volume  = {29},
+  number  = {1},
+  pages   = {96--103},
+  year    = {2022},
+  doi     = {10.1109/MWC.001.2100338}
+} % [CHECK DOI]
+
+@article{wu2022iiotslicing,
+  author  = {Wu, Yulei and Dai, Hong-Ning and Wang, Haozhe and Xiong, Zehui and Guo, Song},
+  title   = {A Survey of Intelligent Network Slicing Management for Industrial {IoT}: Integrated Approaches for Smart Transportation, Smart Energy, and Smart Factory},
+  journal = {IEEE Communications Surveys \& Tutorials},
+  volume  = {24},
+  number  = {2},
+  pages   = {1175--1211},
+  year    = {2022},
+  doi     = {10.1109/COMST.2022.3158270}
+} % [VERIFIED]
+
+@article{wu2021vehicular,
+  author  = {Wu, Wen and Chen, Nan and Zhou, Conghao and Li, Mushu and Shen, Xuemin and Zhuang, Weihua and Li, Xu},
+  title   = {Dynamic {RAN} Slicing for Service-Oriented Vehicular Networks via Constrained Learning},
+  journal = {IEEE Journal on Selected Areas in Communications},
+  volume  = {39},
+  number  = {7},
+  pages   = {2076--2089},
+  year    = {2021},
+  doi     = {10.1109/JSAC.2021.3078505}
+} % [CHECK DOI]
+
+@inproceedings{liu2021onslicing,
+  author    = {Liu, Qiang and Choi, Nakjung and Han, Tao},
+  title     = {{OnSlicing}: Online End-to-End Network Slicing with Reinforcement Learning},
+  booktitle = {Proc. 17th Int. Conf. Emerging Networking EXperiments and Technologies (CoNEXT)},
+  pages     = {141--153},
+  year      = {2021},
+  doi       = {10.1145/3485983.3494850}
+} % [CHECK DOI]
+
+@inproceedings{hu2022intercell,
+  author    = {Hu, Tianlun and Liao, Qi and Liu, Qiang and Wellington, Dan and Carle, Georg},
+  title     = {Inter-Cell Slicing Resource Partitioning via Coordinated Multi-Agent Deep Reinforcement Learning},
+  booktitle = {Proc. IEEE Int. Conf. Communications (ICC)},
+  pages     = {3202--3207},
+  year      = {2022},
+  doi       = {10.1109/ICC45855.2022.9838508}
+} % [CHECK DOI]
+
+@article{nagib2023safe,
+  author  = {Nagib, Ahmad M. and Abou-Zeid, Hatem and Hassanein, Hossam S.},
+  title   = {Toward Safe and Accelerated Deep Reinforcement Learning for Next-Generation Wireless Networks},
+  journal = {IEEE Network},
+  volume  = {37},
+  number  = {2},
+  pages   = {182--189},
+  year    = {2023},
+  doi     = {10.1109/MNET.106.2100578}
+} % [CHECK DOI]
+
+@article{messaoud2021federated,
+  author  = {Messaoud, Seifeddine and Bradai, Abbas and Ahmed, Olfa Ben and Quang, Pham Tran Anh and Atri, Mohamed and Hossain, M. Shamim},
+  title   = {Deep Federated {Q}-Learning-Based Network Slicing for Industrial {IoT}},
+  journal = {IEEE Transactions on Industrial Informatics},
+  volume  = {17},
+  number  = {8},
+  pages   = {5572--5582},
+  year    = {2021},
+  doi     = {10.1109/TII.2020.3032165}
+} % [CHECK DOI]
+
+
+% ---------------------------------------------------------------------
+% C. SDN, O-RAN AND PROGRAMMABLE CONTROL PLANES
+% ---------------------------------------------------------------------
+
+@article{polverini2026sdnconflicts,
+  author  = {Polverini, Marco and Garc{\'\i}a-L{\'o}pez, Andr{\'e}s and Herrera, Juan Luis and Garc{\'\i}a-Gil, Santiago and Lavacca, Francesco G. and Cianfrani, Antonio and Galan-Jimenez, Jaime},
+  title   = {Avoiding {SDN} Application Conflicts With Digital Twins: Design, Models and Proof of Concept},
+  journal = {IEEE Transactions on Network and Service Management},
+  volume  = {23},
+  pages   = {2038--2050},
+  year    = {2026},
+  doi     = {10.1109/TNSM.2026.3652800}
+} % [VERIFIED]
+
+@article{rao2026ssl,
+  author  = {Rao, Akhila and Boman, Magnus},
+  title   = {Self-Supervised Pretraining for User Performance Prediction Under Scarce Data Conditions},
+  journal = {IEEE Transactions on Network and Service Management},
+  volume  = {23},
+  pages   = {112--121},
+  year    = {2026},
+  doi     = {10.1109/TNSM.2025.3622892}
+} % [VERIFIED]
+
+@article{polese2023oran,
+  author  = {Polese, Michele and Bonati, Leonardo and D'Oro, Salvatore and Basagni, Stefano and Melodia, Tommaso},
+  title   = {Understanding {O-RAN}: Architecture, Interfaces, Algorithms, Security, and Research Challenges},
+  journal = {IEEE Communications Surveys \& Tutorials},
+  volume  = {25},
+  number  = {2},
+  pages   = {1376--1411},
+  year    = {2023},
+  doi     = {10.1109/COMST.2023.3239220}
+} % [VERIFIED]
+
+@article{bonati2021intelligence,
+  author  = {Bonati, Leonardo and D'Oro, Salvatore and Polese, Michele and Basagni, Stefano and Melodia, Tommaso},
+  title   = {Intelligence and Learning in {O-RAN} for Data-Driven {NextG} Cellular Networks},
+  journal = {IEEE Communications Magazine},
+  volume  = {59},
+  number  = {10},
+  pages   = {21--27},
+  year    = {2021},
+  doi     = {10.1109/MCOM.101.2100147}
+} % [CHECK DOI]
+
+@article{bonati2023openrangym,
+  author  = {Bonati, Leonardo and D'Oro, Salvatore and Polese, Michele and Basagni, Stefano and Melodia, Tommaso},
+  title   = {{OpenRAN Gym}: {AI/ML} Development, Data Collection, and Testing for {O-RAN} on {PAWR} Platforms},
+  journal = {Computer Networks},
+  volume  = {220},
+  pages   = {109502},
+  year    = {2023},
+  doi     = {10.1016/j.comnet.2022.109502}
+} % [CHECK DOI]
+
+@inproceedings{bonati2021colosseum,
+  author    = {Bonati, Leonardo and Johari, Pedram and Polese, Michele and D'Oro, Salvatore and Mohanti, Subhramoy and Tehrani-Moayyed, Miead and Villa, Davide and Shrivastava, Shweta and Tassie, Chinenye and Yoder, Kurt and Bagga, Ajeet and Patel, Paresh and Petkos, Ventz and Seltser, Michael and Restuccia, Francesco and Gosain, Abhimanyu and Chowdhury, Kaushik R. and Basagni, Stefano and Melodia, Tommaso},
+  title     = {Colosseum: Large-Scale Wireless Experimentation Through Hardware-in-the-Loop Network Emulation},
+  booktitle = {Proc. IEEE Int. Symp. Dynamic Spectrum Access Networks (DySPAN)},
+  pages     = {105--113},
+  year      = {2021},
+  doi       = {10.1109/DySPAN53946.2021.9677430}
+} % [CHECK DOI]
+
+@article{shafiq2024sdniot,
+  author  = {Shafiq, Muhammad and Afzal, Muhammad Khalil and Rehman, Sabeeh Ur and Kim, Dohyeun},
+  title   = {A Review on Software-Defined Networking for {Internet} of {Things}: Basics, Trends, Challenges, and Future Research Potentials},
+  journal = {International Journal of Distributed Sensor Networks},
+  volume  = {2024},
+  pages   = {9006405},
+  year    = {2024},
+  doi     = {10.1155/2024/9006405}
+} % [CHECK DOI] - confirm exact author list on the publisher page
+
+
+% ---------------------------------------------------------------------
+% D. MULTI-AGENT REINFORCEMENT LEARNING ALGORITHMS AND FRAMEWORKS
+% ---------------------------------------------------------------------
+
+@inproceedings{yu2022mappo,
+  author    = {Yu, Chao and Velu, Akash and Vinitsky, Eugene and Gao, Jiaxuan and Wang, Yu and Bayen, Alexandre and Wu, Yi},
+  title     = {The Surprising Effectiveness of {PPO} in Cooperative Multi-Agent Games},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
+  volume    = {35},
+  pages     = {24611--24624},
+  year      = {2022}
+} % [CHECK PAGES]
+
+@inproceedings{papoudakis2021benchmarking,
+  author    = {Papoudakis, Georgios and Christianos, Filippos and Sch{\"a}fer, Lukas and Albrecht, Stefano V.},
+  title     = {Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
+  year      = {2021}
 }
 
-@inproceedings{ref9,
-  author    = {Ortega, R. and Astolfi, A. and Bastin, G. and Rodriguez, H.},
-  title     = {Stabilization of food-chain systems using a port-controlled Hamiltonian description},
-  booktitle = {Proc. Amer. Control Conf.},
-  address   = {Chicago, IL, USA},
-  pages     = {2245--2249},
-  year      = {2000}
+@inproceedings{terry2021pettingzoo,
+  author    = {Terry, J. K. and Black, Benjamin and Grammel, Nathaniel and Jayakumar, Mario and Hari, Ananth and Sullivan, Ryan and Santos, Luis and Perez, Rodrigo and Horsch, Caroline and Dieffendahl, Clemens and Williams, Niall L. and Lokesh, Yashas and Ravi, Praveen},
+  title     = {{PettingZoo}: Gym for Multi-Agent Reinforcement Learning},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  volume    = {34},
+  pages     = {15032--15043},
+  year      = {2021}
 }
+
+@misc{towers2024gymnasium,
+  author       = {Towers, Mark and Kwiatkowski, Ariel and Terry, Jordan and Balis, John U. and De Cola, Gianluca and Deleu, Tristan and Goul{\~a}o, Manuel and Kallinteris, Andreas and Krimmel, Markus and KG, Arjun and Perez-Vicente, Rodrigo and Pierr{\'e}, Andrea and Schulhoff, Sander and Tai, Jun Jet and Tan, Hannah and Younis, Omar G.},
+  title        = {Gymnasium: A Standard Interface for Reinforcement Learning Environments},
+  howpublished = {arXiv:2407.17032},
+  year         = {2024},
+  doi          = {10.48550/arXiv.2407.17032}
+}
+
+@article{kirk2023zeroshot,
+  author  = {Kirk, Robert and Zhang, Amy and Grefenstette, Edward and Rockt{\"a}schel, Tim},
+  title   = {A Survey of Zero-Shot Generalisation in Deep Reinforcement Learning},
+  journal = {Journal of Artificial Intelligence Research},
+  volume  = {76},
+  pages   = {201--264},
+  year    = {2023},
+  doi     = {10.1613/jair.1.14174}
+} % [CHECK DOI]
+
+@article{schulman2017ppo,
+  author       = {Schulman, John and Wolski, Filip and Dhariwal, Prafulla and Radford, Alec and Klimov, Oleg},
+  title        = {Proximal Policy Optimization Algorithms},
+  howpublished = {arXiv:1707.06347},
+  journal      = {arXiv preprint arXiv:1707.06347},
+  year         = {2017},
+  doi          = {10.48550/arXiv.1707.06347}
+} % [PRE-2021 FOUNDATIONAL]
+
+@article{mnih2015dqn,
+  author  = {Mnih, Volodymyr and Kavukcuoglu, Koray and Silver, David and Rusu, Andrei A. and Veness, Joel and Bellemare, Marc G. and Graves, Alex and Riedmiller, Martin and Fidjeland, Andreas K. and Ostrovski, Georg and Petersen, Stig and Beattie, Charles and Sadik, Amir and Antonoglou, Ioannis and King, Helen and Kumaran, Dharshan and Wierstra, Daan and Legg, Shane and Hassabis, Demis},
+  title   = {Human-Level Control Through Deep Reinforcement Learning},
+  journal = {Nature},
+  volume  = {518},
+  number  = {7540},
+  pages   = {529--533},
+  year    = {2015},
+  doi     = {10.1038/nature14236}
+} % [PRE-2021 FOUNDATIONAL]
+
+@inproceedings{wang2016dueling,
+  author    = {Wang, Ziyu and Schaul, Tom and Hessel, Matteo and van Hasselt, Hado and Lanctot, Marc and de Freitas, Nando},
+  title     = {Dueling Network Architectures for Deep Reinforcement Learning},
+  booktitle = {Proc. 33rd Int. Conf. Machine Learning (ICML)},
+  pages     = {1995--2003},
+  year      = {2016}
+} % [PRE-2021 FOUNDATIONAL]
+
+
+% ---------------------------------------------------------------------
+% E. GRAPH NEURAL NETWORK ARCHITECTURES
+% ---------------------------------------------------------------------
+
+@inproceedings{kipf2017gcn,
+  author    = {Kipf, Thomas N. and Welling, Max},
+  title     = {Semi-Supervised Classification with Graph Convolutional Networks},
+  booktitle = {Proc. Int. Conf. Learning Representations (ICLR)},
+  year      = {2017}
+} % [PRE-2021 FOUNDATIONAL]
+
+@inproceedings{hamilton2017graphsage,
+  author    = {Hamilton, William L. and Ying, Rex and Leskovec, Jure},
+  title     = {Inductive Representation Learning on Large Graphs},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  volume    = {30},
+  pages     = {1024--1034},
+  year      = {2017}
+} % [PRE-2021 FOUNDATIONAL]
+
+@inproceedings{velickovic2018gat,
+  author    = {Veli{\v{c}}kovi{\'c}, Petar and Cucurull, Guillem and Casanova, Arantxa and Romero, Adriana and Li{\`o}, Pietro and Bengio, Yoshua},
+  title     = {Graph Attention Networks},
+  booktitle = {Proc. Int. Conf. Learning Representations (ICLR)},
+  year      = {2018}
+} % [PRE-2021 FOUNDATIONAL]
+
+@inproceedings{brody2022gatv2,
+  author    = {Brody, Shaked and Alon, Uri and Yahav, Eran},
+  title     = {How Attentive are Graph Attention Networks?},
+  booktitle = {Proc. Int. Conf. Learning Representations (ICLR)},
+  year      = {2022}
+}
+
+@misc{rusch2023oversmoothing,
+  author       = {Rusch, T. Konstantin and Bronstein, Michael M. and Mishra, Siddhartha},
+  title        = {A Survey on Oversmoothing in Graph Neural Networks},
+  howpublished = {arXiv:2303.10993},
+  year         = {2023},
+  doi          = {10.48550/arXiv.2303.10993}
+}
+
+@article{zhou2021gnnreview,
+  author  = {Zhou, Jie and Cui, Ganqu and Hu, Shengding and Zhang, Zhengyan and Yang, Cheng and Liu, Zhiyuan and Wang, Lifeng and Li, Changcheng and Sun, Maosong},
+  title   = {Graph Neural Networks: A Review of Methods and Applications},
+  journal = {AI Open},
+  volume  = {1},
+  pages   = {57--81},
+  year    = {2020},
+  doi     = {10.1016/j.aiopen.2021.01.001}
+} % [CHECK YEAR/DOI] - published online 2021 in AI Open vol. 1
+
+
+% ---------------------------------------------------------------------
+% F. STANDARDS, CHANNEL MODELS AND SIMULATION TOOLING
+% ---------------------------------------------------------------------
+
+@techreport{3gpp38901,
+  author      = {{3GPP}},
+  title       = {Study on Channel Model for Frequencies From 0.5 to 100 {GHz}},
+  institution = {3rd Generation Partnership Project (3GPP)},
+  type        = {Technical Report (TR)},
+  number      = {38.901, V17.0.0},
+  address     = {Sophia Antipolis, France},
+  year        = {2022}
+}
+
+@techreport{3gpp38913,
+  author      = {{3GPP}},
+  title       = {Study on Scenarios and Requirements for Next Generation Access Technologies},
+  institution = {3rd Generation Partnership Project (3GPP)},
+  type        = {Technical Report (TR)},
+  number      = {38.913, V17.0.0},
+  address     = {Sophia Antipolis, France},
+  year        = {2022}
+}
+
+@techreport{oran2023wg2,
+  author      = {{O-RAN Alliance}},
+  title       = {{O-RAN} Working Group 2: Non-{RT} {RIC} and {A1} Interface --- Use Cases and Requirements},
+  institution = {O-RAN Alliance},
+  type        = {Technical Specification},
+  year        = {2023}
+} % [CHECK] - replace with the exact O-RAN.WG2 document number/version you cite
+
+@misc{hoydis2022sionna,
+  author       = {Hoydis, Jakob and Cammerer, Sebastian and Ait Aoudia, Fay{\c{c}}al and Vem, Avinash and Binder, Nikolaus and Marcus, Guillermo and Keller, Alexander},
+  title        = {Sionna: An Open-Source Library for Next-Generation Physical Layer Research},
+  howpublished = {arXiv:2203.11854},
+  year         = {2022},
+  doi          = {10.48550/arXiv.2203.11854}
+}
+
+@inproceedings{fey2019pyg,
+  author    = {Fey, Matthias and Lenssen, Jan Eric},
+  title     = {Fast Graph Representation Learning with {PyTorch Geometric}},
+  booktitle = {ICLR Workshop on Representation Learning on Graphs and Manifolds},
+  year      = {2019}
+} % [PRE-2021 FOUNDATIONAL - tooling reference]

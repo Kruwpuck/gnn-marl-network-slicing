@@ -1,4 +1,4 @@
-\documentclass[lettersize,journal]{IEEEtran}
+\documentclass[journal]{IEEEtran}
 \usepackage{amsmath,amsfonts}
 \usepackage{algorithmic}
 \usepackage{algorithm}
@@ -11,12 +11,16 @@
 \usepackage{graphicx}
 \graphicspath{{figures/}}
 \usepackage{cite}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue, allcolors=blue]{hyperref}
+\newcommand{\placeholderbox}[2]{%
+  \fbox{\parbox[c][3cm][c]{#1}{\centering\textcolor{red}{\textbf{#2}}}}%
+}
 \hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
 % updated with editorial comments 8/9/2021
 
 \begin{document}
 
-\title{GNN-MARL for Network Slicing for SDN-IoT}
+\title{Graph-Based Multi-Agent Reinforcement Learning for\\ Dynamic PRB Allocation in SDN/O-RAN-Enabled\\ 5G/6G Network Slicing: A Benchmarking Framework\\ for GNN-MADQN and GNN-MAPPO}
 
 \author{Habb,~\IEEEmembership{Student Member,~IEEE}% <-this % stops a space
 \thanks{Manuscript received ...; revised ....}% <-this % stops a space
@@ -26,486 +30,1063 @@
 \markboth{IEEE Transactions on ..., Vol.~XX, No.~X, Month~Year}%
 {Habb \MakeLowercase{\textit{et al.}}: GNN-MARL for Network Slicing}
 
-\IEEEpubid{0000--0000/00\$00.00~\copyright~2021 IEEE}
+%\IEEEpubid{0000--0000/00\$00.00~\copyright~2021 IEEE}
 % Remember, if you use this you must call \IEEEpubidadjcol in the second
 % column for its text to clear the IEEEpubid mark.
 
 \maketitle
 
 \begin{abstract}
-This document describes the most common article elements and how to use the IEEEtran class with \LaTeX \ to produce files that are suitable for submission to the IEEE.  IEEEtran can produce conference, journal, and technical note (correspondence) papers with a suitable choice of class options. 
+Radio access network (RAN) slicing must partition a shared pool of
+physical resource blocks (PRBs) among services whose objectives are in
+direct tension: enhanced mobile broadband (eMBB) maximises aggregate
+throughput, while ultra-reliable low-latency communication (URLLC)
+demands bounded tail latency. In dense deployments the problem is
+additionally coupled across cells through inter-cell interference, so
+that a locally optimal allocation at one base station can violate the
+service-level agreement of a neighbour. Multi-agent deep reinforcement
+learning (MARL) is a natural formalism for this setting, but the
+multi-layer perceptron (MLP) encoders used by most existing agents
+consume a fixed-length observation vector and therefore cannot be
+transferred to a deployment with a different number of cells without
+retraining. This paper presents the design and the evaluation
+methodology of a graph neural network (GNN) based MARL framework in
+which each next-generation Node B (gNB) is an agent, the deployment is
+represented as an interference-weighted graph, and a permutation-%
+equivariant GNN encoder provides the inductive bias needed for
+size-agnostic policies. The framework is deliberately factorised into a
+swappable graph encoder (GCN, GraphSAGE, GATv2) and a swappable
+reinforcement learning head, which allows a controlled comparison
+between a value-based agent with discretised PRB tiers (GNN-MADQN) and
+a policy-gradient agent with continuous bandwidth fractions
+(GNN-MAPPO) under an identical environment, reward and seed protocol.
+We formalise the decentralised partially observable Markov decision
+process, derive the observation, action and multi-objective reward
+spaces, describe the integration of the agents as an xApp-like control
+loop in an SDN/O-RAN architecture for industrial IoT, and specify a
+three-stage evaluation protocol covering convergence, network-level
+key performance indicators, and zero-shot transfer from a
+five-gNB training topology to unseen ten- and twenty-gNB topologies.
+The experimental campaign is ongoing; this paper contributes the
+system model, the architecture, the benchmarking protocol and the
+reproducibility package rather than empirical results.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Article submission, IEEE, IEEEtran, journal, \LaTeX, paper, template, typesetting.
+Network slicing, graph neural networks, multi-agent reinforcement
+learning, resource allocation, eMBB, URLLC, O-RAN, software-defined
+networking, zero-shot generalisation, and 6G.
 \end{IEEEkeywords}
 
 \section{Introduction}
-\IEEEPARstart{T}{his} file is intended to serve as a ``sample article file''
-for IEEE journal papers produced under \LaTeX\ using
-IEEEtran.cls version 1.8b and later. The most common elements are covered in the simplified and updated instructions in ``New\_IEEEtran\_how-to.pdf''. For less common elements you can refer back to the original ``IEEEtran\_HOWTO.pdf''. It is assumed that the reader has a basic working knowledge of \LaTeX. Those who are new to \LaTeX \ are encouraged to read Tobias Oetiker's ``The Not So Short Introduction to \LaTeX ,'' available at: \url{http://tug.ctan.org/info/lshort/english/lshort.pdf} which provides an overview of working with \LaTeX.
+\IEEEPARstart{N}{etwork} slicing allows a single physical radio access
+network to be partitioned into logically isolated virtual networks,
+each tailored to a service class with its own quality-of-service (QoS)
+profile~\cite{wu2022ainative}. Two of the slice types defined for 5G
+and studied for 6G sit at opposite ends of the design space. Enhanced
+mobile broadband (eMBB) traffic is bursty, tolerant of tens of
+milliseconds of delay, and benefits monotonically from additional
+bandwidth. Ultra-reliable low-latency communication (URLLC) traffic is
+sporadic and lightweight in volume, but its value collapses once a
+deadline is missed. Because both slices draw from the same finite pool
+of physical resource blocks (PRBs) at each next-generation Node B
+(gNB), the allocation decision is a genuine multi-objective trade-off
+rather than a simple capacity-planning exercise.
 
-\section{The Design, Intent, and \\ Limitations of the Templates}
-The templates are intended to {\bf{approximate the final look and page length of the articles/papers}}. {\bf{They are NOT intended to be the final produced work that is displayed in print or on IEEEXplore\textsuperscript{\textregistered}}}. They will help to give the authors an approximation of the number of pages that will be in the final version. The structure of the \LaTeX\ files, as designed, enable easy conversion to XML for the composition systems used by the IEEE. The XML files are used to produce the final print/IEEEXplore pdf and then converted to HTML for IEEEXplore.
+The trade-off is made harder by two structural properties of dense
+deployments. First, the decision is \emph{spatially coupled}: the
+signal-to-interference-plus-noise ratio (SINR) experienced by a user
+depends on the transmission activity of neighbouring cells, so a PRB
+assignment that looks locally optimal can degrade a neighbour's URLLC
+slice. Second, the decision is \emph{temporally coupled}: allocations
+must be revised on a sub-second control loop as traffic and channel
+conditions evolve. Classical convex or heuristic optimisation
+struggles on both counts, since the coupled problem is non-convex and
+the per-decision budget is small.
 
-\section{Where to Get \LaTeX \ Help --- User Groups}
-The following online groups are helpful to beginning and experienced \LaTeX\ users. A search through their archives can provide many answers to common questions.
-\begin{list}{}{}
-\item{\url{http://www.latex-community.org/}} 
-\item{\url{https://tex.stackexchange.com/} }
-\end{list}
+Deep reinforcement learning (DRL) has consequently become the dominant
+approach in the RAN-slicing literature~\cite{hurtado2022survey}. A
+centralised agent that observes the whole network can in principle
+resolve the spatial coupling optimally, but its joint action space
+grows exponentially in the number of cells and its signalling burden is
+impractical. Independent agents, one per cell, scale linearly but
+discard the coupling entirely and therefore learn in a non-stationary
+environment. Multi-agent reinforcement learning (MARL) with
+centralised training and decentralised execution (CTDE) is the standard
+compromise~\cite{papoudakis2021benchmarking}, and it has been applied
+to inter-cell slicing with encouraging
+results~\cite{hu2022intercell,naderializadeh2021marl}.
 
-\section{Other Resources}
-See \cite{ref1,ref2,ref3,ref4,ref5} for resources on formatting math into text and additional help in working with \LaTeX .
+A limitation cuts across almost all of this work. The observation of
+each agent is encoded by a multi-layer perceptron (MLP), whose input
+dimension is fixed at design time. A policy trained on a five-cell
+deployment simply cannot be evaluated on a ten-cell deployment: the
+tensor shapes do not match. Even where padding or truncation is used to
+force a match, the MLP has no notion of which observation slots
+correspond to which neighbours, so the learned function is not
+invariant to a relabelling of the cells. In an operational network
+where cells are added, removed, or temporarily deactivated for energy
+saving, this brittleness translates directly into retraining cost.
 
-\section{Text}
-For some of the remainer of this sample we will use dummy text to fill out paragraphs rather than use live text that may violate a copyright.
+Graph neural networks (GNNs) address exactly this gap. By operating on
+a graph whose nodes are cells and whose edges encode interference, a
+GNN encoder is permutation-equivariant and parameter-shared across
+nodes, so the same weights apply to a graph of any size. The theoretical
+and empirical case for GNNs in radio resource management is by now well
+established~\cite{shen2021gnnrrm,shen2023theory,he2021gnnoverview}, and
+GNN encoders have been combined with DRL for slicing in dense cellular
+networks~\cite{shao2021gat}, for joint slicing and
+routing~\cite{dong2022gcnslicing}, and for topology-adaptive routing in
+mesh networks~\cite{xu2026graphsage}. What is missing is a
+\emph{controlled} comparison. Existing studies typically pair one graph
+encoder with one RL algorithm and report that the combination beats a
+non-graph baseline. It therefore remains unclear how much of the gain
+is attributable to the graph inductive bias and how much to the choice
+of RL objective, and in particular whether a value-based agent forced
+to discretise the PRB allocation can match a policy-gradient agent that
+allocates a continuous bandwidth fraction.
 
-Itam, que ipiti sum dem velit la sum et dionet quatibus apitet voloritet audam, qui aliciant voloreicid quaspe volorem ut maximusandit faccum conemporerum aut ellatur, nobis arcimus.
-Fugit odi ut pliquia incitium latum que cusapere perit molupta eaquaeria quod ut optatem poreiur? Quiaerr ovitior suntiant litio bearciur?
+This paper sets out the design and the evaluation methodology needed to
+answer that question. We build a slicing environment in which a graph
+encoder and an RL head are independent, swappable modules behind fixed
+interfaces, and we use it to specify a benchmark between two agents
+that differ only in their action parameterisation and learning rule:
+\emph{GNN-MADQN}, a value-based agent with a Dueling
+head~\cite{wang2016dueling} acting over discrete PRB tiers, and
+\emph{GNN-MAPPO}, a policy-gradient agent~\cite{schulman2017ppo,yu2022mappo}
+acting over a continuous bandwidth simplex. Both are embedded in an
+SDN/O-RAN control loop~\cite{polese2023oran}, which is the deployment
+context in which such a controller would actually run, and both are
+subjected to an identical zero-shot transfer test in which a policy
+trained on five gNBs is evaluated, without any gradient update, on ten-
+and twenty-gNB topologies.
 
-Onseque sequaes rectur autate minullore nusae nestiberum, sum voluptatio. Et ratem sequiam quaspername nos rem repudandae volum consequis nos eium aut as molupta tectum ulparumquam ut maximillesti consequas quas inctia cum volectinusa porrum unt eius cusaest exeritatur? Nias es enist fugit pa vollum reium essusam nist et pa aceaqui quo elibusdandis deligendus que nullaci lloreri bla que sa coreriam explacc atiumquos simolorpore, non prehendunt lam que occum\cite{ref6} si aut aut maximus eliaeruntia dia sequiamenime natem sendae ipidemp orehend uciisi omnienetus most verum, ommolendi omnimus, est, veni aut ipsa volendelist mo conserum volores estisciis recessi nveles ut poressitatur sitiis ex endi diti volum dolupta aut aut odi as eatquo cullabo remquis toreptum et des accus dolende pores sequas dolores tinust quas expel moditae ne sum quiatis nis endipie nihilis etum fugiae audi dia quiasit quibus.
-\IEEEpubidadjcol
-Ibus el et quatemo luptatque doluptaest et pe volent rem ipidusa eribus utem venimolorae dera qui acea quam etur aceruptat.
-Gias anis doluptaspic tem et aliquis alique inctiuntiur?
+\subsection{Contributions}
+The contributions of this paper are the following.
 
-Sedigent, si aligend elibuscid ut et ium volo tem eictore pellore ritatus ut ut ullatus in con con pere nos ab ium di tem aliqui od magnit repta volectur suntio. Nam isquiante doluptis essit, ut eos suntionsecto debitiur sum ea ipitiis adipit, oditiore, a dolorerempos aut harum ius, atquat.
-
-Rum rem ditinti sciendunti volupiciendi sequiae nonsect oreniatur, volores sition ressimil inus solut ea volum harumqui to see\eqref{deqn_ex1a} mint aut quat eos explis ad quodi debis deliqui aspel earcius.
-
-\begin{equation}
-\label{deqn_ex1a}
-x = \sum_{i=0}^{n} 2{i} Q.
-\end{equation}
-
-Alis nime volorempera perferi sitio denim repudae pre ducilit atatet volecte ssimillorae dolore, ut pel ipsa nonsequiam in re nus maiost et que dolor sunt eturita tibusanis eatent a aut et dio blaudit reptibu scipitem liquia consequodi od unto ipsae. Et enitia vel et experferum quiat harum sa net faccae dolut voloria nem. Bus ut labo. Ita eum repraer rovitia samendit aut et volupta tecupti busant omni quiae porro que nossimodic temquis anto blacita conse nis am, que ereperum eumquam quaescil imenisci quae magnimos recus ilibeaque cum etum iliate prae parumquatemo blaceaquiam quundia dit apienditem rerit re eici quaes eos sinvers pelecabo. Namendignis as exerupit aut magnim ium illabor roratecte plic tem res apiscipsam et vernat untur a deliquaest que non cus eat ea dolupiducim fugiam volum hil ius dolo eaquis sitis aut landesto quo corerest et auditaquas ditae voloribus, qui optaspis exero cusa am, ut plibus.
-
-
-\section{Some Common Elements}
-\subsection{Sections and Subsections}
-Enumeration of section headings is desirable, but not required. When numbered, please be consistent throughout the article, that is, all headings and all levels of section headings in the article should be enumerated. Primary headings are designated with Roman numerals, secondary with capital letters, tertiary with Arabic numbers; and quaternary with lowercase letters. Reference and Acknowledgment headings are unlike all other section headings in text. They are never enumerated. They are simply primary headings without labels, regardless of whether the other headings in the article are enumerated. 
-
-\subsection{Citations to the Bibliography}
-The coding for the citations is made with the \LaTeX\ $\backslash${\tt{cite}} command. 
-This will display as: see \cite{ref1}.
-
-For multiple citations code as follows: {\tt{$\backslash$cite\{ref1,ref2,ref3\}}}
- which will produce \cite{ref1,ref2,ref3}. For reference ranges that are not consecutive code as {\tt{$\backslash$cite\{ref1,ref2,ref3,ref9\}}} which will produce  \cite{ref1,ref2,ref3,ref9}
-
-\subsection{Lists}
-In this section, we will consider three types of lists: simple unnumbered, numbered, and bulleted. There have been many options added to IEEEtran to enhance the creation of lists. If your lists are more complex than those shown below, please refer to the original ``IEEEtran\_HOWTO.pdf'' for additional options.\\
-
-\subsubsection*{\bf A plain  unnumbered list}
-\begin{list}{}{}
-\item{bare\_jrnl.tex}
-\item{bare\_conf.tex}
-\item{bare\_jrnl\_compsoc.tex}
-\item{bare\_conf\_compsoc.tex}
-\item{bare\_jrnl\_comsoc.tex}
-\end{list}
-
-\subsubsection*{\bf A simple numbered list}
 \begin{enumerate}
-\item{bare\_jrnl.tex}
-\item{bare\_conf.tex}
-\item{bare\_jrnl\_compsoc.tex}
-\item{bare\_conf\_compsoc.tex}
-\item{bare\_jrnl\_comsoc.tex}
+\item \textbf{A modular GNN-MARL architecture for PRB allocation.} We
+      specify an agent architecture in which the graph encoder exposes
+      a single interface, $\mathrm{forward}(\mathbf{X},\mathbf{E},
+      \mathbf{A}) \rightarrow \mathbf{Z}$, so that GCN~\cite{kipf2017gcn},
+      GraphSAGE~\cite{hamilton2017graphsage} and
+      GATv2~\cite{brody2022gatv2} backbones are interchangeable
+      without touching the RL head, and vice versa. This factorisation
+      is what makes an attribution study --- separating the
+      contribution of the graph prior from that of the RL objective ---
+      methodologically sound.
+\item \textbf{An interference-weighted graph construction.} Rather than
+      connecting cells by a distance threshold, we weight each edge by
+      the modelled interference coupling derived from the 3GPP TR 38.901
+      path-loss model~\cite{3gpp38901}, so that the message-passing
+      neighbourhood reflects the physical structure of the problem
+      instead of a geometric proxy.
+\item \textbf{A benchmark protocol for discrete versus continuous PRB
+      control.} We formalise the two action parameterisations so that
+      quantisation error is the only substantive difference between the
+      agents, and we identify the URLLC tail-latency metric on which
+      the discretisation penalty, if any, should manifest.
+\item \textbf{A zero-shot topology-generalisation protocol.} We define
+      a Performance Retention Ratio and an experimental procedure that
+      isolates architectural generalisation from
+      retraining~\cite{kirk2023zeroshot}, and we state the
+      falsifiable hypotheses that the ablation is designed to test.
+\item \textbf{An SDN/O-RAN integration design and a reproducibility
+      package.} We describe how the trained policy is exposed as a
+      near-real-time control application, and we release the
+      environment, seeds, configuration files and evaluation scripts.
 \end{enumerate}
 
-\subsubsection*{\bf A simple bulleted list}
-\begin{itemize}
-\item{bare\_jrnl.tex}
-\item{bare\_conf.tex}
-\item{bare\_jrnl\_compsoc.tex}
-\item{bare\_conf\_compsoc.tex}
-\item{bare\_jrnl\_comsoc.tex}
-\end{itemize}
+\subsection{Scope and Non-Goals}
+This paper reports a design and a protocol, not measurements. The
+experimental campaign described in Section~\ref{sec:eval} has not been
+executed at the time of writing, and no performance figures are
+claimed. We also make explicit that the evaluation is
+simulation-based: results obtained on a synthetic environment
+constitute algorithmic evidence about the relative merits of the
+compared architectures, not a guarantee of behaviour in a commercial
+deployment. Section~\ref{sec:validity} discusses the resulting threats
+to validity and the external-calibration strategy we adopt to mitigate
+them.
 
+\subsection{Organisation}
+Section~\ref{sec:related} reviews related work and positions our
+contribution. Section~\ref{sec:system} presents the system model.
+Section~\ref{sec:decpomdp} formalises the control problem as a
+decentralised partially observable Markov decision process.
+Section~\ref{sec:arch} details the proposed architecture.
+Section~\ref{sec:eval} specifies the evaluation methodology.
+Section~\ref{sec:validity} discusses threats to validity, and
+% =====================================================================
+\section{Related Work}\label{sec:related}
 
+\subsection{Deep Reinforcement Learning for RAN Slicing}
+The use of DRL for slice resource management is mature enough to have
+attracted dedicated surveys. Hurtado S\'anchez \emph{et
+al.}~\cite{hurtado2022survey} decompose slice resource management into
+admission control, allocation, scheduling and orchestration, and
+observe that the majority of published agents address a single phase in
+isolation and evaluate on a single fixed topology. Wu \emph{et
+al.}~\cite{wu2022iiotslicing} survey the same problem from the
+industrial IoT perspective and highlight the heterogeneity of
+requirements that a smart-factory slice mix imposes.
 
+Concrete agents span the algorithmic spectrum. Azimi \emph{et
+al.}~\cite{azimi2022energy} target energy efficiency in 5G-RAN slicing
+with a DRL-assisted allocator. Filali \emph{et
+al.}~\cite{filali2023urllc} slice both communication and computation
+resources for URLLC in an O-RAN setting. Motalleb \emph{et
+al.}~\cite{motalleb2023oran} formulate slice resource allocation
+directly against the Open RAN architecture. Liu \emph{et
+al.}~\cite{liu2021onslicing} address the online, end-to-end variant of
+the problem, and Wu \emph{et al.}~\cite{wu2021vehicular} handle dynamic
+RAN slicing for vehicular services under learned constraints.
+Messaoud \emph{et al.}~\cite{messaoud2021federated} apply federated
+Q-learning to industrial IoT slicing, which removes the need to
+centralise raw observations but retains the fixed-dimension encoder.
 
+Multi-agent formulations follow naturally from the per-cell structure
+of the problem. Hu \emph{et al.}~\cite{hu2022intercell} coordinate
+inter-cell slicing partitions with a MARL scheme, and Naderializadeh
+\emph{et al.}~\cite{naderializadeh2021marl} manage wireless resources
+with multi-agent DRL over a spectrum-sharing objective. In both cases
+the encoder is an MLP over a fixed-length observation, which is
+precisely the constraint we set out to remove.
 
-\subsection{Figures}
-Fig. 1 is an example of a floating figure using the graphicx package.
- Note that $\backslash${\tt{label}} must occur AFTER (or within) $\backslash${\tt{caption}}.
- For figures, $\backslash${\tt{caption}} should occur after the $\backslash${\tt{includegraphics}}.
+\subsection{Graph Neural Networks for Wireless Resource Management}
+Graph neural networks generalise convolution to irregular domains by
+iteratively aggregating information from a node's
+neighbourhood~\cite{zhou2021gnnreview}. Shen \emph{et
+al.}~\cite{shen2021gnnrrm} give the foundational argument for applying
+them in this domain: by embedding the permutation equivariance of
+the underlying interference structure into the network architecture,
+the learned policy scales to problem instances larger than those seen
+during training, and the sample complexity improves accordingly. Their
+follow-up work~\cite{shen2023theory} translates the theory into design
+guidance, and He \emph{et al.}~\cite{he2021gnnoverview} survey the
+breadth of wireless applications. Su\'arez-Varela \emph{et
+al.}~\cite{suarez2023gnncomm} make the parallel case at the network
+layer, and the RouteNet family~\cite{ferriol2023routenetfermi}
+demonstrates that a message-passing model over a
+path--link bipartite graph can predict end-to-end delay accurately
+enough to drive what-if analysis. Wang \emph{et
+al.}~\cite{wang2022gnndt} apply a GNN to build a digital twin of a
+slicing-enabled network, capturing the intertwined relationships among
+slices that a per-slice model would miss.
+
+\subsection{Combining Graph Encoders with Reinforcement Learning}
+The closest precedents to our work combine the two threads above.
+Shao \emph{et al.}~\cite{shao2021gat} place a graph attention network
+on top of both a DQN and an A2C agent for inter-slice resource
+management in a dense cellular network, and report that the graph layer
+improves both. Their study is the most direct antecedent of ours;
+it differs in that the comparison is DQN versus A2C rather than
+DQN versus PPO, the action space is discrete in both arms, and
+generalisation to unseen topology sizes is not evaluated. Dong \emph{et
+al.}~\cite{dong2022gcnslicing} use a GCN-powered multi-task agent for
+joint slicing and routing. Xu \emph{et al.}~\cite{xu2026graphsage} pair
+an inductive GraphSAGE encoder with MAPPO for routing and resource
+allocation in a dynamic mesh network and explicitly motivate the
+inductive encoder as a solution to the ``input dimension mismatch''
+problem under node failure; their setting is mesh routing rather than
+PRB-level slice partitioning. Du \emph{et al.}~\cite{du2024gnnmarl}
+survey the intersection and identify the absence of controlled
+architectural comparisons as an open problem, which is the gap this
+paper targets.
+
+\subsection{Generalisation and Transfer}
+Kirk \emph{et al.}~\cite{kirk2023zeroshot} formalise zero-shot
+generalisation in RL and distinguish generalisation across
+\emph{instances} of a fixed problem structure from generalisation
+across structures. Topology-size transfer is a case of the latter, and
+is unusually clean to evaluate: the MLP baselines cannot be evaluated
+at all on a larger graph, so the comparison is between graph encoders.
+Nagib \emph{et al.}~\cite{nagib2023safe} approach the same underlying
+concern --- the cost of retraining a wireless agent when the deployment
+changes --- from the safe-and-accelerated-learning direction, which is
+complementary to the architectural approach taken here.
+
+\subsection{SDN, O-RAN and the Control-Plane Context}
+A learned allocator is only useful if it can be deployed. O-RAN
+provides the natural vehicle: the near-real-time RAN Intelligent
+Controller (RIC) hosts xApps on a $10$\,ms--$1$\,s control loop with
+standardised access to RAN
+state~\cite{polese2023oran,bonati2021intelligence,oran2023wg2},
+and OpenRAN Gym~\cite{bonati2023openrangym} together with the
+Colosseum emulator~\cite{bonati2021colosseum} supplies the
+experimental tooling. In the industrial IoT deployments that motivate
+our slice mix, the transport segment is typically
+software-defined~\cite{shafiq2024sdniot}, and Polverini \emph{et
+al.}~\cite{polverini2026sdnconflicts} show that when several control
+applications with heterogeneous objectives share an SDN controller
+their decisions can conflict in ways that are invisible to each
+application individually. That observation is directly relevant to us:
+a slice allocator is one such application, and its interaction with
+mobility, reliability and energy-aware applications is a first-class
+design concern rather than an afterthought.
+
+Finally, Rao and Boman~\cite{rao2026ssl} document a constraint that
+shapes our methodology: labelled user-performance data is expensive to
+collect in real networks, whereas base-station-side metrics are cheap.
+This asymmetry is one of the reasons a simulation-first methodology
+with explicit external calibration, rather than a measurement-first
+one, is the defensible choice at this stage.
+
+\subsection{Positioning}
+Table~\ref{tab:related} summarises the comparison. To the best of our
+knowledge, no prior study holds the environment, reward, seeds and
+graph construction fixed while varying \emph{both} the graph backbone
+and the RL objective, and additionally reports zero-shot transfer to
+strictly larger topologies.
+
+\begin{table*}[!t]
+\renewcommand{\arraystretch}{1.25}
+\caption{Positioning of this work with respect to representative prior art.
+``Zero-shot size'' denotes evaluation on a topology with more nodes than
+seen in training, without any gradient update.}
+\label{tab:related}
+\centering
+\footnotesize
+\begin{tabular}{@{}llccccc@{}}
+\hline
+\textbf{Work} & \textbf{Domain} & \textbf{Graph encoder} & \textbf{RL algorithm(s)} & \textbf{Multi-agent} & \textbf{Backbone ablation} & \textbf{Zero-shot size} \\
+\hline
+Shao \emph{et al.}~\cite{shao2021gat}          & Dense cellular slicing & GAT            & DQN, A2C        & Yes & No  & No  \\
+Dong \emph{et al.}~\cite{dong2022gcnslicing}   & Slicing + routing      & GCN            & Multi-task DRL  & No  & No  & No  \\
+Xu \emph{et al.}~\cite{xu2026graphsage}        & Mesh routing/resources & GraphSAGE      & MAPPO           & Yes & No  & Partial \\
+Hu \emph{et al.}~\cite{hu2022intercell}        & Inter-cell slicing     & MLP      & MADRL           & Yes & N/A & No  \\
+Naderializadeh \emph{et al.}~\cite{naderializadeh2021marl} & Spectrum sharing &  MLP & MADRL      & Yes & N/A & No  \\
+Shen \emph{et al.}~\cite{shen2021gnnrrm}       & Radio resource mgmt.   & MPNN           & Supervised & No  & No  & Yes \\
+Motalleb \emph{et al.}~\cite{motalleb2023oran} & O-RAN slicing          & MLP      & DRL             & No  & N/A & No  \\
+\textbf{This work}                             & \textbf{PRB slicing (eMBB/URLLC)} & \textbf{GCN/SAGE/GATv2} & \textbf{MADQN vs.\ MAPPO} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\hline
+\end{tabular}
+\end{table*}
+
+% =====================================================================
+\section{System Model}\label{sec:system}
+
+\subsection{Network and Control Architecture}
+We consider a downlink deployment of $N$ gNBs, indexed by
+$i \in \mathcal{N} = \{1,\dots,N\}$, serving a population of user
+equipments (UEs) that are attached to exactly one gNB at a time. Each
+gNB owns a pool of $B^{\mathrm{tot}}$ PRBs which it must partition
+between an eMBB slice and a URLLC slice at every control interval
+$t \in \{1,\dots,T\}$ of duration $\Delta t$.
+
+The allocator is realised as a near-real-time control application. In
+O-RAN terms it is an xApp hosted on the near-RT
+RIC~\cite{polese2023oran}; in the SDN-based industrial IoT deployments
+we take as the motivating scenario, the same logic is realised as a
+control application on the SDN controller that manages the transport
+segment behind the access points~\cite{shafiq2024sdniot,polverini2026sdnconflicts}.
+Either way, the operational assumptions are the same: RAN state is
+collected over a standardised telemetry interface, the decision is
+computed within the control-loop budget, and the resulting policy is
+pushed to the data plane. Fig.~\ref{fig:arch} shows the arrangement.
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=2.5in]{fig1}
-\caption{Simulation results for the network.}
-\label{fig_1}
+% >>> FIGURE PLACEHOLDER 1 -------------------------------------------
+% Suggested illustration: a three-layer stack drawn top to bottom.
+%   TOP LAYER  - "Non-RT RIC / SDN control applications": four boxes
+%                (Mobility Mgmt, Slice Allocator [highlight this one],
+%                Reliability-Aware Routing, Energy-Aware Routing) to
+%                show the coexisting-application context taken from
+%                the SDN-conflict literature.
+%   MIDDLE     - "Near-RT RIC / GNN-MARL xApp": a rounded box containing
+%                the shared GNN encoder and N per-agent policy heads,
+%                with an arrow labelled "E2 / telemetry" going up from
+%                the RAN and an arrow labelled "PRB split action" going
+%                down. Mark the control-loop budget (10 ms - 1 s).
+%   BOTTOM     - "RAN + IoT data plane": 5 gNB hexagons with overlapping
+%                coverage, eMBB UEs (video icon) and URLLC UEs (robot/
+%                sensor icon) scattered, dashed red lines between
+%                neighbouring gNBs annotated "interference coupling".
+% Recommended: vector drawing (draw.io / Inkscape / TikZ), single column
+% width, greyscale-safe (differentiate by hatching, not colour alone).
+% ---------------------------------------------------------------------
+\placeholderbox{6.2cm}{FIGURE 1 PLACEHOLDER --- SDN/O-RAN reference
+architecture with the GNN-MARL slice allocator deployed as a
+near-real-time control application. See the LaTeX comment above this
+box for the detailed drawing brief.}
+\caption{Reference architecture. The proposed GNN-MARL allocator runs as
+a near-real-time control application, consumes per-cell telemetry, and
+returns a per-cell eMBB/URLLC PRB split. It coexists with other control
+applications whose objectives may conflict with
+its own~\cite{polverini2026sdnconflicts}.}
+\label{fig:arch}
 \end{figure}
 
-Fig. 2(a) and 2(b) is an example of a double column floating figure using two subfigures.
- (The subfig.sty package must be loaded for this to work.)
- The subfigure $\backslash${\tt{label}} commands are set within each subfloat command,
- and the $\backslash${\tt{label}} for the overall figure must come after $\backslash${\tt{caption}}.
- $\backslash${\tt{hfil}} is used as a separator to get equal spacing.
- The combined width of all the parts of the figure should do not exceed the text width or a line break will occur.
-%
-\begin{figure*}[!t]
+\subsection{Channel Model}
+Large-scale propagation follows the 3GPP TR 38.901 urban macro (UMa)
+and urban micro (UMi) models~\cite{3gpp38901}. For a line-of-sight
+(LOS) UMa link, the path loss in dB at three-dimensional separation
+$d_{3\mathrm{D}}$ (m) and carrier frequency $f_c$ (GHz) is
+
+\begin{equation}
+\mathrm{PL}_{\mathrm{LOS}} = 28.0 + 22\log_{10}(d_{3\mathrm{D}})
++ 20\log_{10}(f_c),
+\label{eq:pathloss}
+\end{equation}
+
+to which we add log-normal shadow fading with standard deviation
+$\sigma_{\mathrm{SF}}$ drawn from the range prescribed for the scenario
+(4--7.82~dB). The non-LOS branch and the LOS probability function are
+taken unmodified from the same specification. The received SINR for UE
+$u$ served by gNB $i$ on a given PRB is
+
+\begin{equation}
+\gamma_{u,i} =
+\frac{p_i g_{u,i}}
+     {\displaystyle\sum_{j \in \mathcal{N}\setminus\{i\}} p_j g_{u,j} + \sigma^2},
+\label{eq:sinr}
+\end{equation}
+
+where $p_i$ is the transmit power of gNB $i$, $g_{u,i}$ the channel
+gain, and $\sigma^2$ the thermal noise power. The achievable rate on a
+bandwidth $b$ follows the Shannon bound
+$R = b\log_2(1+\gamma)$, capped at the highest modulation and coding
+scheme supported by the numerology.
+
+Because the summation in~\eqref{eq:sinr} runs over all other cells, the
+reward obtained by agent $i$ depends on the actions of its neighbours.
+This is the coupling that the graph encoder is intended to expose to
+the policy.
+
+\subsection{Traffic Model}
+The two slices are driven by deliberately different arrival processes.
+URLLC traffic is modelled as a Poisson process with rate
+$\lambda^{\mathrm{U}}$, so that the number of packets arriving at gNB
+$i$ in one control interval is
+$n_i^{\mathrm{U}} \sim \mathrm{Poisson}(\lambda^{\mathrm{U}}\Delta t)$;
+packets are small and carry a hard deadline. eMBB traffic is modelled
+as a two-state Markov-modulated Poisson process (MMPP) to reproduce the
+burstiness of video and file transfer, alternating between a low-rate
+state $\lambda^{\mathrm{E}}_{\mathrm{lo}}$ and a high-rate state
+$\lambda^{\mathrm{E}}_{\mathrm{hi}}$ with transition probabilities that
+parameterise the burst intensity. The burstiness parameter is treated
+as an explicit experimental factor in Section~\ref{sec:eval}, because
+an allocator that performs well only under smooth load is of limited
+practical interest.
+
+\subsection{Graph Construction}
+At each control interval the deployment is represented as a weighted
+directed graph $\mathcal{G}^{(t)} = (\mathcal{N},\mathcal{E}^{(t)})$.
+Nodes are gNBs. An edge $(j,i)$ exists when the interference that gNB
+$j$ imposes on gNB $i$ is non-negligible, and carries the weight
+
+\begin{equation}
+a_{ji} = \frac{p_j \bar{g}_{ji}}
+              {\displaystyle\sum_{k \in \mathcal{N}\setminus\{i\}} p_k \bar{g}_{ki}},
+\qquad
+\mathcal{E}^{(t)} = \{(j,i) : a_{ji} > \tau\},
+\label{eq:edge}
+\end{equation}
+
+where $\bar{g}_{ji}$ is the average channel gain from gNB $j$ to the
+users served by gNB $i$ and $\tau$ is a pruning threshold that keeps the
+graph sparse. Two properties of~\eqref{eq:edge} matter. First, the
+weight is a normalised \emph{share} of the interference budget, so it
+is comparable across deployments of different density --- which is what
+makes the encoder transferable across topology sizes. Second, the
+construction is physical rather than geometric: two cells that are
+close but separated by a blocker are correctly weakly coupled, whereas
+a distance threshold would join them. We retain the distance-threshold
+construction as an ablation arm to quantify how much this matters.
+
+\begin{figure}[!t]
 \centering
-\subfloat[]{\includegraphics[width=2.5in]{fig1}%
-\label{fig_first_case}}
-\hfil
-\subfloat[]{\includegraphics[width=2.5in]{fig1}%
-\label{fig_second_case}}
-\caption{Dae. Ad quatur autat ut porepel itemoles dolor autem fuga. Bus quia con nessunti as remo di quatus non perum que nimus. (a) Case I. (b) Case II.}
-\label{fig_sim}
-\end{figure*}
+% >>> FIGURE PLACEHOLDER 2 -------------------------------------------
+% Suggested illustration: two panels side by side.
+%   (a) Physical deployment: 5 gNBs as hexagonal cells on a plane, UEs
+%       as small dots coloured by slice, one blocker (building outline)
+%       between two nearby cells.
+%   (b) Derived graph: the same 5 gNBs as circles at the same positions,
+%       edges drawn with line THICKNESS proportional to a_ji from
+%       Eq. (3); the pair separated by the blocker has a thin/absent
+%       edge while a distant but unobstructed pair has a thick edge.
+%       Annotate one node with its feature vector o_i (8 entries) and
+%       one edge with its attribute a_ji.
+%   Add a caption arrow "interference-weighted, NOT distance-threshold".
+% Recommended: single column, vector, greyscale-safe.
+% ---------------------------------------------------------------------
+\placeholderbox{5.4cm}{FIGURE 2 PLACEHOLDER --- from physical deployment
+to interference-weighted graph. See the LaTeX comment above this box
+for the detailed drawing brief.}
+\caption{Graph construction. Edge weights encode the normalised
+interference share of~\eqref{eq:edge} rather than geometric proximity,
+so that message passing follows the physical coupling of the
+deployment.}
+\label{fig:graph}
+\end{figure}
 
-Note that often IEEE papers with multi-part figures do not place the labels within the image itself (using the optional argument to $\backslash${\tt{subfloat}}[]), but instead will
- reference/describe all of them (a), (b), etc., within the main caption.
- Be aware that for subfig.sty to generate the (a), (b), etc., subfigure
- labels, the optional argument to $\backslash${\tt{subfloat}} must be present. If a
- subcaption is not desired, leave its contents blank,
- e.g.,$\backslash${\tt{subfloat}}[].
+% =====================================================================
+\section{Problem Formulation}\label{sec:decpomdp}
 
+\subsection{Decentralised POMDP}
+We model the control problem as a decentralised partially observable
+Markov decision process (Dec-POMDP)
+$\langle \mathcal{N}, \mathcal{S}, \{\mathcal{A}_i\},
+\{\mathcal{O}_i\}, P, r, \gamma \rangle$, where $\mathcal{N}$ is the
+set of agents (one per gNB), $\mathcal{S}$ the global state,
+$\mathcal{A}_i$ and $\mathcal{O}_i$ the action and observation spaces
+of agent $i$, $P$ the transition kernel induced by the channel and
+traffic processes, $r$ the reward, and $\gamma$ the discount factor.
 
- 
+\subsection{Observation Space}
+Each agent observes an eight-dimensional local feature vector
 
-\section{Tables}
-Note that, for IEEE-style tables, the
- $\backslash${\tt{caption}} command should come BEFORE the table. Table captions use title case. Articles (a, an, the), coordinating conjunctions (and, but, for, or, nor), and most short prepositions are lowercase unless they are the first or last word. Table text will default to $\backslash${\tt{footnotesize}} as
- the IEEE normally uses this smaller font for tables.
- The $\backslash${\tt{label}} must come after $\backslash${\tt{caption}} as always.
- 
+\begin{equation}
+\mathbf{o}_i^{(t)} = \big[\bar{\gamma}_i,\;
+\gamma_i^{\mathrm{E}},\; \gamma_i^{\mathrm{U}},\;
+q_i^{\mathrm{E}},\; q_i^{\mathrm{U}},\;
+d_i^{\mathrm{E}},\; d_i^{\mathrm{U}},\;
+b_i^{\mathrm{prev}}\big],
+\label{eq:obs}
+\end{equation}
+
+comprising the mean SINR at the cell, the per-slice SINR, the per-slice
+queue occupancy, the per-slice mean delay over the previous interval,
+and the previous PRB split. The stacked matrix
+$\mathbf{X}^{(t)} \in \mathbb{R}^{N \times 8}$, together with
+$\mathcal{E}^{(t)}$ and the edge weights, is the input to the graph
+encoder. Crucially, an agent never observes the raw state of its
+neighbours; it receives only what message passing aggregates, which
+keeps the signalling requirement compatible with an E2-style interface.
+
+\subsection{Action Space}
+The two benchmarked agents differ precisely here.
+
+\subsubsection{Discrete (GNN-MADQN)} Agent $i$ selects a tier index from
+$\mathcal{A}_i^{\mathrm{disc}} = \{0, 1, \dots, L-1\}$ mapping to an
+eMBB share $\{0\%, 10\%, \dots, 100\%\}$ with $L = 11$ levels; the URLLC
+slice receives the complement. The quantisation step
+$\delta = 1/(L-1)$ is the mechanism by which discretisation can, in
+principle, prevent the agent from meeting a tight URLLC deadline: if
+the required URLLC share falls between two tiers, the agent must round
+up (wasting spectral efficiency) or round down (risking a violation).
+
+\subsubsection{Continuous (GNN-MAPPO)} Agent $i$ outputs
+$\mathbf{a}_i^{\mathrm{cont}} = [\beta_i^{\mathrm{E}},
+\beta_i^{\mathrm{U}}]$ on the 2-simplex, i.e.
+$\beta_i^{\mathrm{E}} + \beta_i^{\mathrm{U}} = 1$,
+$\beta_i^{\mathrm{E}},\beta_i^{\mathrm{U}} \geq 0$, realised as a
+squashed Gaussian policy followed by a softmax projection. No
+quantisation error is incurred.
+
+In both cases the realised PRB counts are
+$\lfloor \beta_i^{s} B^{\mathrm{tot}} \rfloor$, so the integrality of
+PRBs is respected identically by both arms and does not confound the
+comparison.
+
+\subsection{Reward Function}
+The reward must express the eMBB/URLLC trade-off without collapsing it
+into a single throughput term. We use
+
+\begin{align}
+r_i^{(t)} = &\; w_1 \frac{T_i^{\mathrm{E}}}{T_{\mathrm{ref}}}
+- w_2 \,\mathbb{1}\!\left[\bar{D}_i^{\mathrm{U}} > D_{\max}\right] \nonumber\\
+&- w_3 \frac{\bar{D}_i^{\mathrm{U}}}{D_{\max}}
++ w_4 \, \mathrm{SE}_i,
+\label{eq:reward}
+\end{align}
+
+where $T_i^{\mathrm{E}}$ is the eMBB throughput normalised by a
+reference rate $T_{\mathrm{ref}}$, $\bar{D}_i^{\mathrm{U}}$ the mean
+URLLC delay, $D_{\max}$ the URLLC deadline, and $\mathrm{SE}_i$ the
+cell spectral efficiency. The second term is a hard penalty on
+service-level agreement (SLA) violation and the third a soft shaping
+term that provides gradient signal before the deadline is breached;
+including both is what prevents the agent from learning a
+bang-bang policy that sits just inside the deadline.
+
+Because the reward of agent $i$ depends on neighbours' actions
+through~\eqref{eq:sinr}, agents are trained cooperatively against the
+team objective $\sum_i r_i^{(t)}$ under CTDE, with a shared critic.
+
+\subsection{On the Choice of \texorpdfstring{$D_{\max}$}{Dmax}}
+The URLLC deadline is the single most consequential free parameter in
+this formulation, and the literature is inconsistent about it. 3GPP TR
+38.913~\cite{3gpp38913} specifies a $0.5$\,ms user-plane latency target
+per direction, whereas DRL slicing papers frequently adopt thresholds
+three orders of magnitude larger because their simulation granularity
+cannot resolve sub-millisecond dynamics. We state our choice
+explicitly, justify it against the control-interval duration
+$\Delta t$, and report sensitivity to it, because a paper that does not
+do so cannot be compared against.
+
 \begin{table}[!t]
-\caption{An Example of a Table\label{tab:table1}}
+\renewcommand{\arraystretch}{1.2}
+\caption{Principal notation.}
+\label{tab:notation}
 \centering
-\begin{tabular}{|c||c|}
+\footnotesize
+\begin{tabular}{@{}ll@{}}
 \hline
-One & Two\\
+\textbf{Symbol} & \textbf{Meaning} \\
 \hline
-Three & Four\\
+$N$, $\mathcal{N}$              & Number / set of gNBs (agents) \\
+$B^{\mathrm{tot}}$              & PRB pool per gNB \\
+$\Delta t$                      & Control-interval duration \\
+$\gamma_{u,i}$                  & SINR of UE $u$ served by gNB $i$ \\
+$a_{ji}$                        & Interference-share edge weight \\
+$\tau$                          & Edge pruning threshold \\
+$\mathbf{o}_i^{(t)}$            & Local observation of agent $i$ \\
+$\mathbf{X}^{(t)}$              & Stacked node-feature matrix \\
+$\mathbf{Z}^{(t)}$              & Node embeddings from the GNN encoder \\
+$\beta_i^{s}$                   & Bandwidth fraction for slice $s$ at gNB $i$ \\
+$L$, $\delta$                   & Discrete tiers, quantisation step \\
+$D_{\max}$                      & URLLC delay budget \\
+$w_1 \dots w_4$                 & Reward weights \\
+$\rho(N)$                       & Performance retention ratio at size $N$ \\
 \hline
 \end{tabular}
 \end{table}
 
-\section{Algorithms}
-Algorithms should be numbered and include a short title. They are set off from the text with rules above and below the title and after the last line.
+% =====================================================================
+\section{Proposed Architecture}\label{sec:arch}
 
-\begin{algorithm}[H]
-\caption{Weighted Tanimoto ELM.}\label{alg:alg1}
-\begin{algorithmic}
-\STATE 
-\STATE {\textsc{TRAIN}}$(\mathbf{X} \mathbf{T})$
-\STATE \hspace{0.5cm}$ \textbf{select randomly } W \subset \mathbf{X}  $
-\STATE \hspace{0.5cm}$ N_\mathbf{t} \gets | \{ i : \mathbf{t}_i = \mathbf{t} \} | $ \textbf{ for } $ \mathbf{t}= -1,+1 $
-\STATE \hspace{0.5cm}$ B_i \gets \sqrt{ \textsc{max}(N_{-1},N_{+1}) / N_{\mathbf{t}_i} } $ \textbf{ for } $ i = 1,...,N $
-\STATE \hspace{0.5cm}$ \hat{\mathbf{H}} \gets  B \cdot (\mathbf{X}^T\textbf{W})/( \mathbb{1}\mathbf{X} + \mathbb{1}\textbf{W} - \mathbf{X}^T\textbf{W} ) $
-\STATE \hspace{0.5cm}$ \beta \gets \left ( I/C + \hat{\mathbf{H}}^T\hat{\mathbf{H}} \right )^{-1}(\hat{\mathbf{H}}^T B\cdot \mathbf{T})  $
-\STATE \hspace{0.5cm}\textbf{return}  $\textbf{W},  \beta $
-\STATE 
-\STATE {\textsc{PREDICT}}$(\mathbf{X} )$
-\STATE \hspace{0.5cm}$ \mathbf{H} \gets  (\mathbf{X}^T\textbf{W} )/( \mathbb{1}\mathbf{X}  + \mathbb{1}\textbf{W}- \mathbf{X}^T\textbf{W}  ) $
-\STATE \hspace{0.5cm}\textbf{return}  $\textsc{sign}( \mathbf{H} \beta )$
+\subsection{Design Principle: Orthogonal Modules}
+The architecture is deliberately factorised into two components with a
+narrow interface between them. The \emph{graph encoder} maps
+$(\mathbf{X},\mathcal{E},\mathbf{A}) \mapsto \mathbf{Z} \in
+\mathbb{R}^{N\times h}$; the \emph{policy head} maps
+$\mathbf{z}_i \mapsto \mathcal{A}_i$. Any encoder may be paired with
+any head. This is a methodological commitment as much as a software
+one: without it, a claim that ``GAT is better than GraphSAGE'' is
+confounded with the choice of RL algorithm, and a claim that ``PPO
+beats DQN'' is confounded with the choice of encoder.
+
+\begin{figure}[!t]
+\centering
+% >>> FIGURE PLACEHOLDER 3 -------------------------------------------
+% Suggested illustration: a left-to-right dataflow block diagram.
+%   INPUT   : graph (X, edge_index, edge_attr) drawn as a mini-graph.
+%   BLOCK A : "Swappable GNN encoder" - a single box with a dashed
+%             border containing three stacked, greyed alternatives
+%             labelled GCN / GraphSAGE / GATv2, to emphasise that
+%             exactly one is active at a time. Show 2-3 message-passing
+%             layers inside.
+%   MIDDLE  : node embeddings Z, drawn as N coloured row vectors.
+%   BLOCK B : "Swappable RL head" - dashed box with two alternatives:
+%             (i) Dueling DQN head -> V(s) and A(s,a) streams -> argmax
+%                 over 11 discrete tiers (draw a bar/tier picker);
+%             (ii) PPO actor-critic head -> Gaussian mean/std -> softmax
+%                 -> continuous simplex (draw a 2-simplex triangle).
+%   OUTPUT  : per-gNB PRB split bar chart (eMBB vs URLLC).
+%   Also show a dotted box around the encoder labelled "shared weights
+%   across all N agents (parameter sharing)".
+% Recommended: DOUBLE column width (figure*), vector, greyscale-safe.
+% ---------------------------------------------------------------------
+\placeholderbox{6.0cm}{FIGURE 3 PLACEHOLDER --- modular agent
+architecture: swappable graph encoder, shared across agents, feeding a
+swappable discrete or continuous policy head. See the LaTeX comment
+above this box for the detailed drawing brief.}
+\caption{Agent architecture. The encoder and the policy head are
+independent modules; the benchmark varies one while holding the other
+fixed.}
+\label{fig:agent}
+\end{figure}
+
+\subsection{Graph Encoders}
+Three backbones are implemented behind the common interface, chosen
+because they occupy distinct points in the expressiveness/inductive-bias
+trade-off.
+
+\subsubsection{GCN} The graph convolutional
+network~\cite{kipf2017gcn} applies a symmetric degree-normalised
+aggregation,
+\begin{equation}
+\mathbf{z}_i^{(\ell+1)} = \sigma\Big(
+\sum_{j \in \mathcal{N}(i)\cup\{i\}}
+\frac{1}{\sqrt{\hat{d}_i\hat{d}_j}}\,
+\mathbf{W}^{(\ell)}\mathbf{z}_j^{(\ell)}\Big).
+\end{equation}
+It is the cheapest option and serves as the graph-encoder baseline. Its
+fixed normalisation means that node degree --- which changes with
+deployment density --- directly rescales the aggregate, which we expect
+to limit transfer to denser topologies. It is also the backbone most
+exposed to over-smoothing at
+depth~\cite{rusch2023oversmoothing}.
+
+\subsubsection{GraphSAGE} The inductive
+formulation~\cite{hamilton2017graphsage} separates the self
+representation from the aggregated neighbourhood,
+\begin{equation}
+\mathbf{z}_i^{(\ell+1)} = \sigma\Big(
+\mathbf{W}_{\mathrm{self}}^{(\ell)}\mathbf{z}_i^{(\ell)}
+\;\Vert\;
+\mathbf{W}_{\mathrm{nbr}}^{(\ell)}\,
+\mathrm{AGG}\big(\{\mathbf{z}_j^{(\ell)}: j \in \mathcal{N}(i)\}\big)\Big),
+\end{equation}
+with a fixed-size sampled aggregation. Because the aggregation is
+mean- or max-pooled over a sampled neighbourhood of bounded size, the
+statistics of the aggregate are approximately invariant to the
+neighbourhood cardinality. This is the property that makes GraphSAGE
+the \emph{a priori} favourite for the zero-shot test, and it is the
+reason Xu \emph{et al.}~\cite{xu2026graphsage} adopt it for
+topology-varying mesh networks.
+
+\subsubsection{GATv2} The attention
+formulation~\cite{velickovic2018gat} in its corrected dynamic-attention
+variant~\cite{brody2022gatv2} learns per-edge coefficients
+\begin{equation}
+\alpha_{ij} = \frac{\exp\!\big(\mathbf{a}^{\!\top}\mathrm{LeakyReLU}(
+\mathbf{W}[\mathbf{z}_i \Vert \mathbf{z}_j \Vert a_{ji}])\big)}
+{\sum_{k \in \mathcal{N}(i)}
+\exp\!\big(\mathbf{a}^{\!\top}\mathrm{LeakyReLU}(
+\mathbf{W}[\mathbf{z}_i \Vert \mathbf{z}_k \Vert a_{ki}])\big)}.
+\end{equation}
+We use GATv2 rather than the original GAT because the static-attention
+limitation identified by Brody \emph{et al.}~\cite{brody2022gatv2}
+matters here: the ranking of interferers should depend on the querying
+cell's own state, not only on the interferer's. GATv2 is the default
+backbone for the main comparison, since anisotropic weighting is the
+best match for a problem in which a handful of dominant interferers
+matter far more than the rest.
+
+\subsection{Policy Heads}
+\subsubsection{GNN-MADQN} A Dueling
+head~\cite{wang2016dueling} decomposes the action value into a state
+value and an advantage,
+$Q(\mathbf{z}_i,a) = V(\mathbf{z}_i) + A(\mathbf{z}_i,a)
+- \frac{1}{|\mathcal{A}_i|}\sum_{a'} A(\mathbf{z}_i,a')$,
+trained with double Q-learning targets and a prioritised replay buffer.
+The dueling decomposition is chosen over vanilla
+DQN~\cite{mnih2015dqn} because in this problem many tiers yield
+near-identical value in low-load regimes, and separating $V$ from $A$
+stabilises learning under that redundancy.
+
+\subsubsection{GNN-MAPPO} A shared-critic actor-critic head trained with
+the clipped surrogate objective~\cite{schulman2017ppo},
+\begin{equation}
+\mathcal{L}^{\mathrm{CLIP}}(\theta) = \hat{\mathbb{E}}_t\Big[
+\min\big(\varrho_t(\theta)\hat{A}_t,\;
+\mathrm{clip}(\varrho_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t\big)\Big],
+\end{equation}
+with $\varrho_t(\theta)$ the probability ratio and $\hat{A}_t$ a
+generalised-advantage estimate computed from the centralised critic.
+The multi-agent instantiation follows the recommendations of Yu
+\emph{et al.}~\cite{yu2022mappo}, including value normalisation and
+observation concatenation for the critic only.
+
+\subsection{Parameter Sharing and Complexity}
+All agents share one set of encoder and head weights. Sharing is not
+merely an efficiency measure: it is what makes the policy well-defined
+on a graph with a different number of nodes, since a per-agent
+parameterisation would have nothing to instantiate for the newly
+appeared cells. It also improves sample efficiency by a factor
+approximately linear in $N$, because every agent's transitions
+contribute to the same gradient.
+
+Per control interval, the encoder costs
+$\mathcal{O}(|\mathcal{E}|\,h + N h^2)$ for $\ell$ layers of width $h$,
+and each head costs $\mathcal{O}(h^2)$ per agent. Since the graph is
+pruned by $\tau$ to a bounded average degree, $|\mathcal{E}| =
+\mathcal{O}(N)$ and the total cost is linear in the number of cells ---
+in contrast to a centralised agent whose joint action space is
+$\mathcal{O}(L^N)$. This linearity is what makes the approach
+compatible with a near-real-time control loop, and we report measured
+inference latency as an explicit metric.
+
+\begin{algorithm}[!t]
+\caption{CTDE training loop (GNN-MAPPO variant)}
+\label{alg:train}
+\begin{algorithmic}[1]
+\STATE Initialise shared encoder $\phi$, actor $\theta$, critic $\psi$
+\STATE Fix seeds for NumPy, PyTorch and the RL framework
+\FOR{iteration $= 1$ to $K$}
+  \STATE Clear rollout buffer $\mathcal{B}$
+  \FOR{$t = 1$ to $T_{\mathrm{roll}}$}
+    \STATE Observe $\mathbf{X}^{(t)}$; build $\mathcal{E}^{(t)}$ via~\eqref{eq:edge}
+    \STATE $\mathbf{Z}^{(t)} \leftarrow \mathrm{Encoder}_\phi(\mathbf{X}^{(t)},\mathcal{E}^{(t)},\mathbf{A}^{(t)})$
+    \STATE For each $i$: sample $\mathbf{a}_i^{(t)} \sim \pi_\theta(\cdot\,|\,\mathbf{z}_i^{(t)})$
+    \STATE Apply PRB split; step environment; observe $r_i^{(t)}$
+    \STATE Store $(\mathbf{X}^{(t)},\mathcal{E}^{(t)},\mathbf{a}^{(t)},r^{(t)})$ in $\mathcal{B}$
+  \ENDFOR
+  \STATE Compute GAE advantages using centralised critic $V_\psi$
+  \FOR{epoch $= 1$ to $E$}
+    \STATE Update $\theta,\phi$ on $\mathcal{L}^{\mathrm{CLIP}}$ (mini-batched)
+    \STATE Update $\psi$ on the value loss
+  \ENDFOR
+\ENDFOR
+\STATE \textbf{return} $\phi,\theta$ \COMMENT{decentralised execution uses $\phi,\theta$ only}
 \end{algorithmic}
-\label{alg1}
 \end{algorithm}
 
-Que sunt eum lam eos si dic to estist, culluptium quid qui nestrum nobis reiumquiatur minimus minctem. Ro moluptat fuga. Itatquiam ut laborpo rersped exceres vollandi repudaerem. Ulparci sunt, qui doluptaquis sumquia ndestiu sapient iorepella sunti veribus. Ro moluptat fuga. Itatquiam ut laborpo rersped exceres vollandi repudaerem. 
-\section{Mathematical Typography \\ and Why It Matters}
+% =====================================================================
+\section{Evaluation Methodology}\label{sec:eval}
+ 
+This section specifies the experiments to be run. It is written before
+the campaign so that the hypotheses, metrics and decision rules are
+fixed in advance rather than selected after seeing the data.
+ 
+\subsection{Baselines}
+Four systems are compared, chosen to isolate one factor each.
+ 
+\begin{itemize}
+\item \textbf{B1 --- Centralised MLP.} One agent observes the
+      concatenated global state and emits the joint action. This is the
+      coordination upper bound: it cannot be beaten by any decentralised
+      scheme on reward, and it establishes how much is lost by
+      decentralisation. It does not scale and cannot transfer.
+\item \textbf{B2 --- Independent learners (IDQN / IPPO).} $N$ agents,
+      MLP encoders, no message passing. The gap between B2 and the
+      proposed method is the value of the graph.
+\item \textbf{P1 --- GNN-MADQN.} GATv2 encoder, Dueling head, discrete
+      tiers.
+\item \textbf{P2 --- GNN-MAPPO.} GATv2 encoder, actor-critic head,
+      continuous simplex.
+\end{itemize}
+ 
+A fixed equal-split allocator and a proportional-fair heuristic are
+additionally reported as non-learned reference points.
+ 
+\subsection{Metrics}
+Table~\ref{tab:metrics} lists the measurements. We report the
+99.9th-percentile URLLC delay alongside the mean because the mean is
+almost uninformative for a service defined by its tail, and because the
+discrete/continuous distinction is expected to show up in the tail
+before it shows up in the mean.
+ 
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.2}
+\caption{Evaluation metrics.}
+\label{tab:metrics}
+\centering
+\footnotesize
+\begin{tabular}{@{}llp{2.6cm}@{}}
+\hline
+\textbf{Metric} & \textbf{Scope} & \textbf{Purpose} \\
+\hline
+Cumulative reward           & Training  & Convergence \\
+Reward at 100k/500k/1M steps& Training  & Sample efficiency \\
+Std.\ dev.\ of moving avg.  & Training  & Stability \\
+Wall-clock training time    & Training  & Practical cost \\
+Inference latency per step  & Runtime   & Control-loop feasibility \\
+eMBB throughput (Mb/s)      & eMBB      & Primary eMBB KPI \\
+Spectral efficiency (b/s/Hz)& System    & Resource efficiency \\
+Mean URLLC delay (ms)       & URLLC     & Average latency \\
+99.9th-pct.\ URLLC delay    & URLLC     & Tail latency \\
+SLA violation rate (\%)     & URLLC     & Reliability \\
+PRB utilisation (\%)        & System    & Waste detection \\
+Jain's fairness index       & System    & Inter-cell equity \\
+Retention ratio $\rho(N)$   & Transfer  & Zero-shot generalisation \\
+\hline
+\end{tabular}
+\end{table}
+ 
+\subsection{Stage 1: Convergence and Sample Efficiency}
+All agents are trained for $10^6$ environment steps on the five-gNB
+topology with five random seeds. We report the mean and the
+seed-to-seed spread, not the best seed, since MARL results are known to
+be seed-sensitive~\cite{papoudakis2021benchmarking}.
+ 
+\emph{Hypothesis H1.} GNN-MAPPO converges more smoothly than
+GNN-MADQN, at the cost of more environment steps to reach a comparable
+return, because the clipped update bounds the policy change per
+iteration whereas the bootstrapped value target does not.
+ 
+\subsection{Stage 2: Network-Level Performance}
+Trained policies are evaluated over held-out traffic and channel
+realisations.
+ 
+\emph{Hypothesis H2.} The two agents achieve comparable eMBB
+throughput, but GNN-MAPPO attains a lower 99.9th-percentile URLLC delay
+because it can allocate the exact URLLC share required rather than
+rounding to a tier. If H2 is falsified --- that is, if the discretised
+agent matches the continuous one at the tail --- the practical
+conclusion is that $L=11$ tiers already resolve the operating region,
+which is itself a useful negative result and is reported as such.
+ 
+\subsection{Stage 3: Zero-Shot Topology Generalisation}
+This is the discriminating experiment. Policies trained on
+$N_{\mathrm{train}} = 5$ are evaluated with frozen weights on
+$N_{\mathrm{test}} \in \{10, 20\}$, with no gradient update of any
+kind. We define the retention ratio
 
-Typographical conventions for mathematical formulas have been developed to {\bf provide uniformity and clarity of presentation across mathematical texts}. This enables the readers of those texts to both understand the author's ideas and to grasp new concepts quickly. While software such as \LaTeX \ and MathType\textsuperscript{\textregistered} can produce aesthetically pleasing math when used properly, it is also very easy to misuse the software, potentially resulting in incorrect math display.
-
-IEEE aims to provide authors with the proper guidance on mathematical typesetting style and assist them in writing the best possible article. As such, IEEE has assembled a set of examples of good and bad mathematical typesetting \cite{ref1,ref2,ref3,ref4,ref5}. 
-
-Further examples can be found at \url{http://journals.ieeeauthorcenter.ieee.org/wp-content/uploads/sites/7/IEEE-Math-Typesetting-Guide-for-LaTeX-Users.pdf}
-
-\subsection{Display Equations}
-The simple display equation example shown below uses the ``equation'' environment. To number the equations, use the $\backslash${\tt{label}} macro to create an identifier for the equation. LaTeX will automatically number the equation for you.
 \begin{equation}
-\label{deqn_ex1}
-x = \sum_{i=0}^{n} 2{i} Q.
+\rho(N) = \frac{\bar{r}(N)}{\bar{r}(N_{\mathrm{train}})} \times 100\%,
+\label{eq:retention}
 \end{equation}
 
-\noindent is coded as follows:
-\begin{verbatim}
-\begin{equation}
-\label{deqn_ex1}
-x = \sum_{i=0}^{n} 2{i} Q.
-\end{equation}
-\end{verbatim}
+where $\bar{r}(\cdot)$ is the per-agent average return, normalised
+per agent so that the comparison is not trivially confounded by the
+larger number of agents contributing to a team sum.
 
-To reference this equation in the text use the $\backslash${\tt{ref}} macro. 
-Please see (\ref{deqn_ex1})\\
-\noindent is coded as follows:
-\begin{verbatim}
-Please see (\ref{deqn_ex1})\end{verbatim}
+\emph{Hypothesis H3.} GNN backbones retain more than 70\% of
+per-agent return at $N=20$, with GraphSAGE $>$ GATv2 $>$ GCN, while the
+MLP baselines cannot be evaluated at all because their input dimension
+is fixed. The inability of B1 and B2 to run this experiment is not a
+technicality to be worked around; it is the finding.
 
-\subsection{Equation Numbering}
-{\bf{Consecutive Numbering:}} Equations within an article are numbered consecutively from the beginning of the
-article to the end, i.e., (1), (2), (3), (4), (5), etc. Do not use roman numerals or section numbers for equation numbering.
+\begin{figure}[!t]
+\centering
+% >>> FIGURE PLACEHOLDER 4 -------------------------------------------
+% Suggested illustration: a three-panel horizontal strip.
+%   PANEL 1 "TRAIN": 5-node graph with a "gradient updates ON" badge and
+%           a lock-open icon; label "1M steps, seeds 1-5".
+%   PANEL 2 "FREEZE": the same encoder box with a padlock icon and the
+%           text "weights frozen - no gradient update".
+%   PANEL 3 "TEST": two graphs side by side, 10 nodes and 20 nodes, with
+%           a "gradient updates OFF" badge; below them the formula
+%           rho(N) = r_bar(N) / r_bar(5) x 100%.
+%   Beneath panel 3, add a small greyed-out box: "MLP baselines: N/A -
+%   fixed input dimension" with a cross, to make the point visually.
+% Recommended: single column, vector, greyscale-safe.
+% ---------------------------------------------------------------------
+\placeholderbox{4.6cm}{FIGURE 4 PLACEHOLDER --- zero-shot transfer
+protocol: train on five gNBs, freeze, evaluate on ten and twenty. See
+the LaTeX comment above this box for the detailed drawing brief.}
+\caption{Zero-shot topology-generalisation protocol. MLP-based
+baselines cannot be evaluated on the larger topologies at all, which is
+the structural limitation the graph encoder removes.}
+\label{fig:zeroshot}
+\end{figure}
 
-\noindent {\bf{Appendix Equations:}} The continuation of consecutively numbered equations is best in the Appendix, but numbering
- as (A1), (A2), etc., is permissible.\\
+\subsection{Ablations}
+Four factors are varied with the RL algorithm fixed to MAPPO, since
+that is the arm expected to be the more stable and therefore the more
+informative substrate for an ablation.
 
-\noindent {\bf{Hyphens and Periods}}: Hyphens and periods should not be used in equation numbers, i.e., use (1a) rather than
-(1-a) and (2a) rather than (2.a) for subequations. This should be consistent throughout the article.
+\begin{table}[!t]
+\caption{Ablation design. Each factor is varied independently with all others at their default setting.}
+\label{tab:ablation}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt} 
+\begin{tabular}{@{}llp{3.2cm}@{}}
+\hline
+\textbf{Factor} & \textbf{Levels} & \textbf{Question addressed} \\
+\hline
+Graph backbone     & GCN, GraphSAGE, GATv2       & Which inductive bias transfers? \\
+Encoder depth      & 1, 2, 3 layers              & Where does over-smoothing begin? \\
+Graph construction & Distance-threshold, interference-weighted & Does physical weighting pay? \\
+Reward weights     & Three ($w_1..w_4$) settings & Sensitivity of the trade-off \\
+eMBB burstiness    & Low, medium, high MMPP      & Robustness to load shape \\
+\hline
+\end{tabular}
+\end{table}
 
-\subsection{Multi-Line Equations and Alignment}
-Here we show several examples of multi-line equations and proper alignments.
+\subsection{Decision Rules}
+We fix in advance how the results will be acted upon, to avoid
+post-hoc rationalisation.
 
-\noindent {\bf{A single equation that must break over multiple lines due to length with no specific alignment.}}
-\begin{multline}
-\text{The first line of this example}\\
-\text{The second line of this example}\\
-\text{The third line of this example}
-\end{multline}
+\begin{itemize}
+\item If GATv2 is unstable or over-smooths beyond two layers, reduce
+      depth and report the depth/stability curve rather than tuning
+      until the preferred backbone wins.
+\item If discretisation caps GNN-MADQN's URLLC performance, report it
+      as a finding about action-space design; do not increase $L$ until
+      the gap disappears, since doing so would answer a different
+      question.
+\item If GATv2 retention falls below 70\% while GraphSAGE holds,
+      GraphSAGE becomes the headline architecture and the attention
+      mechanism is reported as an accuracy/transfer trade-off.
+\end{itemize}
 
-\noindent is coded as:
-\begin{verbatim}
-\begin{multline}
-\text{The first line of this example}\\
-\text{The second line of this example}\\
-\text{The third line of this example}
-\end{multline}
-\end{verbatim}
+\subsection{Implementation}
+The environment is implemented against the Gymnasium
+interface~\cite{towers2024gymnasium} for the single-agent reference
+case and lifted to the PettingZoo parallel
+API~\cite{terry2021pettingzoo} for the multi-agent case, from which it
+is wrapped for a CTDE-capable training backend. Graph encoders are
+built on PyTorch Geometric~\cite{fey2019pyg}, which supplies the
+convolution operators used in Section~\ref{sec:arch} and, importantly
+for the transfer experiment, handles variable-size graphs natively. The
+environment emits each observation directly as a graph tuple
+$(\mathbf{X}, \texttt{edge\_index}, \texttt{edge\_attr})$, so that no
+reshaping step re-introduces a fixed input dimension by the back door.
 
-\noindent {\bf{A single equation with multiple lines aligned at the = signs}}
-\begin{align}
-a &= c+d \\
-b &= e+f
-\end{align}
-\noindent is coded as:
-\begin{verbatim}
-\begin{align}
-a &= c+d \\
-b &= e+f
-\end{align}
-\end{verbatim}
+\subsection{Reproducibility}
+Random seeds for NumPy, PyTorch and the RL framework are fixed in a
+single configuration file. The environment is deterministic under a
+fixed seed, verified by unit tests on \texttt{reset()} and
+\texttt{step()}. Hyperparameters are reported in full in
+Table~\ref{tab:hyper}, and the environment, training scripts, evaluation
+scripts and configuration files are released publicly.
 
-The {\tt{align}} environment can align on multiple  points as shown in the following example:
-\begin{align}
-x &= y & X & =Y & a &=bc\\
-x' &= y' & X' &=Y' &a' &=bz
-\end{align}
-\noindent is coded as:
-\begin{verbatim}
-\begin{align}
-x &= y & X & =Y & a &=bc\\
-x' &= y' & X' &=Y' &a' &=bz
-\end{align}
-\end{verbatim}
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.2}
+\caption{Simulation and training hyperparameters (to be finalised after
+the calibration run).}
+\label{tab:hyper}
+\centering
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+\hline
+\textbf{Parameter} & \textbf{Value} \\
+\hline
+Carrier frequency $f_c$        & TBD (GHz) \\
+System bandwidth               & TBD (MHz) \\
+PRBs per gNB $B^{\mathrm{tot}}$& TBD \\
+Control interval $\Delta t$    & TBD (ms) \\
+Shadow fading $\sigma_{SF}$    & 4--7.82 dB (per TR 38.901) \\
+URLLC arrival $\lambda^{U}$    & TBD \\
+eMBB MMPP states               & 2 (low/high) \\
+URLLC deadline $D_{\max}$      & TBD --- justified in Sec.~IV-E \\
+Reward weights $(w_1..w_4)$    & TBD --- swept in ablation \\
+GNN layers / width             & 2--3 / TBD \\
+Attention heads (GATv2)        & TBD \\
+Discount $\gamma$              & TBD \\
+PPO clip $\epsilon$            & TBD \\
+Training steps                 & $10^6$ \\
+Seeds                          & 5 \\
+\hline
+\end{tabular}
+\end{table}
 
-
-
-
-
-\subsection{Subnumbering}
-The amsmath package provides a {\tt{subequations}} environment to facilitate subnumbering. An example:
-
-\begin{subequations}\label{eq:2}
-\begin{align}
-f&=g \label{eq:2A}\\
-f' &=g' \label{eq:2B}\\
-\mathcal{L}f &= \mathcal{L}g \label{eq:2c}
-\end{align}
-\end{subequations}
-
-\noindent is coded as:
-\begin{verbatim}
-\begin{subequations}\label{eq:2}
-\begin{align}
-f&=g \label{eq:2A}\\
-f' &=g' \label{eq:2B}\\
-\mathcal{L}f &= \mathcal{L}g \label{eq:2c}
-\end{align}
-\end{subequations}
-
-\end{verbatim}
-
-\subsection{Matrices}
-There are several useful matrix environments that can save you some keystrokes. See the example coding below and the output.
-
-\noindent {\bf{A simple matrix:}}
-\begin{equation}
-\begin{matrix}  0 &  1 \\ 
-1 &  0 \end{matrix}
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\begin{matrix}  0 &  1 \\ 
-1 &  0 \end{matrix}
-\end{equation}
-\end{verbatim}
-
-\noindent {\bf{A matrix with parenthesis}}
-\begin{equation}
-\begin{pmatrix} 0 & -i \\
- i &  0 \end{pmatrix}
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\begin{pmatrix} 0 & -i \\
- i &  0 \end{pmatrix}
-\end{equation}
-\end{verbatim}
-
-\noindent {\bf{A matrix with square brackets}}
-\begin{equation}
-\begin{bmatrix} 0 & -1 \\ 
-1 &  0 \end{bmatrix}
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\begin{bmatrix} 0 & -1 \\ 
-1 &  0 \end{bmatrix}
-\end{equation}
-\end{verbatim}
-
-\noindent {\bf{A matrix with curly braces}}
-\begin{equation}
-\begin{Bmatrix} 1 &  0 \\ 
-0 & -1 \end{Bmatrix}
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\begin{Bmatrix} 1 &  0 \\ 
-0 & -1 \end{Bmatrix}
-\end{equation}\end{verbatim}
-
-\noindent {\bf{A matrix with single verticals}}
-\begin{equation}
-\begin{vmatrix} a &  b \\ 
-c &  d \end{vmatrix}
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\begin{vmatrix} a &  b \\ 
-c &  d \end{vmatrix}
-\end{equation}\end{verbatim}
-
-\noindent {\bf{A matrix with double verticals}}
-\begin{equation}
-\begin{Vmatrix} i &  0 \\ 
-0 & -i \end{Vmatrix}
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\begin{Vmatrix} i &  0 \\ 
-0 & -i \end{Vmatrix}
-\end{equation}\end{verbatim}
-
-\subsection{Arrays}
-The {\tt{array}} environment allows you some options for matrix-like equations. You will have to manually key the fences, but there are other options for alignment of the columns and for setting horizontal and vertical rules. The argument to {\tt{array}} controls alignment and placement of vertical rules.
-
-A simple array
-\begin{equation}
-\left(
-\begin{array}{cccc}
-a+b+c & uv & x-y & 27\\
-a+b & u+v & z & 134
-\end{array}\right)
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\left(
-\begin{array}{cccc}
-a+b+c & uv & x-y & 27\\
-a+b & u+v & z & 134
-\end{array} \right)
-\end{equation}
-\end{verbatim}
-
-A slight variation on this to better align the numbers in the last column
-\begin{equation}
-\left(
-\begin{array}{cccr}
-a+b+c & uv & x-y & 27\\
-a+b & u+v & z & 134
-\end{array}\right)
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\left(
-\begin{array}{cccr}
-a+b+c & uv & x-y & 27\\
-a+b & u+v & z & 134
-\end{array} \right)
-\end{equation}
-\end{verbatim}
-
-An array with vertical and horizontal rules
-\begin{equation}
-\left( \begin{array}{c|c|c|r}
-a+b+c & uv & x-y & 27\\ \hline
-a+b & u+v & z & 134
-\end{array}\right)
-\end{equation}
-is coded as:
-\begin{verbatim}
-\begin{equation}
-\left(
-\begin{array}{c|c|c|r}
-a+b+c & uv & x-y & 27\\
-a+b & u+v & z & 134
-\end{array} \right)
-\end{equation}
-\end{verbatim}
-Note the argument now has the pipe "$\vert$" included to indicate the placement of the vertical rules.
-
-
-\subsection{Cases Structures}
-Many times cases can be miscoded using the wrong environment, i.e., {\tt{array}}. Using the {\tt{cases}} environment will save keystrokes (from not having to type the $\backslash${\tt{left}}$\backslash${\tt{lbrace}}) and automatically provide the correct column alignment.
-\begin{equation*}
-{z_m(t)} = \begin{cases}
-1,&{\text{if}}\ {\beta }_m(t) \\ 
-{0,}&{\text{otherwise.}} 
-\end{cases}
-\end{equation*}
-\noindent is coded as follows:
-\begin{verbatim}
-\begin{equation*}
-{z_m(t)} = 
-\begin{cases}
-1,&{\text{if}}\ {\beta }_m(t),\\ 
-{0,}&{\text{otherwise.}} 
-\end{cases}
-\end{equation*}
-\end{verbatim}
-\noindent Note that the ``\&'' is used to mark the tabular alignment. This is important to get  proper column alignment. Do not use $\backslash${\tt{quad}} or other fixed spaces to try and align the columns. Also, note the use of the $\backslash${\tt{text}} macro for text elements such as ``if'' and ``otherwise.''
-
-\subsection{Function Formatting in Equations}
-Often, there is an easy way to properly format most common functions. Use of the $\backslash$ in front of the function name will in most cases, provide the correct formatting. When this does not work, the following example provides a solution using the $\backslash${\tt{text}} macro:
-
-\begin{equation*} 
-  d_{R}^{KM} = \underset {d_{l}^{KM}} {\text{arg min}} \{ d_{1}^{KM},\ldots,d_{6}^{KM}\}.
-\end{equation*}
-
-\noindent is coded as follows:
-\begin{verbatim}
-\begin{equation*} 
- d_{R}^{KM} = \underset {d_{l}^{KM}} 
- {\text{arg min}} \{ d_{1}^{KM},
- \ldots,d_{6}^{KM}\}.
-\end{equation*}
-\end{verbatim}
-
-\subsection{ Text Acronyms Inside Equations}
-This example shows where the acronym ``MSE" is coded using $\backslash${\tt{text\{\}}} to match how it appears in the text.
-
-\begin{equation*}
- \text{MSE} = \frac {1}{n}\sum _{i=1}^{n}(Y_{i} - \hat {Y_{i}})^{2}
-\end{equation*}
-
-\begin{verbatim}
-\begin{equation*}
- \text{MSE} = \frac {1}{n}\sum _{i=1}^{n}
-(Y_{i} - \hat {Y_{i}})^{2}
-\end{equation*}
-\end{verbatim}
+% =====================================================================
+\section{Threats to Validity}\label{sec:validity}
+ 
+\subsection{Simulation-to-Reality Gap}
+The environment is synthetic. Results obtained on it are evidence about
+the \emph{relative} behaviour of the compared architectures under a
+shared set of modelling assumptions, and they do not license claims
+about absolute performance in a deployed network. Rao and
+Boman~\cite{rao2026ssl} document why the alternative --- collecting
+labelled user-performance data from a real network --- is expensive
+enough that simulation-first is the standard practice, while also
+showing that simulated data remains useful when the modelling
+assumptions are stated and the gap is acknowledged.
+ 
+To narrow the gap we calibrate the SINR and traffic distributions
+generated by our environment against publicly available O-RAN
+measurement traces collected on the Colosseum
+emulator~\cite{bonati2021colosseum,bonati2023openrangym}, and we report
+the distributional comparison rather than only asserting that
+calibration was performed. Where a GPU-accelerated ray-traced channel is
+required, channel realisations are pre-generated
+offline~\cite{hoydis2022sionna} and consumed as a static database, so
+that the training loop remains framework-isolated.
+ 
+\subsection{Coexisting Control Applications}
+The allocator does not run alone. Polverini \emph{et
+al.}~\cite{polverini2026sdnconflicts} show that independently developed
+SDN control applications with heterogeneous objectives --- mobility,
+reliability, energy --- can produce conflicting decisions that no
+single application can detect on its own, and that a digital-twin
+what-if layer can surface such conflicts before they manifest. Our
+evaluation treats the allocator in isolation, which is a simplification.
+We flag the composition of a learned slice allocator with other control
+applications as the most operationally significant item of future work,
+and note that a GNN-based digital twin of the slicing
+network~\cite{wang2022gnndt} is a plausible substrate for it.
+ 
+\subsection{Hypothesis Confirmation}
+The hypotheses H1--H3 are stated with a preferred outcome, which
+creates an obvious confirmation risk. The decision rules in
+Section~\ref{sec:eval} are the mitigation: each hypothesis has a
+stated falsification condition and a stated action to take if it is
+falsified, and negative results are reported rather than tuned away.
+ 
+\subsection{Metric Selection}
+Reporting a single scalar return would allow a poor tail-latency result
+to be masked by a strong throughput result. This is why the reward
+in~\eqref{eq:reward} is decomposed in the reporting as well as in the
+optimisation, and why SLA violation rate and 99.9th-percentile delay
+are reported separately from cumulative reward.
 
 \section{Conclusion}
 The conclusion goes here.
