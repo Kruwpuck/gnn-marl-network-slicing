@@ -7,6 +7,8 @@ __pycache__/
 env/
 venv/
 ENV/
+# produced by `pip install -e .`
+*.egg-info/
 
 # Testing
 .pytest_cache/

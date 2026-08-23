@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gnn-marl-network-slicing"
+version = "0.4.0"
+description = "GNN-based multi-agent RL for 5G network slicing under a CMDP constraint"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+# Flat layout, packages listed explicitly. A glob would sweep in results/ (1040 tracked
+# files) and runs/, neither of which is importable.
+[tool.setuptools]
+packages = ["ablation", "agents", "envs", "evaluation", "gnn", "traffic", "training"]
+
+# requirements.txt stays the single source of dependencies -- a second list here would
+# be free to drift from it.
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+# scripts/test_treatment_identity.py is a Gate C script, not a pytest module; without
+# this, `pytest` from the repo root collects it by name.
+[tool.pytest.ini_options]
+testpaths = ["tests"]

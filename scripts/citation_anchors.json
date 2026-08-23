@@ -1,0 +1,15 @@
+{
+  "results/B3_DELAY_CENSORING.md": {
+    "envs/network_slicing_env.py:333": "while fifo and (self._step_count - fifo[0][0]) > deadline_slots:"
+  },
+  "results/GATE_C.md": {
+    "scripts/evaluate_checkpoints.py:40": "EVAL_SEED_BASE = 10_000  # disjoint from training seeds (42-46) and smoke seeds (999)",
+    "scripts/rliable_report.py:34": "MATCHED_BASELINES = {",
+    "scripts/run_wave.py:60": "common = [\"--seed\", str(seed), \"--resume\", \"--ckpt-interval\", \"25000\",",
+    "training/train_baselines.py:159": "agent = MLPKNNPPOAgent(config_path=config_path).to(DEVICE)",
+    "training/train_baselines.py:163": "agent = MLPPPOAgent(obs_dim, config_path=config_path).to(DEVICE)",
+    "training/train_baselines.py:84": "agent = MLPDQNAgent(obs_dim, config_path=config_path).to(DEVICE)",
+    "training/train_proposed.py:142": "agent = PPOAgent(backbone, config_path=config_path).to(DEVICE)",
+    "training/train_proposed.py:75": "agent = DQNAgent(backbone, config_path=config_path).to(DEVICE)"
+  }
+}
