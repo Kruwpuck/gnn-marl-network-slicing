@@ -44,6 +44,39 @@ sudah kolinear penuh adalah bukti tambahan bahwa encoder-nya memang tidak membed
 Tapi PLAN-03 §5 (residual/JK) menyerang gejala yang sama, dan §Larangan 4 melarang dua
 teknik sekaligus: jalankan §5 dulu, ukur, baru putuskan auxiliary loss masih perlu.
 
+## 0b. D2c menentukan urutannya — PLAN-03 §5 DULU
+
+Ditambahkan 2026-08-24, dari `results/DIAG_GRAD_RATIO.md`. D2c dijalankan justru untuk
+memutuskan pertanyaan §Larangan 4 di atas.
+
+**Premis §2 dokumen ini tidak berlaku di mayoritas seed.** §2 beralasan auxiliary loss
+perlu karena gradiennya "mengalir langsung ke layer GNN tanpa melewati policy head — jadi
+tidak bisa dipotong". Terukur: di **13 dari 20** seed, backbone sudah menerima gradien
+**lebih besar per parameter** daripada head (`ratio_rms` median 2,01–4,88 untuk tiga dari
+empat varian). §D2c menetapkan `rasio << 1` sebagai tanda jalur GNN tidak terlatih; yang
+memenuhi cuma **3 dari 20** seed.
+
+| Kondisi | Sebaran | Ditangani |
+|---|---|---|
+| Over-smoothing | **25/25** checkpoint `gat`, cosine 1.0000 persis | PLAN-03 §5 |
+| Jalur GNN mati (`ratio_rms << 1`) | **3/20** seed | dokumen ini |
+
+**Urutan: PLAN-03 §5 lebih dulu.** Ia menyasar kondisi yang hadir di mana-mana. Auxiliary
+loss menyasar kondisi yang hadir di minoritas, dan di mayoritas seed ia akan mendorong
+lebih banyak gradien ke jalur yang sudah menerima 2–6× lipat head — memperkuat masalah
+yang di sana tidak ada.
+
+**Yang tidak berubah:** gerbang §0 tetap terbuka dan dokumen ini tetap dijalankan. D2c
+tidak menutupnya — ia cuma menyatakan giliran. Setelah §5 dijalankan dan diukur, ulangi
+D2a (`python scripts/diag_gnn_reliance.py`) dan D2c
+(`python scripts/diag_grad_ratio.py`); kalau over-smoothing teratasi dan keluaran GNN
+masih diabaikan, auxiliary loss baru punya sasaran yang jelas.
+
+**Catatan untuk §2 kalau nanti dijalankan:** gambaran gabungan D2c + D2a + D3 bukan
+"encoder diabaikan" melainkan "encoder terlatih menuju representasi degenerate". Target
+auxiliary yang dipilih harus memaksa node **berbeda satu sama lain**, bukan sekadar
+memaksa gradien masuk — gradien sudah masuk.
+
 Mengimplementasikan auxiliary loss tanpa bukti collapse menambah kompleksitas untuk masalah yang mungkin tidak ada.
 
 ---

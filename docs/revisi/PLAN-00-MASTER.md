@@ -46,10 +46,21 @@
 > | D2 collapse | **terkonfirmasi** — 41/50 checkpoint tak bergerak >1% saat pesan tetangga dinolkan; atribut edge 0/25 | **PLAN-04 dijalankan** sesudah PLAN-03 |
 > | D3 over-smoothing | **terkonfirmasi**, tak terbantahkan untuk `gat` — cosine embedding 1.0000 persis di 25/25 checkpoint | **PLAN-03 §5 dijalankan** |
 > | D4 kapasitas | **timpang, arah terbalik** — `ippo` 3.852 vs `gnn-*_gat` 37.580 | arm `ippo-scaled` tetap, perannya berubah |
-> | D5 collision storm | **tidak terkonfirmasi** — `ippo` juga lockstep di 8/20 seed tanpa rugi throughput | tidak ada yang ditulis di paper soal collision storm |
+> | D2c aliran gradien | **hipotesis "jalur GNN tidak terlatih" tidak didukung** — `rasio << 1` cuma di 3/20 seed; di 13/20 backbone justru menerima gradien lebih besar per parameter daripada head | **menentukan urutan Fase 2: PLAN-03 §5 lebih dulu** |
+> | D5 collision storm | **tidak terkonfirmasi** — di dalam `gnn-mappo_gat`, episode greedy yang kolaps dan yang tidak tak terbedakan pada sinkroni | tidak ada yang ditulis di paper soal collision storm |
 >
-> Peta estafet karena itu: Fase 2 menjalankan **PLAN-03 (termasuk §5) lalu PLAN-04**, dan
-> arm `obs=strict` tidak ada.
+> **Peta estafet:** Fase 2 menjalankan **PLAN-03 (termasuk §5) lalu PLAN-04**, arm
+> `obs=strict` tidak ada, dan urutan §5 sebelum auxiliary loss kini punya dasar terukur
+> bukan sekadar urutan dokumen — over-smoothing hadir di 25/25 checkpoint sementara jalur
+> GNN mati cuma di 3/20 seed, jadi §5 menyasar kondisi yang hadir di mana-mana
+> (PLAN-04 §0b).
+>
+> **Gambaran mekanistik yang muncul dari D2c + D2 + D3 bersamaan, dan tidak diantisipasi
+> dokumen mana pun:** GNN **dilatih dengan baik** — gradien mengalir deras ke sana — tapi
+> keluarannya nyaris tidak dipakai dan embeddingnya kolaps sempurna. Bukan encoder yang
+> diabaikan, melainkan encoder yang terlatih menuju representasi degenerate. Itu mengubah
+> sasaran perbaikan: yang dibutuhkan bukan memaksa gradien masuk, melainkan memaksa node
+> berbeda satu sama lain.
 >
 > Tidak ada verdict, ambang, definisi metrik, atau angka hasil v4 yang bergerak. Yang
 > bergerak adalah daftar pekerjaan Fase 2 dan status dua konflik.

@@ -103,3 +103,36 @@ Checkpoints: `results/logs/gnn-mappo_gat_v4_seed*.pt,results/logs/ippo_v4_seed*.
 |---|---|---|---|---|---|---|
 | `gnn-mappo_gat` | 20 | 18/20 | +0.6069 (n=20) | +1.0023 (n=13) | +0.6734 (n=13) | +1.283061 (n=20) |
 | `ippo` | 20 | 8/20 | +0.4940 (n=20) | +0.6175 (n=20) | +0.5374 (n=20) | +0.009663 (n=20) |
+
+## Conditioned on collapsed episodes
+
+Everything above averages over **all** episodes. PLAN-01 D5's own evidence says the episodes are bimodal -- greedy sd 34.95/37.82 pp against sampled 11.04/10.45 -- and averaging over a bimodal population is exactly how an intermittent effect hides. The collision-storm hypothesis is specific to a policy that learned fine stochastic coordination, so the population it should be tested on is the episodes that actually collapsed.
+
+**Collapse rule, declared before the numbers were read.** A greedy episode is collapsed when its `timely_throughput_mbps` falls below **50%** of its own checkpoint's sampled-arm mean. Per checkpoint, so nothing is compared against another model.
+
+**This is not the project's cell-edge collapse.** That one is `embb_p5_mbps < 0.01` Mbps with the **seed** as the unit (`scripts/stability_report.py`), it is a gate metric, and it is untouched here. D5 is about the *greedy readout* collapse -- the 51.19 Mbps drop D5 cites -- which lives in `timely_throughput`. Applying the cell-edge rule here would select almost every *sampled* episode and almost no greedy one, the opposite of the population needed. The unit also changes from seed to episode; that is a weaker unit than the project fixes elsewhere and is named rather than swapped in quietly.
+
+**Path agreement.** Each episode is walked twice -- `run_episode` for the KPIs, `rollout` for the per-step traces -- under identical seeding. Largest `embb_p5_mbps` disagreement between the two paths across all 800 episodes: **0.000e+00**. A non-trivial gap would mean the traces and the KPIs describe different episodes, and every number in this section would be meaningless.
+
+**`sinr_corr` carries its own `n=`, and it is not the episode count.** When throughput pins near zero the per-gNB SINR series go constant, and a correlation on a constant series is undefined -- so the collapsed group, the very population this section exists to examine, is where the measure most often has nothing to say. A median printed without that count would rest on a fraction of the episodes while looking like it rested on all of them. `mode_share` is defined everywhere and needs no such caveat.
+
+| algo | greedy episodes | collapsed | sinr_corr collapsed | sinr_corr not-collapsed | mode_share collapsed | mode_share not-collapsed |
+|---|---|---|---|---|---|---|
+| `gnn-mappo_gat` | 200 | 63 | 1.0000 (n=13/63) | 1.0000 (n=112/137) | 1.0000 (n=63/63) | 1.0000 (n=137/137) |
+| `ippo` | 200 | 1 | 0.9715 (n=1/1) | 0.9999 (n=199/199) | 0.9940 (n=1/1) | 0.9770 (n=199/199) |
+
+### Threshold sensitivity
+
+Mandatory, not optional: if the picture moves across these thresholds then the threshold is driving the result, and that is itself the finding rather than a reason to pick the most convenient one.
+
+| threshold | algo | collapsed | sinr_corr collapsed | mode_share collapsed |
+|---|---|---|---|---|
+| 35% | `gnn-mappo_gat` | 61/200 | 1.0000 (n=11) | 1.0000 (n=61) |
+| 35% | `ippo` | 1/200 | 0.9715 (n=1) | 0.9940 (n=1) |
+| 50% | `gnn-mappo_gat` | 63/200 | 1.0000 (n=13) | 1.0000 (n=63) |
+| 50% | `ippo` | 1/200 | 0.9715 (n=1) | 0.9940 (n=1) |
+| 65% | `gnn-mappo_gat` | 66/200 | 1.0000 (n=16) | 1.0000 (n=66) |
+| 65% | `ippo` | 1/200 | 0.9715 (n=1) | 0.9940 (n=1) |
+
+Every episode is in `diag_collision_episodes.csv` (800 rows) with its own throughput and synchrony, so the conditioning above can be recomputed at any other threshold straight from that file.
+

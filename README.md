@@ -62,8 +62,14 @@ python scripts/citation_audit.py    # path:line evidence in the gate docs still 
 # Fase 0 diagnostics (docs/revisi/PLAN-01-DIAGNOSTICS.md) -- checkpoint evaluation, no training
 python scripts/diag_equivariance.py   # D1 permutation equivariance, D4 parameter counts
 python scripts/diag_gnn_reliance.py   # D2a/D2b message ablation, D3 over-smoothing
+python scripts/diag_grad_ratio.py     # D2c gradient-norm ratio into the GNN
 python scripts/diag_collision.py      # D5 collision-storm hypothesis
 ```
+
+`diag_grad_ratio.py` is the only diagnostic that trains: it resumes a v4 checkpoint for a
+few thousand steps to read gradients off the real training loop. It copies each checkpoint
+to a scratch name first, so no v4 artifact is written -- verify with `md5sum` over
+`results/checkpoints/*_v4_*_last.pt` before and after if you change it.
 
 Training runs on GPU and is started by hand, not by an agent (`docs/HANDOVER.md` §11).
 

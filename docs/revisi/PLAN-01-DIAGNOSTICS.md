@@ -39,19 +39,29 @@
 >
 > **Keputusan D2c — jangan pakai rollout dengan jalur loss yang ditulis ulang.** Tabel
 > gerbang §D2 mengunci keputusan PLAN-04 ke D2a dan D2b, keduanya murni evaluasi
-> checkpoint, jadi D2c tidak dijalankan sekarang. Kalau nanti D2a dan D2b tidak sepakat
-> dan D2c benar-benar dibutuhkan: **gunakan training pendek terinstrumentasi yang membaca
-> `p.grad` setelah `agent.learn()`.** Menulis ulang sebagian jalur loss untuk menghitung
-> gradien dari rollout berarti mengukur jalur yang belum tentu sama dengan jalur training
-> asli. Untuk diagnostik yang menentukan gerbang, kesetiaan lebih penting daripada
-> kemurahan — angka yang salah di sini menyesatkan seluruh Fase 2. Butuh GPU dan
-> dijalankan manusia (`docs/HANDOVER.md` §11).
+> checkpoint, jadi D2c tidak dijalankan bersama mereka. Kalau dibutuhkan: **gunakan
+> training pendek terinstrumentasi yang membaca `p.grad` setelah `agent.learn()`.**
+> Menulis ulang sebagian jalur loss untuk menghitung gradien dari rollout berarti mengukur
+> jalur yang belum tentu sama dengan jalur training asli. Untuk diagnostik yang menentukan
+> gerbang, kesetiaan lebih penting daripada kemurahan — angka yang salah di sini
+> menyesatkan seluruh Fase 2.
+>
+> **D2c kemudian dijalankan (2026-08-24), dan pertanyaannya berbeda dari yang semula
+> ditunda.** Gerbang PLAN-04 memang sudah dibuka D2a/D2b. Yang belum terjawab: PLAN-03 §5
+> dan PLAN-04 sama-sama lolos gerbang, `PLAN-04 §Larangan 4` melarang dua teknik
+> anti-collapse sekaligus, dan keduanya menyasar penyebab berbeda. D2a/D2b menguji
+> *akibat* (keluaran tidak bergantung pesan); D2c menguji *mekanisme* yang §D2 tulis
+> ("jalur GNN tidak terlatih efektif"). Hasilnya menentukan urutan Fase 2 — lihat
+> §Keluaran.
 >
 > **Implementasi.** D1+D4 di `scripts/diag_equivariance.py`, D2a/D2b/D3 di
-> `scripts/diag_gnn_reliance.py`, D5 di `scripts/diag_collision.py`. Hasil di
-> `results/DIAG_EQUIVARIANCE.md`, `results/DIAG_GNN_RELIANCE.md`,
+> `scripts/diag_gnn_reliance.py`, D2c di `scripts/diag_grad_ratio.py`, D5 di
+> `scripts/diag_collision.py`. Hasil di `results/DIAG_EQUIVARIANCE.md`,
+> `results/DIAG_GNN_RELIANCE.md`, `results/DIAG_GRAD_RATIO.md`,
 > `results/DIAG_COLLISION.md`. Nol file di `envs/` `agents/` `gnn/` `training/` diubah
-> (§Larangan 1).
+> (§Larangan 1) — D2c membungkus metode kelas `PPOAgent.learn`/`DQNAgent.learn` dari sisi
+> skrip diagnostik dan menjalankan loop training yang asli, di-resume ke salinan scratch
+> supaya nol artefak v4 tersentuh (diverifikasi md5, 210 file, nol perbedaan).
 
 ---
 
@@ -255,6 +265,48 @@ D2b lebih tegas dari D2a: informasi fisik pada edge (path loss) tidak berkontrib
 pun pada varian `gat`. Untuk `sage` arm ini **N/A**, bukan 0 — `SAGEConv` tidak pernah
 membaca `edge_attr`.
 
+**D2c — HIPOTESIS "JALUR GNN TIDAK TERLATIH" TIDAK DIDUKUNG SEBAGAI PENJELASAN UMUM**
+(`results/DIAG_GRAD_RATIO.md`, 20 checkpoint, 2.160 update terekam). §D2c menetapkan
+`rasio << 1` sebagai tanda jalur GNN tidak terlatih. Yang memenuhi cuma **3 dari 20** seed.
+
+| Varian | `ratio_l2` median | `ratio_rms` median |
+|---|---|---|
+| `gnn-madqn_gat` | 2,31 | 2,23 |
+| `gnn-madqn_sage` | 0,38 | 0,53 |
+| `gnn-mappo_gat` | 2,08 | 2,01 |
+| `gnn-mappo_sage` | 3,50 | 4,88 |
+
+Di **13 dari 20** seed backbone justru menerima gradien **lebih besar per parameter**
+daripada head. Kedua rasio sepakat arah di **20/20**, jadi kolom RMS mengonfirmasi bukan
+membalikkan — itu penting, karena `ratio_l2 < 1` bisa cuma berarti parameter backbone
+lebih sedikit (`gnn-*_sage`: 9.344 lawan 18.188).
+
+**Gambaran yang muncul dari D2c + D2 + D3 bersamaan:** GNN **dilatih dengan baik** —
+gradien mengalir deras ke sana — tapi keluarannya nyaris tidak dipakai (D2a) dan
+embeddingnya kolaps sempurna (D3). Jadi bukan encoder yang diabaikan, melainkan encoder
+yang terlatih menuju representasi degenerate.
+
+**Korespondensi lintas-diagnostik, n=5, suggestif bukan mapan.** Pada `gnn-mappo_gat`,
+dua seed dengan jalur GNN mati adalah persis dua seed yang policy greedy-nya membeku
+total (setiap gNB menahan satu aksi sepanjang episode):
+
+| seed | `ratio_rms` (D2c) | aksi beku total (D5) |
+|---|---|---|
+| 42 | 3,86 | tidak |
+| 43 | 5,85 | tidak |
+| 44 | **0,0074** | **ya** |
+| 45 | **0,0023** | **ya** |
+| 46 | 5,72 | tidak |
+
+D2c mengukur gradien saat training, D5 mengukur perilaku saat evaluasi — dua jalur kode
+berbeda, jadi korespondensinya independen. Tapi lima titik. Jangan dinaikkan jadi klaim
+kausal di paper tanpa seed lebih banyak.
+
+**Keterbatasan DQN.** `_maybe_resume` tidak memulihkan `ReplayBuffer`, jadi run DQN
+mengisi `replay_start` step pertama dengan policy yang sudah konvergen. Rasio DQN
+menggambarkan aliran gradien di titik konvergen dengan data mendekati on-policy, bukan
+campuran historis. PPO tidak kena — on-policy, jadi `RolloutBuffer` fresh memang setia.
+
 **D3 — OVER-SMOOTHING TERKONFIRMASI, tak terbantahkan untuk `gat`.** Gerbang PLAN-03 §5
 **terbuka**. `gat`: cosine similarity embedding = **1.0000 persis di seluruh 25
 checkpoint** (min = max), sementara referensi cosine pada observasi mentahnya berkisar
@@ -305,6 +357,41 @@ Catatan metodologis yang layak masuk paper: uji ini dijalankan lebih dulu pada s
 Berhenti di sana akan menghasilkan konfirmasi yang salah. Yang membalikkannya cuma
 menambah seed.
 
+**D5 diuji ulang dengan pengkondisian, 2026-08-24 — verdict tetap, ujinya jauh lebih
+kuat.** Versi pertama merata-rata `sinr_corr` dan `mode_share` atas **seluruh** episode.
+Itu cacat: §D5 poin bukti 1 menyatakan episodenya bimodal, dan merata-rata populasi
+bimodal persis cara menyembunyikan efek intermiten. Versi pertama juga bersandar pada
+perbandingan dengan `ippo`, padahal `ippo` bukan pembanding setara — hipotesis collision
+storm spesifik pada model yang belajar koordinasi stokastik halus, dan `ippo` tidak punya
+itu untuk dirusak.
+
+Uji yang benar ada **di dalam** `gnn-mappo_gat`: bandingkan episode greedy yang kolaps
+dengan yang tidak, pada model yang sama.
+
+| kelompok | n | `sinr_corr` median | `mode_share` median | `timely_throughput` median |
+|---|---|---|---|---|
+| kolaps | 63 | 1,0000 (n=13 terdefinisi) | 1,0000 | 0,0002 Mbps |
+| tidak kolaps | 137 | 1,0000 (n=112 terdefinisi) | 1,0000 | 64,66 Mbps |
+
+**Tak terbedakan pada kedua ukuran sinkroni.** Throughput-nya terbelah tajam — 0,0002
+lawan 64,66 Mbps, bimodalitas yang §D5 prediksi — tapi sinkroninya tidak. Sinkroni hadir
+di **seluruh** episode greedy GNN sementara kolaps cuma terjadi di 63 dari 200: **kondisi
+yang selalu ada tidak bisa menjelaskan akibat yang selektif.** Itu argumen yang jauh lebih
+kuat daripada versi `ippo`, dan tidak bergantung pada pembanding lintas-arsitektur.
+
+Ambang tidak menyetir apa pun: 61/63/66 episode kolaps di ambang 35%/50%/65%, seluruh
+statistik identik sampai empat desimal.
+
+**Dua keterbatasan yang ikut dilaporkan.** Pertama, `sinr_corr` hanya terdefinisi di 13
+dari 63 episode kolaps — saat throughput terpaku ~0,0002 Mbps, deret SINR jadi konstan
+dan korelasinya tak terdefinisi. Jadi baris kolaps bersandar pada 13 nilai, bukan 63;
+`mode_share` terdefinisi di seluruh 200 dan tidak kena. Kedua, ambang collapse ini
+didefinisikan pada `timely_throughput_mbps` per **episode**, bukan `embb_p5_mbps` per
+**seed** seperti `collapse_rate` yang dipakai Gate (`scripts/stability_report.py`). Unit
+yang lebih lemah, dinyatakan bukan ditukar diam-diam — dan memang harus berbeda, karena
+memakai aturan cell-edge di sini akan menyeleksi hampir seluruh episode *sampled* dan
+hampir nol episode *greedy*, kebalikan dari populasi yang D5 butuhkan.
+
 **Framing "batas validitas operasional" (PLAN-07 §4) tetap berdiri tanpa D5** — memang
 sudah dirancang begitu.
 
@@ -313,9 +400,17 @@ sudah dirancang begitu.
 | Gerbang | Verdict | Akibat |
 |---|---|---|
 | D2 → PLAN-04 | collapse terkonfirmasi | **PLAN-04 dijalankan** sesudah PLAN-03 |
+| D2c → urutan Fase 2 | jalur GNN **terlatih** di mayoritas seed | **PLAN-03 §5 lebih dulu**, baru PLAN-04 (PLAN-04 §0b) |
 | D3 → PLAN-03 §5 | over-smoothing terkonfirmasi | **§5 dijalankan.** Pilih satu: residual atau Jumping Knowledge, jangan dua-duanya |
 | D4 → PLAN-05 §2 | timpang, GNN lebih besar | arm `ippo-scaled` tetap, peran berubah |
 | D5 | tidak terkonfirmasi | tidak ada yang ditulis di paper soal collision storm |
+
+**Sasaran perbaikan bergeser karena D2c.** Sebelum D2c, dua penjelasan bersaing: encoder
+diabaikan (→ auxiliary loss) atau encoder degenerate (→ residual/JK). D2c menyingkirkan
+yang pertama untuk mayoritas seed — gradiennya mengalir, bahkan 2–6× lipat head. Jadi yang
+dibutuhkan bukan **memaksa gradien masuk**, melainkan **memaksa node berbeda satu sama
+lain**. Itu mengubah bukan cuma urutan, tapi kriteria memilih target auxiliary kalau
+PLAN-04 nanti dijalankan.
 
 D2b (0/25) menambah alasan independen untuk PLAN-03 §2: satu-satunya fitur edge yang ada
 sekarang tidak terpakai sama sekali, jadi menambahkan `interference_coupling` harus

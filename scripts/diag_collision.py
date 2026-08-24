@@ -40,8 +40,25 @@ from scipy.stats import spearmanr
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from envs.network_slicing_env import NetworkSlicingEnv
-from scripts.evaluate_checkpoints import EVAL_SEED_BASE, load_agent, select_actions
+from scripts.evaluate_checkpoints import (EVAL_SEED_BASE, load_agent, run_episode,
+                                          select_actions)
 from scripts.rliable_report import parse_run_name
+
+# An episode counts as collapsed when its timely throughput falls below this fraction of
+# its own checkpoint's sampled-arm mean. Declared here, before the numbers are looked at.
+#
+# Note this is NOT the project's cell-edge collapse (embb_p5_mbps < 0.01 Mbps, unit = seed,
+# scripts/stability_report.py). That one is a gate metric and is untouched. D5 is about the
+# *greedy readout* collapse -- the 51.19 Mbps drop PLAN-01 D5 cites -- which lives in
+# timely_throughput. Using the cell-edge rule here would select almost every *sampled*
+# episode and almost no greedy one, i.e. the opposite of the population D5 needs.
+#
+# 0.50 comes from the task, not from the results: the cited collapse is ~68 -> ~17 Mbps,
+# about 25% of baseline, so half separates cleanly without grazing. The other two are the
+# mandatory sensitivity check -- if the verdict moves between them, the threshold is
+# driving it and that is itself the finding.
+COLLAPSE_FRAC = 0.50
+SENSITIVITY_FRACS = (0.35, 0.65)
 
 
 def rollout(env: NetworkSlicingEnv, agent, kind: str, seed: int, greedy: bool) -> dict:
@@ -79,8 +96,14 @@ def mean_pairwise(series: np.ndarray, method: str) -> float:
     return float(np.mean(vals)) if vals else float("nan")
 
 
-def episode_stats(ep: dict) -> dict:
-    """Agreement and synchrony for one episode."""
+def episode_stats(ep: dict, kpis: dict) -> dict:
+    """Agreement and synchrony for one episode.
+
+    `kpis` comes from scripts/evaluate_checkpoints.run_episode driven over the identical
+    seed, so the throughput here is the same quantity every gate number uses. Re-deriving
+    it locally would create a second definition of a protected metric, free to drift from
+    the first.
+    """
     actions, sinr = ep["actions"], ep["sinr"]
     n = actions.shape[1]
     # How much of the fleet picks the same tier at a given step. 1.0 = unanimous.
@@ -97,7 +120,12 @@ def episode_stats(ep: dict) -> dict:
         # Collision storm predicts SINR falling across all gNB together rather than one at
         # a time, i.e. positively correlated series.
         "sinr_corr_mean": mean_pairwise(np.log10(np.maximum(sinr, 1e-12)), "pearson"),
-        "embb_p5_mbps": ep["embb_p5_mbps"],
+        "timely_throughput_mbps": kpis["timely_throughput_mbps"],
+        "embb_p5_mbps": kpis["embb_p5_mbps"],
+        # Same episode seen twice, once by each code path. If the two ever disagree the
+        # traces and the KPIs describe different episodes and every conditioned number
+        # below is meaningless, so the gap is measured rather than assumed away.
+        "path_agreement_gap": abs(kpis["embb_p5_mbps"] - ep["embb_p5_mbps"]),
     }
 
 
@@ -117,7 +145,7 @@ def main() -> None:
     if not paths:
         raise SystemExit(f"no checkpoints matched {args.checkpoints!r}")
 
-    rows = []
+    rows, episodes = [], []
     for pt_path in paths:
         algo, _, seed = parse_run_name(pt_path.stem)
         agent, ckpt_algo, kind = load_agent(pt_path, device)
@@ -128,9 +156,20 @@ def main() -> None:
             per_ep = []
             for ep in range(args.episodes):
                 eval_seed = EVAL_SEED_BASE + ep
+                # The same episode is walked twice: once by run_episode for the KPIs, on
+                # the same code path that produced every gate number, and once by rollout
+                # for the per-step traces run_episode does not return. Re-seeding before
+                # each makes them the same episode; `path_agreement_gap` checks that they
+                # really were.
                 torch.manual_seed(eval_seed)
                 np.random.seed(eval_seed)
-                per_ep.append(episode_stats(rollout(env, agent, kind, eval_seed, greedy)))
+                kpis = run_episode(env, agent, kind, seed=eval_seed, greedy=greedy)
+                torch.manual_seed(eval_seed)
+                np.random.seed(eval_seed)
+                stats = episode_stats(rollout(env, agent, kind, eval_seed, greedy), kpis)
+                per_ep.append(stats)
+                episodes.append({"algo": algo, "seed": seed, "arm": label,
+                                 "episode": ep, **stats})
             for k in per_ep[0]:
                 row[f"{label}_{k}"] = float(np.nanmean([e[k] for e in per_ep]))
         env.close()
@@ -142,6 +181,14 @@ def main() -> None:
     df = pd.DataFrame(rows)
     out_path = Path(args.out)
     df.to_csv(out_path.parent / f"{out_path.stem.lower()}.csv", index=False)
+
+    eps = pd.DataFrame(episodes)
+    eps.to_csv(out_path.parent / f"{out_path.stem.lower()}_episodes.csv", index=False)
+    # Sampled-arm mean per checkpoint is the reference the collapse threshold is relative
+    # to, so a checkpoint is only ever compared against itself.
+    ref = (eps[eps.arm == "sampled"].groupby(["algo", "seed"])
+           .timely_throughput_mbps.mean().rename("sampled_ref"))
+    eps = eps.join(ref, on=["algo", "seed"])
 
     lines = [
         "# D5 -- collision-storm hypothesis\n",
@@ -208,6 +255,89 @@ def main() -> None:
             cells.append("--" if not ok.any() else
                          f"{format(float(d[ok].mean()), fmt)} (n={int(ok.sum())})")
         lines.append(f"| `{algo}` | {len(sub)} | {locked}/{len(sub)} | " + " | ".join(cells) + " |")
+
+    # --- Conditioned on collapsed episodes -------------------------------------------
+    # Everything above averages over ALL episodes. PLAN-01 D5's own evidence says the
+    # episodes are bimodal (greedy sd 34.95/37.82 pp against sampled 11.04/10.45), and
+    # averaging over a bimodal population is exactly how an intermittent effect hides.
+    gap = float(eps.path_agreement_gap.max())
+    lines += [
+        "\n## Conditioned on collapsed episodes\n",
+        "Everything above averages over **all** episodes. PLAN-01 D5's own evidence says "
+        "the episodes are bimodal -- greedy sd 34.95/37.82 pp against sampled 11.04/10.45 "
+        "-- and averaging over a bimodal population is exactly how an intermittent effect "
+        "hides. The collision-storm hypothesis is specific to a policy that learned fine "
+        "stochastic coordination, so the population it should be tested on is the episodes "
+        "that actually collapsed.\n",
+        f"**Collapse rule, declared before the numbers were read.** A greedy episode is "
+        f"collapsed when its `timely_throughput_mbps` falls below **{COLLAPSE_FRAC:.0%}** of "
+        f"its own checkpoint's sampled-arm mean. Per checkpoint, so nothing is compared "
+        f"against another model.\n",
+        "**This is not the project's cell-edge collapse.** That one is "
+        "`embb_p5_mbps < 0.01` Mbps with the **seed** as the unit "
+        "(`scripts/stability_report.py`), it is a gate metric, and it is untouched here. "
+        "D5 is about the *greedy readout* collapse -- the 51.19 Mbps drop D5 cites -- which "
+        "lives in `timely_throughput`. Applying the cell-edge rule here would select almost "
+        "every *sampled* episode and almost no greedy one, the opposite of the population "
+        "needed. The unit also changes from seed to episode; that is a weaker unit than the "
+        "project fixes elsewhere and is named rather than swapped in quietly.\n",
+        f"**Path agreement.** Each episode is walked twice -- `run_episode` for the KPIs, "
+        f"`rollout` for the per-step traces -- under identical seeding. Largest "
+        f"`embb_p5_mbps` disagreement between the two paths across all "
+        f"{len(eps)} episodes: **{gap:.3e}**. A non-trivial gap would mean the traces and "
+        f"the KPIs describe different episodes, and every number in this section would be "
+        f"meaningless.\n",
+        "**`sinr_corr` carries its own `n=`, and it is not the episode count.** When "
+        "throughput pins near zero the per-gNB SINR series go constant, and a correlation "
+        "on a constant series is undefined -- so the collapsed group, the very population "
+        "this section exists to examine, is where the measure most often has nothing to "
+        "say. A median printed without that count would rest on a fraction of the episodes "
+        "while looking like it rested on all of them. `mode_share` is defined everywhere "
+        "and needs no such caveat.\n",
+        "| algo | greedy episodes | collapsed | sinr_corr collapsed | sinr_corr not-collapsed | "
+        "mode_share collapsed | mode_share not-collapsed |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    greedy_eps = eps[eps.arm == "greedy"]
+    for algo, g in greedy_eps.groupby("algo"):
+        hit = g.timely_throughput_mbps < COLLAPSE_FRAC * g.sampled_ref
+        inn, out = g[hit], g[~hit]
+
+        def med(frame, col):
+            v = frame[col].dropna()
+            if v.empty:
+                return f"-- (n=0/{len(frame)})"
+            return f"{v.median():.4f} (n={len(v)}/{len(frame)})"
+        lines.append(
+            f"| `{algo}` | {len(g)} | {int(hit.sum())} | {med(inn, 'sinr_corr_mean')} | "
+            f"{med(out, 'sinr_corr_mean')} | {med(inn, 'mode_share_mean')} | "
+            f"{med(out, 'mode_share_mean')} |"
+        )
+
+    lines += [
+        f"\n### Threshold sensitivity\n",
+        "Mandatory, not optional: if the picture moves across these thresholds then the "
+        "threshold is driving the result, and that is itself the finding rather than a "
+        "reason to pick the most convenient one.\n",
+        "| threshold | algo | collapsed | sinr_corr collapsed | mode_share collapsed |",
+        "|---|---|---|---|---|",
+    ]
+    for frac in sorted((COLLAPSE_FRAC, *SENSITIVITY_FRACS)):
+        for algo, g in greedy_eps.groupby("algo"):
+            hit = g.timely_throughput_mbps < frac * g.sampled_ref
+            inn = g[hit]
+            sc = inn.sinr_corr_mean.dropna()
+            ms = inn.mode_share_mean.dropna()
+            lines.append(
+                f"| {frac:.0%} | `{algo}` | {int(hit.sum())}/{len(g)} | "
+                f"{'--' if sc.empty else f'{sc.median():.4f}'} (n={len(sc)}) | "
+                f"{'--' if ms.empty else f'{ms.median():.4f}'} (n={len(ms)}) |"
+            )
+
+    lines.append(
+        f"\nEvery episode is in `{out_path.stem.lower()}_episodes.csv` ({len(eps)} rows) "
+        "with its own throughput and synchrony, so the conditioning above can be recomputed "
+        "at any other threshold straight from that file.\n")
 
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {out_path}")
