@@ -1,4 +1,38 @@
 {
+  "docs/revisi/PLAN-00-MASTER.md": {
+    "envs/channel_model.py:113": "Returns edge_index (2, E) and edge_attr (E, 1) path-loss in dB.",
+    "envs/network_slicing_env.py:22": "(neighbor_urllc_frac_mean), which leaked global state to every agent including",
+    "gnn/gat_backbone.py:5": "from torch_geometric.nn import GATv2Conv"
+  },
+  "docs/revisi/PLAN-01-DIAGNOSTICS.md": {
+    "envs/channel_model.py:112": "Fully-connected inter-gNB interference graph.",
+    "gnn/sage_backbone.py:19": "self.conv1 = SAGEConv(in_channels, hidden)"
+  },
+  "docs/revisi/PLAN-03-EDGE-FEATURES.md": {
+    "envs/channel_model.py:112": "Fully-connected inter-gNB interference graph.",
+    "envs/channel_model.py:113": "Returns edge_index (2, E) and edge_attr (E, 1) path-loss in dB.",
+    "envs/channel_model.py:123": "d3d = float(np.sqrt(d2d**2))",
+    "envs/channel_model.py:124": "pl = self.compute_path_loss(d3d, d2d, los=True)",
+    "envs/channel_model.py:34": "\"\"\"Return path-loss in dB (no shadow fading), per TR 38.901 Table 7.4.1.\"\"\"",
+    "envs/network_slicing_env.py:22": "(neighbor_urllc_frac_mean), which leaked global state to every agent including",
+    "envs/network_slicing_env.py:429": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,",
+    "gnn/base_backbone.py:48": "edge_attr = torch.from_numpy(edge_attr).float() / 100.0",
+    "gnn/gat_backbone.py:29": "self.conv1 = GATv2Conv(",
+    "gnn/gat_backbone.py:30": "in_channels, hidden, heads=heads, edge_dim=1, concat=True, dropout=dropout",
+    "gnn/gat_backbone.py:32": "self.conv2 = GATv2Conv(",
+    "gnn/gat_backbone.py:33": "hidden * heads, out_dim, heads=1, edge_dim=1, concat=False, dropout=dropout",
+    "gnn/gat_backbone.py:5": "from torch_geometric.nn import GATv2Conv",
+    "gnn/sage_backbone.py:19": "self.conv1 = SAGEConv(in_channels, hidden)",
+    "gnn/sage_backbone.py:20": "self.conv2 = SAGEConv(hidden, out_dim)"
+  },
+  "docs/revisi/PLAN-05-HPO-SYMMETRIC.md": {
+    "envs/network_slicing_env.py:22": "(neighbor_urllc_frac_mean), which leaked global state to every agent including",
+    "envs/network_slicing_env.py:429": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,"
+  },
+  "docs/revisi/PLAN-06-MECHANISM-EVIDENCE.md": {
+    "envs/channel_model.py:113": "Returns edge_index (2, E) and edge_attr (E, 1) path-loss in dB.",
+    "gnn/gat_backbone.py:30": "in_channels, hidden, heads=heads, edge_dim=1, concat=True, dropout=dropout"
+  },
   "results/B3_DELAY_CENSORING.md": {
     "envs/network_slicing_env.py:333": "while fifo and (self._step_count - fifo[0][0]) > deadline_slots:"
   },

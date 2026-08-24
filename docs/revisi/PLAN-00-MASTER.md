@@ -6,6 +6,56 @@
 
 ---
 
+> ## KOREKSI 2026-08-24 — enam premis basi, estafet Fase 2 menyusut
+>
+> Enam dokumen turunan ditulis dari jawaban NotebookLM tanpa akses ke kondisi kode
+> terkini. Enam premisnya diverifikasi ulang terhadap file dan sudah tidak berlaku. Tiga
+> di antaranya menyentuh gerbang, bukan catatan kaki. Ringkas di sini; detail di blok
+> koreksi masing-masing dokumen.
+>
+> | # | Premis | Keadaan kode | Akibat ke estafet |
+> |---|---|---|---|
+> | P1 | PLAN-03 §3: "ganti GAT → GATv2" | `gnn/gat_backbone.py:5` sudah `GATv2Conv` sejak v1 | §3 gugur. Varian **dinamai `gat` padahal GATv2** — koreksi terminologi paper |
+> | P2 | PLAN-03 §2: "edge belum bawa fitur fisik" | `envs/channel_model.py:113` sudah kirim path loss dB; `edge_dim=1` diset | §2 menyusut ke `interference_coupling` saja |
+> | P3 | PLAN-03 §2: `distance_norm` fitur ketiga | path loss tanpa shadow fading + `los=True` = fungsi monoton jarak | Fitur dicoret. Dua fitur, bukan tiga |
+> | P4 | PLAN-03 §7 / K2: buang `neighbor_urllc_frac_mean` | sudah dibuang di v3, `envs/network_slicing_env.py:22` | **Arm `obs=strict` hilang dari Fase 2. K2 selesai sendiri.** Kalimat "ablasi tiga tingkatmu bocor" batal |
+> | P5 | PLAN-01 D3 / PLAN-03 §4: "diameter graf kecil" | graf **lengkap**, diameter **1** | Risiko over-smoothing lebih **tinggi**. D3 lebih relevan, dan D2b terbatas pada informasi edge |
+> | P6 | PLAN-01 D4: "GNN kemungkinan parameter lebih sedikit" | `ippo` 3.852 vs `gnn-mappo_gat` 37.580 — GNN **9,8× lebih banyak** | Hasil null tidak bisa dijelaskan kapasitas kurang. Peran `ippo-scaled` berubah |
+>
+> **Konflik yang bergeser:**
+> - **K2 — selesai dengan sendirinya** (P4). Tidak ada pekerjaan observasi yang bisa
+>   bertabrakan dengan HPO. Batasan di PLAN-05 §3.3 dan §10.6 tidak lagi mengikat.
+> - **K3 — lebih lemah dari yang ditulis** (P1/P2). Prasyarat edge feature sudah terpenuhi
+>   sejak awal, dan analisis atensi + ablasi kausal **sudah dikerjakan**
+>   (`scripts/attention_analysis.py`, `results/ATTENTION_v4_greedy.md`). K3 menyusut jadi:
+>   ulangi analisis sesudah `interference_coupling` ditambahkan.
+> - **K1, K4, K5, K6 tidak berubah.**
+>
+> **Fase 0 sudah dieksekusi.** D1+D4 `scripts/diag_equivariance.py`, D2a/D2b/D3
+> `scripts/diag_gnn_reliance.py`, D5 `scripts/diag_collision.py`. Hasil di
+> `results/DIAG_*.md`; checklist terisi di PLAN-01 §Keluaran. D2c sengaja ditunda — kalau
+> nanti dibutuhkan, pakai training pendek terinstrumentasi, bukan rollout dengan jalur
+> loss yang ditulis ulang (PLAN-01 blok koreksi).
+>
+> **Gerbang keputusan sudah terjawab** — §"Gerbang keputusan" di ringkasan Fase 0 di bawah
+> kini punya jawabannya:
+>
+> | Uji | Verdict | Akibat ke estafet |
+> |---|---|---|
+> | D1 equivariance | **equivariant**, kategoris — 7 arsitektur per-agen varians tepat 0, dua arsitektur terpusat sensitif penuh | MLP per-agen **juga** equivariant. Tesis Tingkat 2 diperkuat: sumbernya parameter sharing, bukan message passing |
+> | D2 collapse | **terkonfirmasi** — 41/50 checkpoint tak bergerak >1% saat pesan tetangga dinolkan; atribut edge 0/25 | **PLAN-04 dijalankan** sesudah PLAN-03 |
+> | D3 over-smoothing | **terkonfirmasi**, tak terbantahkan untuk `gat` — cosine embedding 1.0000 persis di 25/25 checkpoint | **PLAN-03 §5 dijalankan** |
+> | D4 kapasitas | **timpang, arah terbalik** — `ippo` 3.852 vs `gnn-*_gat` 37.580 | arm `ippo-scaled` tetap, perannya berubah |
+> | D5 collision storm | **tidak terkonfirmasi** — `ippo` juga lockstep di 8/20 seed tanpa rugi throughput | tidak ada yang ditulis di paper soal collision storm |
+>
+> Peta estafet karena itu: Fase 2 menjalankan **PLAN-03 (termasuk §5) lalu PLAN-04**, dan
+> arm `obs=strict` tidak ada.
+>
+> Tidak ada verdict, ambang, definisi metrik, atau angka hasil v4 yang bergerak. Yang
+> bergerak adalah daftar pekerjaan Fase 2 dan status dua konflik.
+
+---
+
 ## Cara membaca dokumen ini
 
 Ada enam rencana turunan. Masing-masing berdiri sendiri, tapi **urutannya mengikat**: keluaran satu fase jadi prasyarat fase berikutnya. Jangan lompat.

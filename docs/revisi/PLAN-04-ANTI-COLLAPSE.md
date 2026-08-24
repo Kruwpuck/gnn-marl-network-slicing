@@ -17,6 +17,33 @@
 | KPI stabil saat message passing dinolkan/diacak | Collapse terkonfirmasi → **lanjutkan** |
 | KPI turun signifikan | GNN dipakai → **hentikan, lewati dokumen ini** |
 
+**Terjawab 2026-08-24: GERBANG TERBUKA** (PLAN-01 §Keluaran, dari
+`results/DIAG_GNN_RELIANCE.md`). Dokumen ini dijalankan, sesudah PLAN-03.
+
+- **D2a** — pesan tetangga dinolkan: `timely_throughput_mbps` bergerak >1% di **9/50**
+  checkpoint, `sla_satisfaction_pct` di **10/50**; median perubahan `+0.072` Mbps dari
+  basis ~70 (0,1%).
+- **D2b** — atribut edge diacak per node tujuan: **0/25**, di ketiga KPI.
+
+Dua kualifikasi yang wajib ikut, jangan dibulatkan jadi "GNN tidak dipakai":
+
+1. **9 checkpoint memang bergerak**, sampai 9,1%, dan tersebar merata di keempat varian —
+   jadi variasi antar-seed, bukan sifat arsitektur. Collapse-nya mayoritas, bukan
+   universal.
+2. **D2b lebih tegas dari D2a.** Yang terbukti nol mutlak adalah pemakaian *informasi
+   edge*; pemakaian *pesan tetangga* mayoritas nol tapi tidak seluruhnya.
+
+Verifikasi §2 (ulangi D2a sesudah auxiliary loss, KPI harus turun saat pesan dinolkan)
+jalankan dengan `python scripts/diag_gnn_reliance.py` — skrip yang menghasilkan angka di
+atas, jadi pembandingnya setara.
+
+Satu hasil dari luar §0 yang relevan ke dokumen ini: **D3 mengonfirmasi over-smoothing**,
+cosine similarity embedding `gat` **1.0000 persis di 25/25 checkpoint**. §2 memilih target
+auxiliary loss untuk memaksa encoder mempelajari sesuatu dari tetangga — embedding yang
+sudah kolinear penuh adalah bukti tambahan bahwa encoder-nya memang tidak membedakan node.
+Tapi PLAN-03 §5 (residual/JK) menyerang gejala yang sama, dan §Larangan 4 melarang dua
+teknik sekaligus: jalankan §5 dulu, ukur, baru putuskan auxiliary loss masih perlu.
+
 Mengimplementasikan auxiliary loss tanpa bukti collapse menambah kompleksitas untuk masalah yang mungkin tidak ada.
 
 ---

@@ -8,6 +8,24 @@
 
 ---
 
+> ## KOREKSI 2026-08-24 — batasan konflik K2 tidak lagi mengikat
+>
+> §3.3 dan §10.6 melarang memperbaiki isu observasi bersamaan dengan HPO, supaya efeknya
+> terpisah. **Isu itu sudah tidak ada.** `neighbor_urllc_frac_mean` dibuang dari observasi
+> di v3, jauh sebelum dokumen ini ditulis: `envs/network_slicing_env.py:22` mencatat
+> penghapusannya beserta penggantinya (`prev_alloc_lag2`), dan `_get_obs()`
+> (`envs/network_slicing_env.py:429`) memang tidak memuatnya.
+>
+> Akibatnya: tidak ada pekerjaan observasi yang bisa bertabrakan dengan HPO, arm
+> `obs=strict` di PLAN-03 §7 hilang, dan konflik K2 selesai dengan sendirinya. §3.3 dan
+> §10.6 dibiarkan tertulis sebagai jejak, tapi tidak mengikat apa pun.
+>
+> Detail lengkap kelima premis basi ada di blok koreksi
+> `docs/revisi/PLAN-03-EDGE-FEATURES.md`. Tidak ada bagian lain PLAN-05 yang berubah —
+> protokol HPO, ruang pencarian, budget trial, dan pemisahan seed tetap berlaku penuh.
+
+---
+
 ## 0. Kenapa fase ini terakhir sebelum penulisan
 
 HPO harus dijalankan pada **arsitektur final**. Kalau dijalankan sebelum edge feature dan auxiliary loss selesai, config terbaiknya jadi tidak relevan dan harus diulang.

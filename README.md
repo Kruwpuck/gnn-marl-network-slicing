@@ -58,6 +58,11 @@ python scripts/gate_b_report.py    --tag _v4 --readout primary
 # guards -- both exit non-zero on a problem
 python scripts/readout_audit.py     # every reported row traces to a readout file
 python scripts/citation_audit.py    # path:line evidence in the gate docs still points where it claims
+
+# Fase 0 diagnostics (docs/revisi/PLAN-01-DIAGNOSTICS.md) -- checkpoint evaluation, no training
+python scripts/diag_equivariance.py   # D1 permutation equivariance, D4 parameter counts
+python scripts/diag_gnn_reliance.py   # D2a/D2b message ablation, D3 over-smoothing
+python scripts/diag_collision.py      # D5 collision-storm hypothesis
 ```
 
 Training runs on GPU and is started by hand, not by an agent (`docs/HANDOVER.md` §11).

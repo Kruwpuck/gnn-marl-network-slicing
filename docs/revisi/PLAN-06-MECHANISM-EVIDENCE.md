@@ -8,6 +8,40 @@
 
 ---
 
+> ## KOREKSI 2026-08-24 — §2 sudah dikerjakan, dan K3 lebih lemah dari yang ditulis
+>
+> **§2 (korelasi atensi vs matriks interferensi, plus ablasi kausal) sudah ada.**
+> Implementasinya `scripts/attention_analysis.py`; hasilnya `results/ATTENTION_v4_greedy.md`
+> dan `results/ATTENTION_v4_stoch.md`. Ablasi kausal yang §2 tandai **WAJIB** sudah
+> dijalankan di sana — atensi dipaksa seragam dengan menolkan parameter `att` kedua layer
+> `GATv2Conv`, kedua arm menarik noise aksi yang sama, dan hasilnya dilaporkan pada tiga
+> KPI, bukan `embb_p5_mbps` sendirian, karena KPI yang terpaku di lantai tidak bisa turun
+> berapa pun efek ablasinya.
+>
+> **Peringatan pemakaian:** paruh DQN `results/ATTENTION_v4_stoch.md` **VOID** — dihasilkan
+> pembacaan ε=1.0, yaitu aksi acak seragam, bukan policy terlatih
+> (`results/quarantine_eps1.0/README.md`). Pengganti yang sah untuk paruh DQN adalah
+> `results/ATTENTION_v4_greedy.md`. Paruh PPO tidak terpengaruh.
+>
+> **Konflik K3 tidak sekuat yang ditulis.** K3 menunda analisis atensi sampai sesudah
+> Fase 2 dengan alasan atensi butuh edge feature dan tanpa itu korelasi rendah cuma
+> artefak. Tapi edge feature **sudah ada sejak awal**: `envs/channel_model.py:113`
+> mengembalikan path loss dB sebagai `edge_attr`, dan `gnn/gat_backbone.py:30` menyetel
+> `edge_dim=1` sehingga benar-benar dibaca. Prasyaratnya sudah terpenuhi, dan analisisnya
+> memang sudah jalan. Yang belum ada cuma `interference_coupling` sebagai fitur kedua,
+> jadi K3 menyusut jadi: analisis boleh diulang sesudah fitur itu ditambahkan, bukan
+> analisis terlarang sebelum Fase 2.
+>
+> **§0 sudah benar** soal D1 dan D5 dipindah ke PLAN-01 — keduanya kini terimplementasi
+> (`scripts/diag_equivariance.py`, `scripts/diag_collision.py`).
+>
+> Detail lengkap keenam premis basi ada di blok koreksi
+> `docs/revisi/PLAN-03-EDGE-FEATURES.md` dan `docs/revisi/PLAN-01-DIAGNOSTICS.md`. Tidak
+> ada verdict, ambang, atau angka hasil yang bergerak. §4-§8 (framing readout dua lapis,
+> tiga cacat protokol pembacaan, struktur paper, aturan penulisan) tetap berlaku penuh.
+
+---
+
 ## 0. Catatan urutan
 
 Sebagian dokumen ini sudah dikerjakan lebih awal:

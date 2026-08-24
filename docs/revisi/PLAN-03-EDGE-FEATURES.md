@@ -8,6 +8,70 @@
 
 ---
 
+> ## KOREKSI 2026-08-24 — empat premis dokumen ini tidak lagi berlaku
+>
+> Dokumen ini ditulis dari jawaban NotebookLM tanpa akses ke kondisi kode terkini. Empat
+> premisnya diverifikasi ulang terhadap file dan ternyata sudah tidak berlaku. Yang di
+> bawah **tidak dihapus** — dibiarkan utuh supaya jejak apa yang diyakini tetap ada — tapi
+> jangan dikerjakan.
+>
+> **P1 — §3 "ganti GAT → GATv2" sudah selesai sebelum dokumen ini ditulis.**
+> `gnn/gat_backbone.py:5` mengimpor `GATv2Conv`, dan benar-benar dipakai untuk kedua layer
+> (`gnn/gat_backbone.py:29,32`) — bukan sekadar diimpor. Tidak ada
+> penggantian, tidak ada varian baru `gnn-mappo_gatv2`, tidak ada penamaan ulang.
+> Konsekuensinya lebih besar dari §3 itu sendiri: **varian ini dinamai `gat` padahal
+> isinya GATv2 sejak v1.** Setiap kalimat paper yang menulis "GAT" untuk varian ini salah,
+> dan sitasi Brody et al. (ICLR 2022) yang §3 siapkan sebagai justifikasi *perubahan*
+> sebenarnya adalah sitasi untuk arsitektur yang sudah dipakai. Nama varian **tidak
+> diubah** — itu memutus seluruh nama checkpoint, CSV, dan laporan v4 — jadi ini koreksi
+> terminologi paper, bukan koreksi kode.
+>
+> **P2 — §2 "edge belum membawa fitur fisik" salah.** `envs/channel_model.py:113`
+> mengembalikan `edge_attr (E,1)` berisi path loss dB; `gnn/base_backbone.py:48`
+> menskalakannya `/100.0`; `gnn/gat_backbone.py:30,33` menyetel `edge_dim=1`. Uji wajib §2
+> ("`edge_dim` wajib diset, tanpa itu `edge_attr` diabaikan diam-diam") sudah lolos sejak
+> awal. Dari tiga fitur usulan, yang benar-benar belum ada **hanya
+> `interference_coupling`**.
+>
+> Tambahan yang membatasi §2: **`SAGEConv` tidak menerima `edge_attr` sama sekali**
+> (`gnn/sage_backbone.py:19-20`). Pekerjaan edge feature apa pun hanya menyentuh varian
+> `gat`; varian `sage` tidak bisa dibandingkan pada dimensi itu.
+>
+> **P3 — `distance_norm` sebagai fitur edge ketiga redundan.**
+> `envs/channel_model.py:34` menyatakan path loss dihitung **tanpa shadow fading**, dan
+> graf inter-gNB selalu memanggilnya `los=True` (`envs/channel_model.py:124`) dengan
+> `d3d = d2d` (`envs/channel_model.py:123`).
+> Path loss jadi fungsi monoton murni dari jarak — piecewise log, naik ketat. `distance_norm`
+> adalah reparametrisasi bijektif dari fitur yang sudah ada: nol informasi baru.
+> Menambahkannya menghasilkan "tiga fitur edge" di paper yang sebenarnya dua.
+>
+> **P4 — §7 "buang `neighbor_urllc_frac_mean`" sudah dikerjakan di v3.**
+> `envs/network_slicing_env.py:22` mencatat penghapusannya beserta penggantinya
+> (`prev_alloc_lag2`), dan `_get_obs()` (`envs/network_slicing_env.py:429`) memang tidak
+> memuatnya. Satu-satunya
+> kemunculan nama itu di seluruh repo adalah catatan historis tersebut. Tiga akibat:
+> 1. **Arm `obs=strict` di wave v6 hilang seluruhnya.** §7 dan urutan eksekusi §10 poin 6
+>    tidak punya pekerjaan tersisa.
+> 2. **Konflik K2 selesai dengan sendirinya.** Batasan "jangan perbaiki observasi
+>    bersamaan dengan HPO" di PLAN-05 §3.3 dan larangan §10.6 tidak lagi mengikat apa pun.
+> 3. Kalimat §7 *"ablasi tiga tingkatmu bocor di tingkat pertama. Ini kemungkinan
+>    penjelasan penting untuk hasil null"* **batal** — ablasinya tidak bocor. Hasil null v4
+>    (`ippo` 0.954 / `mlp-knn-ppo` 0.949 / GNN 0.942-0.955) kembali tanpa penjelasan dari
+>    jalur ini.
+>
+> **P5 — §4 "dengan 5 gNB, diameter graf kecil" salah arah.**
+> `envs/channel_model.py:112` menyatakannya sendiri — *"Fully-connected inter-gNB
+> interference graph"* — dan loop di bawahnya menerbitkan tiap pasangan `(i,j), i≠j`
+> sebagai edge. Bukan "diameter kecil" — diameter **1**. Satu layer sudah menjangkau
+> seluruh graf, dan dua layer berarti tiap node mengagregasi himpunan tetangga yang
+> identik dua kali. Risiko over-smoothing **lebih tinggi**, bukan lebih rendah: D3 jadi
+> lebih relevan, bukan kurang.
+>
+> Tidak ada verdict, ambang, atau angka hasil yang bergerak karena koreksi ini. Yang
+> bergerak adalah daftar pekerjaan Fase 2.
+
+---
+
 ## 0. Gerbang masuk
 
 Cek hasil PLAN-01 dulu:
@@ -23,6 +87,21 @@ Dokumen ini dijalankan dalam kedua kasus — edge feature berguna terlepas dari 
 |---|---|
 | Over-smoothing terkonfirmasi | Jalankan §5 |
 | Tidak | Lewati §5 |
+
+**Terjawab 2026-08-24** (PLAN-01 §Keluaran, dari `results/DIAG_GNN_RELIANCE.md`):
+
+- **D2 collapse terkonfirmasi** → jalankan dokumen ini, **lalu PLAN-04**.
+- **D3 over-smoothing terkonfirmasi** → **jalankan §5**. Tak terbantahkan untuk `gat`:
+  cosine similarity embedding **1.0000 persis di 25/25 checkpoint**, sementara referensi
+  pada observasi mentahnya 0,7955–0,9844. `sage` 0,9464–0,9999, tinggi tapi tidak
+  degenerate. Sesuai §5, pilih **satu** teknik saja supaya efeknya terisolasi.
+
+Satu hasil D2 yang mengikat §2 dokumen ini: **atribut edge yang sudah ada tidak terpakai
+sama sekali** — D2b mengacak path loss per node tujuan dan menggerakkan 0/25 checkpoint di
+ketiga KPI. Menambahkan `interference_coupling` karena itu wajib disertai uji bahwa fitur
+baru benar-benar dibaca, bukan diasumsikan. Uji `assert not torch.allclose(...)` di §2
+memeriksa `edge_attr` berpengaruh pada keluaran; itu **tidak** membuktikan policy
+memakainya. Ulangi D2b sesudah fitur ditambahkan.
 
 ---
 
