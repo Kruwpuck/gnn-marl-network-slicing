@@ -113,6 +113,32 @@ class NetworkSlicingEnv(gym.Env):
         self.lambda_max: float = float(cmdp_cfg.get("lambda_max", 100.0))
         self.dual_update_every: int = int(cmdp_cfg.get("dual_update_every", 2000))
 
+        # Per-gNB resilient minimum-rate constraint (docs/revisi/PLAN-02). Independent of
+        # the URLLC constraint above and deliberately per-gNB rather than network-wide:
+        # an aggregate constraint structurally permits sacrificing a minority, which is the
+        # mechanism this arm tests. Unit is per-gNB and not per-UE because the environment
+        # produces no per-UE rate (see the config comment for the three call sites).
+        res_cfg = cfg.get("resilient", {})
+        self.resilient_mode: str = res_cfg.get("mode", "none")
+        if self.resilient_mode not in ("none", "fixed", "learned"):
+            raise ValueError(f"resilient.mode must be none|fixed|learned, got "
+                             f"{self.resilient_mode!r}")
+        f_min_mbps = res_cfg.get("f_min_mbps", None)
+        if self.resilient_mode != "none" and f_min_mbps is None:
+            # Loud rather than silent: an unset f_min would constrain against 0, which every
+            # policy satisfies, and the arm would look like it ran when it did not.
+            raise ValueError("resilient.f_min_mbps must be set when resilient.mode != none "
+                             "-- freeze it with scripts/calibrate_fmin.py first "
+                             "(docs/revisi/PLAN-02 section 7)")
+        self.resilient_f_min: float = float(f_min_mbps or 0.0) * 1e6
+        self.resilient_c: float = float(res_cfg.get("c", 0.1))
+        self.alpha_mu: float = float(res_cfg.get("alpha_mu", 0.01))
+        self.alpha_z: float = float(res_cfg.get("alpha_z", 0.001))
+        self.mu_init: float = float(res_cfg.get("mu_init", 0.0))
+        self.z_init: float = float(res_cfg.get("z_init", 0.0))
+        self.mu_max: float = float(res_cfg.get("mu_max", 100.0))
+        self.z_max: float = float(res_cfg.get("z_max", 10.0))
+
         floor_cfg = cfg.get("floor", {})
         self.floor_mode: str = floor_cfg.get("mode", "none")
         self.floor_base: float = float(floor_cfg.get("base", 0.10))
@@ -170,6 +196,14 @@ class NetworkSlicingEnv(gym.Env):
         self._lam: float = self.lambda_init
         self._total_steps: int = 0
         self._viol_window: deque = deque(maxlen=max(self.dual_update_every, 1))
+        # Resilient dual state, same lifetime and same update cadence as _lam. Kept here
+        # and NOT as an nn.Parameter, so it can never reach the policy state_dict — that
+        # is what keeps the model dimension independent of n_gnb (PLAN-02 sections 5, 12.3).
+        self._mu: np.ndarray = np.full(self.n_gnb, self.mu_init, dtype=np.float64)
+        self._z: np.ndarray = np.full(self.n_gnb, self.z_init, dtype=np.float64)
+        self._rate_window: deque = deque(maxlen=max(self.dual_update_every, 1))
+        self._clip_hits: int = 0
+        self._clip_steps: int = 0
 
     def _load_config(self, config_path: str | None) -> dict:
         if config_path is None:
@@ -231,6 +265,9 @@ class NetworkSlicingEnv(gym.Env):
             "lam": self._lam,
             "total_steps": self._total_steps,
             "viol_window": list(self._viol_window),
+            "mu": self._mu.tolist(),
+            "z": self._z.tolist(),
+            "rate_window": [r.tolist() for r in self._rate_window],
         }
 
     def set_cmdp_state(self, state: dict) -> None:
@@ -239,6 +276,17 @@ class NetworkSlicingEnv(gym.Env):
         self._lam = float(state.get("lam", self.lambda_init))
         self._total_steps = int(state.get("total_steps", 0))
         self._viol_window = deque(state.get("viol_window", []), maxlen=max(self.dual_update_every, 1))
+        # Absent keys keep the __init__ values, so a v4 checkpoint written before the
+        # resilient constraint existed still resumes cleanly instead of raising.
+        mu = state.get("mu")
+        z = state.get("z")
+        if mu is not None:
+            self._mu = np.asarray(mu, dtype=np.float64)
+        if z is not None:
+            self._z = np.asarray(z, dtype=np.float64)
+        self._rate_window = deque(
+            (np.asarray(r, dtype=np.float64) for r in state.get("rate_window", [])),
+            maxlen=max(self.dual_update_every, 1))
 
     def step(self, actions):
         assert self._rng is not None, "Call reset() before step()"
@@ -365,15 +413,35 @@ class NetworkSlicingEnv(gym.Env):
         self._viol_ewma = (0.9 * self._viol_ewma + 0.1 * urllc_violation_rate).astype(np.float32)
 
         mean_violation_rate = float(urllc_violation_rate.mean())
-        reward = self._compute_reward(embb_thr_bps, mean_violation_rate)
+        shortfall = self._resilient_shortfall(embb_thr_bps)
+        reward = self._compute_reward(embb_thr_bps, mean_violation_rate, shortfall)
 
         # --- 6. CMDP dual (Lagrangian) update — slow timescale, persists across episodes ---
         self._viol_window.append(mean_violation_rate)
+        if self.resilient_mode != "none":
+            self._rate_window.append(np.asarray(embb_thr_bps, dtype=np.float64))
         self._total_steps += 1
         if self.cmdp_enabled and self.dual_update_every > 0 and self._total_steps % self.dual_update_every == 0:
             mean_viol = float(np.mean(self._viol_window)) if self._viol_window else 0.0
             self._lam = float(np.clip(self._lam + self.lambda_lr * (mean_viol - self.delta),
                                        0.0, self.lambda_max))
+
+        # --- 6b. Resilient dual, per gNB. Same cadence and same window-mean shape as the
+        # lambda update above, so the window variance already validated for lambda carries
+        # over unchanged (PLAN-02 section 4 "Frekuensi"). Order matters: mu moves on the
+        # measured shortfall, then z reacts to mu, and alpha_z << alpha_mu keeps the slack
+        # from loosening to chase the policy.
+        if (self.resilient_mode != "none" and self.dual_update_every > 0
+                and self._total_steps % self.dual_update_every == 0 and self._rate_window):
+            t_ref = max(self.embb_min_throughput, 1.0)
+            mean_rate = np.mean(np.stack(self._rate_window), axis=0)
+            z = np.zeros(self.n_gnb) if self.resilient_mode == "fixed" else self._z
+            self._mu = np.clip(
+                self._mu + self.alpha_mu * (self.resilient_f_min - z - mean_rate) / t_ref,
+                0.0, self.mu_max)
+            if self.resilient_mode == "learned":
+                self._z = np.clip(self._z + self.alpha_z * (self._mu - self.resilient_c),
+                                  0.0, self.z_max)
 
         self._prev_alloc_lag2 = self._prev_alloc
         self._prev_alloc = urllc_fracs.astype(np.float32)
@@ -397,6 +465,14 @@ class NetworkSlicingEnv(gym.Env):
             "urllc_arrived": arrived,
             "lam": self._lam,
         }
+        # Only added when the arm is on, so `mode=none` returns exactly the v4 info dict and
+        # the bit-identity test in tests/test_resilient.py compares like with like.
+        if self.resilient_mode != "none":
+            info["mu"] = self._mu.copy()
+            info["z"] = self._z.copy()
+            info["resilient_shortfall"] = shortfall
+            info["reward_clip_frac"] = (self._clip_hits / self._clip_steps
+                                        if self._clip_steps else 0.0)
         return obs, reward, False, self._step_count >= self.episode_length, info
 
     def _compute_floor(self, backlog_bits: np.ndarray) -> np.ndarray:
@@ -409,7 +485,24 @@ class NetworkSlicingEnv(gym.Env):
         f_min = self.floor_base + self.floor_k * (backlog_bits / q_ref)
         return np.clip(f_min, self.floor_lo, self.floor_hi)
 
-    def _compute_reward(self, embb_thr_bps: np.ndarray, urllc_violation_rate: float) -> float:
+    def _resilient_shortfall(self, embb_thr_bps: np.ndarray) -> np.ndarray:
+        """Per-gNB shortfall below the resilient floor, NORMALISED by t_ref.
+
+        The normalisation is not cosmetic. embb_thr_bps is in bps (1e6-1e7) while the
+        reward is clipped to [-10, 10] a few lines below, so a raw shortfall times any
+        useful mu would saturate the clip on every step and kill the gradient -- the same
+        failure that broke calibration round 3. Dividing by t_ref, which the objective term
+        already uses, puts mu on the same scale as lambda.
+        """
+        if self.resilient_mode == "none":
+            return np.zeros(self.n_gnb)
+        t_ref = max(self.embb_min_throughput, 1.0)
+        # fixed: no slack at all, whatever z_init says (PLAN-02 section 8 honesty arm).
+        z = np.zeros(self.n_gnb) if self.resilient_mode == "fixed" else self._z
+        return np.maximum(0.0, (self.resilient_f_min - z - embb_thr_bps) / t_ref)
+
+    def _compute_reward(self, embb_thr_bps: np.ndarray, urllc_violation_rate: float,
+                        shortfall: np.ndarray | None = None) -> float:
         t_ref = max(self.embb_min_throughput, 1.0)
         r_obj = (self.w1 * min(float(embb_thr_bps.mean() / t_ref), 5.0)
                  + self.w4 * float(embb_thr_bps.sum() / self.bandwidth_hz))
@@ -417,6 +510,21 @@ class NetworkSlicingEnv(gym.Env):
             r = r_obj - self.w2 * urllc_violation_rate
         else:
             r = r_obj - self._lam * urllc_violation_rate
+        if self.resilient_mode != "none" and shortfall is not None:
+            # MEAN over gNB, not sum, for two reasons decided from the task rather than
+            # from any result. First, the URLLC constraint a few lines above already
+            # aggregates with a mean (mean_violation_rate), and using a sum here would make
+            # the two constraints inconsistent for no reason. Second, a sum scales with
+            # n_gnb, so transferring to 10 or 20 gNB would multiply the penalty 2-4x purely
+            # from topology size and the constraint would bind differently at test time
+            # than at training time -- which is exactly the zero-shot claim PLAN-02
+            # section 9 metric 6 sets out to test. mu stays per-gNB; only the reduction
+            # into the scalar reward is a mean. Measured with a sum: the [-10, 10] clip
+            # fired on 66.7% of steps in tests/test_resilient.py.
+            r -= float(np.mean(self._mu * shortfall))
+            # PLAN-02 section 11 wants the clipped fraction monitored rather than assumed.
+            self._clip_steps += 1
+            self._clip_hits += int(not -10.0 <= r <= 10.0)
         return float(np.clip(r, -10.0, 10.0))
 
     def _get_obs(self) -> np.ndarray:

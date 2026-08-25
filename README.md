@@ -65,7 +65,17 @@ python scripts/diag_gnn_reliance.py   # D2a/D2b message ablation, D3 over-smooth
 python scripts/diag_grad_ratio.py     # D2c gradient-norm ratio into the GNN
 python scripts/diag_collision.py      # D5 collision-storm hypothesis
 python scripts/diag_input_separability.py   # D6 which layer collapses the node representation
+
+# Fase 1 (docs/revisi/PLAN-02) -- per-gNB resilient constraint, wave v5
+python scripts/calibrate_fmin.py --sweep --checkpoints "results/logs/*_v4_seed4[2-6].pt"
+python scripts/run_wave.py --seeds 42,43 --floor-mode none --resilient learned
 ```
+
+`--resilient` defaults to `none`, which is bit-identical to v4 (asserted by
+`tests/test_resilient.py`), so an unflagged wave is unchanged. `fixed` and `learned` refuse
+to start until `resilient.f_min_mbps` is frozen in the config. As of 2026-08-25 it is not:
+`calibrate_fmin.py` finds no eligible candidate and says so rather than picking one -- see
+`docs/revisi/PREREG-V5.md` §0.
 
 `diag_grad_ratio.py` is the only diagnostic that trains: it resumes a v4 checkpoint for a
 few thousand steps to read gradients off the real training loop. It copies each checkpoint

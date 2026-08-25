@@ -6,10 +6,15 @@
   },
   "docs/revisi/PLAN-01-DIAGNOSTICS.md": {
     "envs/channel_model.py:112": "Fully-connected inter-gNB interference graph.",
-    "envs/network_slicing_env.py:429": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,",
-    "envs/network_slicing_env.py:430": "urllc_backlog_log, self._viol_ewma, self._prev_alloc_lag2, self._prev_alloc],",
+    "envs/network_slicing_env.py:537": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,",
+    "envs/network_slicing_env.py:538": "urllc_backlog_log, self._viol_ewma, self._prev_alloc_lag2, self._prev_alloc],",
     "gnn/gat_backbone.py:52": "h = self.conv2(h, edge_index, edge_attr=edge_attr)",
     "gnn/sage_backbone.py:19": "self.conv1 = SAGEConv(in_channels, hidden)"
+  },
+  "docs/revisi/PLAN-02-RESILIENT-CELLEDGE.md": {
+    "envs/network_slicing_env.py:327": "self._pl_matrix[i, i * self.n_ue_per_gnb:(i + 1) * self.n_ue_per_gnb].mean()",
+    "scripts/evaluate_checkpoints.py:171": "\"embb_p5_mbps\": float(np.percentile(embb_arr, 5) / 1e6),",
+    "training/metrics_logger.py:39": "\"embb_p5_mbps\",        # 5th-percentile (cell-edge) eMBB throughput, 3GPP TR 36.814"
   },
   "docs/revisi/PLAN-03-EDGE-FEATURES.md": {
     "envs/channel_model.py:112": "Fully-connected inter-gNB interference graph.",
@@ -18,7 +23,7 @@
     "envs/channel_model.py:124": "pl = self.compute_path_loss(d3d, d2d, los=True)",
     "envs/channel_model.py:34": "\"\"\"Return path-loss in dB (no shadow fading), per TR 38.901 Table 7.4.1.\"\"\"",
     "envs/network_slicing_env.py:22": "(neighbor_urllc_frac_mean), which leaked global state to every agent including",
-    "envs/network_slicing_env.py:429": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,",
+    "envs/network_slicing_env.py:537": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,",
     "gnn/base_backbone.py:48": "edge_attr = torch.from_numpy(edge_attr).float() / 100.0",
     "gnn/gat_backbone.py:29": "self.conv1 = GATv2Conv(",
     "gnn/gat_backbone.py:30": "in_channels, hidden, heads=heads, edge_dim=1, concat=True, dropout=dropout",
@@ -30,19 +35,25 @@
   },
   "docs/revisi/PLAN-05-HPO-SYMMETRIC.md": {
     "envs/network_slicing_env.py:22": "(neighbor_urllc_frac_mean), which leaked global state to every agent including",
-    "envs/network_slicing_env.py:429": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,"
+    "envs/network_slicing_env.py:537": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,"
   },
   "docs/revisi/PLAN-06-MECHANISM-EVIDENCE.md": {
     "envs/channel_model.py:113": "Returns edge_index (2, E) and edge_attr (E, 1) path-loss in dB.",
     "gnn/gat_backbone.py:30": "in_channels, hidden, heads=heads, edge_dim=1, concat=True, dropout=dropout"
   },
   "results/B3_DELAY_CENSORING.md": {
-    "envs/network_slicing_env.py:333": "while fifo and (self._step_count - fifo[0][0]) > deadline_slots:"
+    "envs/network_slicing_env.py:381": "while fifo and (self._step_count - fifo[0][0]) > deadline_slots:"
+  },
+  "results/DIAG_INPUT_SEPARABILITY.md": {
+    "envs/network_slicing_env.py:537": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,",
+    "envs/network_slicing_env.py:538": "urllc_backlog_log, self._viol_ewma, self._prev_alloc_lag2, self._prev_alloc],",
+    "envs/network_slicing_env.py:539": "axis=1).astype(np.float32)",
+    "gnn/gat_backbone.py:52": "h = self.conv2(h, edge_index, edge_attr=edge_attr)"
   },
   "results/GATE_C.md": {
     "scripts/evaluate_checkpoints.py:40": "EVAL_SEED_BASE = 10_000  # disjoint from training seeds (42-46) and smoke seeds (999)",
     "scripts/rliable_report.py:34": "MATCHED_BASELINES = {",
-    "scripts/run_wave.py:60": "common = [\"--seed\", str(seed), \"--resume\", \"--ckpt-interval\", \"25000\",",
+    "scripts/run_wave.py:63": "common = [\"--seed\", str(seed), \"--resume\", \"--ckpt-interval\", \"25000\",",
     "training/train_baselines.py:159": "agent = MLPKNNPPOAgent(config_path=config_path).to(DEVICE)",
     "training/train_baselines.py:163": "agent = MLPPPOAgent(obs_dim, config_path=config_path).to(DEVICE)",
     "training/train_baselines.py:84": "agent = MLPDQNAgent(obs_dim, config_path=config_path).to(DEVICE)",

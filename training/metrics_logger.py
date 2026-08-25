@@ -47,6 +47,13 @@ CSV_COLUMNS = [
     "timely_throughput_mbps", # URLLC bits delivered before deadline, per second (Mbps)
     "jains_fairness",      # Jain's fairness index over eMBB rates
     "lam",                 # CMDP Lagrangian dual variable (constant across a shared step)
+    # Appended for the per-gNB resilient constraint (docs/revisi/PLAN-02). Both are 0.0
+    # when resilient.mode=none, so a v4-style run still reads cleanly. They exist because
+    # PLAN-02 section 7's two calibration gates -- "feasible" (shortfall converges toward
+    # zero rather than growing monotonically) and "binding" (steady-state mu > 0) -- cannot
+    # be checked from the data without them.
+    "mu_mean",                    # mean resilient multiplier across gNB
+    "resilient_shortfall_mean",   # mean normalised shortfall across gNB
 ]
 
 
@@ -130,6 +137,9 @@ class EpisodeNetworkStats:
         self._delivered_bits: float = 0.0
         self._n_steps: int = 0
         self._lam_last: float = 0.0
+        self._mu_sum: float = 0.0
+        self._shortfall_sum: float = 0.0
+        self._resilient_steps: int = 0
 
     def add(self, info: dict) -> None:
         embb = info.get("embb_rates")
@@ -159,6 +169,12 @@ class EpisodeNetworkStats:
         self._n_steps += 1
         if "lam" in info:
             self._lam_last = float(info["lam"])
+        # Absent when resilient.mode=none, so these stay at their zero initial values and
+        # the two columns read 0.0 for a v4-style run.
+        if "mu" in info:
+            self._mu_sum += float(np.mean(info["mu"]))
+            self._shortfall_sum += float(np.mean(info["resilient_shortfall"]))
+            self._resilient_steps += 1
 
     def summary(self, bandwidth_hz: float, urllc_max_delay_ms: float, slot_s: float = 0.001) -> dict:
         if not self._embb_bps and self._arrived == 0:
@@ -184,6 +200,9 @@ class EpisodeNetworkStats:
             "timely_throughput_mbps": float(self._delivered_bits / window_s / 1e6),
             "jains_fairness": float(np.mean(self._fairness)) if self._fairness else 0.0,
             "lam": self._lam_last,
+            "mu_mean": self._mu_sum / self._resilient_steps if self._resilient_steps else 0.0,
+            "resilient_shortfall_mean": (self._shortfall_sum / self._resilient_steps
+                                         if self._resilient_steps else 0.0),
         }
 
 

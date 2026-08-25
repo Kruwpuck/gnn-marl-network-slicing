@@ -36,13 +36,16 @@ BASELINE_PPO = ["ippo", "central-ppo"]
 ALL_ALGOS = PROPOSED_DQN + PROPOSED_PPO + BASELINE_DQN + BASELINE_PPO
 
 
-def make_variant_config(floor_mode: str, overrides: dict | None = None) -> Path:
+def make_variant_config(floor_mode: str, overrides: dict | None = None,
+                        resilient_mode: str = "none") -> Path:
     """overrides: {"env.n_gnb": 20, "buffer.urllc_max_bits": 131072} — dotted path."""
     GEN_DIR.mkdir(parents=True, exist_ok=True)
     cfg = yaml.safe_load(BASE_CONFIG.read_text())
     cfg.setdefault("floor", {})["mode"] = floor_mode
+    cfg.setdefault("resilient", {})["mode"] = resilient_mode
 
-    suffix = ""
+    # Empty for the default arm, so every v4 config path keeps the filename it already has.
+    suffix = "" if resilient_mode == "none" else f"_res{resilient_mode}"
     for dotted_key, value in sorted((overrides or {}).items()):
         node = cfg
         *parents, leaf = dotted_key.split(".")
@@ -94,6 +97,12 @@ def main() -> int:
     p.add_argument("--tag", type=str, default=None,
                    help="override run tag (default: derived from floor-mode, e.g. _floornone; "
                         "'' for the main dynamic wave to keep original filenames)")
+    p.add_argument("--resilient", type=str, default="none",
+                   choices=["none", "fixed", "learned"],
+                   help="per-gNB resilient constraint arm (docs/revisi/PLAN-02 section 8). "
+                        "'none' reproduces v4 and is the default, so an unflagged wave is "
+                        "unchanged. 'fixed'/'learned' require resilient.f_min_mbps to be "
+                        "frozen in the config first, or the env raises")
     p.add_argument("--max-parallel", type=int, default=6)
     p.add_argument("--n-gnb", type=int, default=None, help="override env.n_gnb (default: config value)")
     p.add_argument("--area-size", type=float, default=None, help="override env.area_size (default: config value)")
@@ -102,6 +111,10 @@ def main() -> int:
     seeds = [int(s) for s in args.seeds.split(",")]
     algos = args.algos.split(",") if args.algos else ALL_ALGOS
     tag = args.tag if args.tag is not None else ("" if args.floor_mode == "dynamic" else f"_floor{args.floor_mode}")
+    # The arm goes into the run tag so v5 checkpoints, metrics CSVs and eval files cannot
+    # collide with v4's -- the `none` arm is meant to be comparable to v4, not to overwrite it.
+    if args.resilient != "none":
+        tag += f"_res{args.resilient}"
 
     overrides = {}
     if args.n_gnb is not None:
@@ -109,7 +122,7 @@ def main() -> int:
     if args.area_size is not None:
         overrides["env.area_size"] = args.area_size
 
-    config_path = make_variant_config(args.floor_mode, overrides or None)
+    config_path = make_variant_config(args.floor_mode, overrides or None, args.resilient)
     stdout_dir = ROOT / "results" / "logs" / "stdout"
     stdout_dir.mkdir(parents=True, exist_ok=True)
 
@@ -119,7 +132,8 @@ def main() -> int:
             name, args_list = job_cmd(algo, seed, config_path, tag)
             jobs.append((name, args_list))
 
-    print(f"Wave: floor={args.floor_mode} tag='{tag}' seeds={seeds} algos={algos} "
+    print(f"Wave: floor={args.floor_mode} resilient={args.resilient} tag='{tag}' "
+          f"seeds={seeds} algos={algos} "
           f"-> {len(jobs)} jobs, max_parallel={args.max_parallel}")
     print(f"config: {config_path}")
 

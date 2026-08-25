@@ -9,6 +9,70 @@
 
 ---
 
+> ## KOREKSI 2026-08-25 — empat premis dokumen ini tidak berlaku apa adanya
+>
+> Diverifikasi terhadap kode saat implementasi. Isi lama **tidak dihapus** — jejaknya tetap
+> ada — tapi yang di bawah ini yang mengikat. Implementasinya:
+> `envs/network_slicing_env.py` (blok `resilient`), `configs/experiment_config.yaml`,
+> `tests/test_resilient.py`, `scripts/calibrate_fmin.py`, `docs/revisi/PREREG-V5.md`.
+>
+> **Q1 — constraint per-UE di §3 tidak punya besaran untuk dipasangi. Unit jadi per-gNB.**
+> §3 menulis `E[r_u] ≥ f_min − z_u ∀u ∈ UE`. Environment tidak punya `r_u`:
+> SINR gNB dihitung dari **rata-rata** path loss atas 5 UE-nya
+> (`envs/network_slicing_env.py:327`), eMBB dilayani sebagai **satu antrean fluida per
+> gNB**, dan `embb_thr_bps` panjangnya `n_gnb`. Posisi UE ada tapi dirata-rata sebelum satu
+> laju pun dihitung.
+>
+> Keputusan manusia (2026-08-25): **constraint per-gNB**, disamakan dengan unit yang
+> benar-benar diproduksi env dan yang benar-benar diukur `embb_p5_mbps`. Tiga akibat:
+> 1. Paper menulis **"per-cell minimum-rate constraint with learnable slack"**, tidak pernah
+>    "per-user". TSP 2023 dikutip sebagai **mekanisme** (learnable slack, primal-dual),
+>    bukan sebagai setup identik.
+> 2. §5 jadi lebih mudah, bukan lebih sulit: `μ_i` jatuh persis di node graf yang sudah ada,
+>    jadi tidak perlu agregasi apa pun antara unit constraint dan unit message passing.
+>    Hipotesis §9 justru menguat dalam bentuk ini.
+> 3. Alternatif per-UE penuh **ditolak**: ia mengubah throughput agregat, jadi definisi
+>    `embb_p5_mbps` ikut bergeser dan seluruh v4 tidak lagi sebanding —
+>    `handoff/goal1.md` §Larangan melarang mengubah definisi metrik.
+>
+> **Q2 — sitasi `embb_p5_mbps` tidak akurat, dan itu koreksi paper.**
+> `training/metrics_logger.py:39` mengutip **3GPP TR 36.814** untuk metrik itu; definisi
+> TR 36.814 adalah persentil-5 throughput **user**, sementara hitungannya persentil-5 atas
+> sampel **(gNB × slot)** (`scripts/evaluate_checkpoints.py:171`). Yang diukur proyek ini
+> adalah **sel terburuk**, bukan **pengguna terpinggir**. Besaran yang sah; namanya dan
+> sitasinya yang salah. **Nama metrik dan nilainya tidak disentuh** — itu metrik gate.
+>
+> **Q3 — §5 (μ sebagai fitur input) ditunda ke Fase 2.** §5 menyebutnya "aman dan
+> disarankan", dan itu tetap benar. Tapi menambah kolom ke-9 mengubah `in_channels` untuk
+> **8 algoritma**, bentrok dengan PLAN-03 §7 yang juga menyentuh observation space, dan
+> merusak sifat verifikasi paling berguna dari wave ini: dengan observasi tetap 8 kolom,
+> arm `resilient=none` **bit-identik dengan v4** dan bisa dipakai sebagai uji regresi
+> (`tests/test_resilient.py::test_mode_none_is_identical_to_no_resilient_block`). Aturan
+> implementasi §5 lainnya **berlaku penuh dan dipenuhi secara struktural**: μ dan z hidup di
+> `get_cmdp_state()`, dict biasa, jadi tidak punya jalan masuk ke `state_dict` policy.
+>
+> **Q4 — `r_penalized` di §4 wajib dinormalisasi, kalau tidak klip menelannya.**
+> §4 menulis `r_penalized = r_throughput - sum(mu_u * shortfall_u)` dalam satuan mentah.
+> `embb_thr_bps` dalam bps (1e6–1e7) sementara reward diklip ke `[-10, 10]`, jadi shortfall
+> mentah dikali μ sekecil apa pun yang berguna akan menjenuhkan klip tiap step dan mematikan
+> gradien — persis kegagalan ronde 3 yang §2 dokumen ini sendiri peringatkan. Shortfall
+> dibagi `t_ref` yang sudah dipakai objective.
+>
+> **Dan agregasinya rata-rata, bukan jumlah.** Terukur saat implementasi: dengan penjumlahan,
+> klip `[-10,10]` kena di **66,7%** step. Dua alasan mengubahnya, keduanya dari properti
+> task bukan dari hasil: (a) constraint URLLC yang sudah ada juga mengagregasi dengan
+> rata-rata (`mean_violation_rate`), jadi menjumlah di sini membuat dua constraint tidak
+> konsisten tanpa alasan; (b) jumlah ikut menskala dengan `n_gnb`, jadi transfer ke 10/20
+> gNB akan melipatgandakan penalti 2–4× murni karena ukuran topologi dan constraint
+> mengikat berbeda saat uji dibanding saat latih — persis klaim zero-shot yang §9 metrik 6
+> uji. μ tetap **per-gNB**; yang jadi rata-rata cuma reduksi ke skalar reward.
+>
+> **§7 belum menghasilkan `f_min`, dan itu memblokir wave.** Lihat `PREREG-V5.md` §0 dan
+> `results/CALIBRATE_FMIN.md`: tidak ada alokasi statis yang memenuhi `delta`, dan referensi
+> `ippo` melanggar sekaligus kolaps di 5/5 seed. Keputusan berikutnya milik manusia.
+
+---
+
 ## Kenapa ini perubahan yang paling didukung
 
 Dua jalur analisis independen menunjuk solusi yang sama:

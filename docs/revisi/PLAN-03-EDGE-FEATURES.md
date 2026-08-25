@@ -47,7 +47,7 @@
 >
 > **P4 — §7 "buang `neighbor_urllc_frac_mean`" sudah dikerjakan di v3.**
 > `envs/network_slicing_env.py:22` mencatat penghapusannya beserta penggantinya
-> (`prev_alloc_lag2`), dan `_get_obs()` (`envs/network_slicing_env.py:429`) memang tidak
+> (`prev_alloc_lag2`), dan `_get_obs()` (`envs/network_slicing_env.py:537`) memang tidak
 > memuatnya. Satu-satunya
 > kemunculan nama itu di seluruh repo adalah catatan historis tersebut. Tiga akibat:
 > 1. **Arm `obs=strict` di wave v6 hilang seluruhnya.** §7 dan urutan eksekusi §10 poin 6
