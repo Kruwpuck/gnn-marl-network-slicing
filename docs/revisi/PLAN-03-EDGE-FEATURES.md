@@ -202,6 +202,34 @@ Cek konfigurasi sekarang sebelum mengubah apa pun.
 
 ## 5. Over-smoothing (kondisional pada D3)
 
+> **D6 (2026-08-25) mempersempit apa yang §5 harus lakukan** —
+> `results/DIAG_INPUT_SEPARABILITY.md`, 50 checkpoint.
+>
+> Premis §5 diverifikasi dan **berlaku**: input tidak degenerate, 0/50 checkpoint di bawah
+> ambang (dan 0/50 juga di kedua ambang sensitivitas), median 6 dari 8 kolom observasi
+> bervariasi antar-node. Jadi node memang bisa dibedakan sebelum masuk GNN, dan §5 menyasar
+> tempat yang benar — bukan §2/§7.
+>
+> Tapi **kolapsnya di layer pertama, bukan menumpuk di dua layer.** Rasio `rel_spread`
+> antar-tahap untuk `gat`: input→`conv1` **0,0145**, `conv1` pra→pasca aktivasi 0,9861,
+> `conv1`→`conv2` 0,0079. Layer pertama sudah membuang 98,6% separasi; aktivasinya praktis
+> tidak bersalah. Konsisten dengan P5 di blok koreksi atas: graf lengkap, diameter 1, satu
+> layer sudah merata-ratakan kelima node.
+>
+> **Konsekuensi konkret untuk pilihan di bawah:** residual `h + α·conv(h)` yang dipasang
+> pada layer kedua saja **tidak akan menolong** — yang perlu diselamatkan adalah `x`, dan
+> `x` sudah hilang di `conv1`. Sambungannya harus melewati layer pertama: residual pada
+> **kedua** layer dengan proyeksi untuk `x` (dimensinya beda — 8 → hidden·heads → 64), atau
+> Jumping Knowledge yang memang menggabungkan `[x, h1, h2]`. Tetap pilih **satu**, dan catat
+> mana.
+>
+> `sage` mempertahankan jauh lebih banyak pada rasio yang sama (0,6343 dan 0,3464,
+> `rel_spread` akhir 0,0348 lawan 0,0000 milik `gat`). Itu penjelasan mekanistik untuk beda
+> `gat`/`sage` di D3 yang selama ini cuma angka: `SAGEConv` menyimpan bobot root terpisah
+> (`gnn/sage_backbone.py:19`), jadi kontribusi diri tidak ikut terata-rata. Residual pada
+> `gat` pada dasarnya menambahkan kembali apa yang `sage` sudah punya secara bawaan — dan
+> itu prediksi yang bisa diuji, bukan sekadar analogi.
+
 Jalankan hanya kalau PLAN-01 D3 mengonfirmasi over-smoothing.
 
 Pilih **satu** (jangan dua-duanya, supaya efek terisolasi):

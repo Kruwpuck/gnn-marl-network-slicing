@@ -227,6 +227,8 @@ Checklist yang harus terisi sebelum lanjut:
 - [x] D3: over-smoothing ya/tidak — gerbang untuk PLAN-03 §5
 - [x] D4: tabel jumlah parameter — gerbang untuk arm `ippo-scaled`
 - [x] D5: collision storm terkonfirmasi ya/tidak
+- [x] D6: di layer mana representasi node kolaps — **gerbang untuk urutan di dalam Fase 2**
+      (ditambahkan 2026-08-25, tidak ada di versi awal dokumen ini)
 
 Catat semuanya di ledger. Ini diagnostik, bukan klaim performa — tidak butuh pra-registrasi, tapi hasilnya dilaporkan apa adanya.
 
@@ -395,22 +397,81 @@ hampir nol episode *greedy*, kebalikan dari populasi yang D5 butuhkan.
 **Framing "batas validitas operasional" (PLAN-07 §4) tetap berdiri tanpa D5** — memang
 sudah dirancang begitu.
 
+**D6 — INPUT TIDAK DEGENERATE; GNN YANG MENGOLAPSKAN, DAN KOLAPSNYA DI LAYER PERTAMA**
+(`results/DIAG_INPUT_SEPARABILITY.md`, 50 checkpoint). Diagnostik ini tidak ada di versi
+awal PLAN-01; ditambahkan 2026-08-25 karena urutan di dalam Fase 2 bersandar pada premis
+yang belum pernah diukur.
+
+D3 melaporkan cosine embedding `gat` 1.0000 lawan cosine observasi 0,7955–0,9844, dan
+PLAN-03 §5 diurutkan lebih dulu atas dasar selisih itu. Premis di bawahnya: observasi
+8-dimensi **cukup** membedakan gNB. Kalau ternyata tidak, residual/JK menyerang gejala di
+tempat yang salah dan §2 (edge feature) serta §7 (observasi) yang duluan.
+
+**Cosine tidak bisa menjawabnya, dan cosine ter-center juga tidak.** Kedelapan kolom
+observasi non-negatif (`envs/network_slicing_env.py:429`), jadi tiap vektor node duduk di
+ortan positif dan cosine terangkat karena konstruksi; `conv2` tidak punya aktivasi
+(`gnn/gat_backbone.py:52`), jadi embedding bebas bertanda. Membandingkan 0,910 dengan
+1,0000 membandingkan dua skala berbeda. Center-nya pun tidak menolong: mengurangi mean
+antar-node memaksa `Σᵢ vᵢ = 0`, jadi inner product rata-rata off-diagonal dipaksa negatif
+dengan lantai sekitar `−1/(n−1) = −0,25` untuk n=5 — nilai "≈1" mustahil muncul. Dipakai
+dua statistik bebas skala: `rel_spread = ‖X − x̄‖_F / ‖X‖_F` (0 = node identik) dan
+effective rank dari X ter-center. Cosine mentah tetap dilaporkan berdampingan supaya
+bersambung dengan tabel D3 yang sudah di-commit.
+
+| backbone | input | conv1 pra-aktivasi | conv1 pasca-aktivasi | conv2 |
+|---|---|---|---|---|
+| `gat` `rel_spread` median | **0,2831** | 0,0040 | 0,0039 | **0,0000** |
+| `sage` `rel_spread` median | **0,1403** | 0,0926 | 0,0841 | **0,0348** |
+
+Aturan keputusan ditulis sebelum dijalankan: input degenerate kalau `rel_spread < 0,05`
+**dan** paling banyak satu kolom bervariasi. Yang memenuhi **0 dari 50** — dan 0/50 juga di
+0,02 maupun 0,10, jadi ambangnya tidak menyetir apa pun. Kolom yang bervariasi: median
+**6 dari 8**, rentang 4–7. **Urutan sekarang bertahan: PLAN-03 §5 lebih dulu.**
+
+Dua hal yang tidak diminta tapi keluar dari data yang sama:
+
+1. **Kolapsnya di `conv1`, bukan menumpuk di dua layer.** Rasio `rel_spread` antar-tahap
+   berturut-turut untuk `gat`: input→conv1 **0,0145**, conv1 pra→pasca aktivasi 0,9861,
+   conv1→conv2 0,0079. Layer pertama sudah membuang 98,6% separasi; aktivasinya praktis
+   tidak bersalah. Konsisten dengan P5 (graf lengkap, diameter 1): satu layer sudah
+   merata-ratakan kelima node. Konsekuensi untuk §5 — residual pada layer kedua saja tidak
+   akan menolong, sambungannya harus melewati **layer pertama**.
+2. **`sage` mempertahankan jauh lebih banyak** (0,6343 dan 0,3464 pada rasio yang sama,
+   `rel_spread` akhir 0,0348 lawan 0,0000). Ini penjelasan mekanistik untuk beda `gat`
+   lawan `sage` di D3 yang selama ini cuma dicatat sebagai angka: `SAGEConv` menyimpan
+   bobot root terpisah, jadi kontribusi diri tidak ikut terata-rata.
+
+**Umpan balik yang tidak diantisipasi dokumen mana pun:** `prev_alloc` dan
+`prev_alloc_lag2` (`envs/network_slicing_env.py:430`) punya std antar-node **0,0000** di
+49 dari 50 checkpoint. Dua dari delapan kolom observasi tidak membawa identitas node sama
+sekali — karena tiap gNB memilih **aksi yang sama**, yaitu lockstep yang D5 ukur sebagai
+`mode_share` 1,0000, sekarang terlihat di observasinya sendiri. Keluaran policy yang
+degenerate mengumpan balik jadi fitur node yang kosong identitas: sekaligus gejala kolaps
+dan masukan bagi kolaps itu.
+
 ### Konsekuensi ke fase berikutnya
 
 | Gerbang | Verdict | Akibat |
 |---|---|---|
-| D2 → PLAN-04 | collapse terkonfirmasi | **PLAN-04 dijalankan** sesudah PLAN-03 |
+| D2 → PLAN-04 | collapse terkonfirmasi | PLAN-04 **tidak lagi digerbangi ini** — lihat baris D6 dan PLAN-04 §0c |
 | D2c → urutan Fase 2 | jalur GNN **terlatih** di mayoritas seed | **PLAN-03 §5 lebih dulu**, baru PLAN-04 (PLAN-04 §0b) |
 | D3 → PLAN-03 §5 | over-smoothing terkonfirmasi | **§5 dijalankan.** Pilih satu: residual atau Jumping Knowledge, jangan dua-duanya |
 | D4 → PLAN-05 §2 | timpang, GNN lebih besar | arm `ippo-scaled` tetap, peran berubah |
 | D5 | tidak terkonfirmasi | tidak ada yang ditulis di paper soal collision storm |
+| D6 → urutan **di dalam** Fase 2 | input tidak degenerate (0/50); kolaps di `conv1` | **§5 tetap lebih dulu**, dan sambungannya harus melewati layer pertama |
+| D6 → gerbang PLAN-04 | — | gerbang baru: jalankan PLAN-04 hanya kalau §5 memperbaiki representasi **tapi KPI tetap datar** (PLAN-04 §0c) |
 
-**Sasaran perbaikan bergeser karena D2c.** Sebelum D2c, dua penjelasan bersaing: encoder
-diabaikan (→ auxiliary loss) atau encoder degenerate (→ residual/JK). D2c menyingkirkan
-yang pertama untuk mayoritas seed — gradiennya mengalir, bahkan 2–6× lipat head. Jadi yang
-dibutuhkan bukan **memaksa gradien masuk**, melainkan **memaksa node berbeda satu sama
-lain**. Itu mengubah bukan cuma urutan, tapi kriteria memilih target auxiliary kalau
-PLAN-04 nanti dijalankan.
+**Diagnosis dibingkai ulang.** Sebelum D2c, dua penjelasan bersaing: encoder **diabaikan**
+(→ auxiliary loss) atau encoder **degenerate** (→ residual/JK). D2c menyingkirkan yang
+pertama untuk mayoritas seed — gradiennya mengalir, bahkan 2–6× lipat head — dan D6
+menutupnya dari sisi lain: masukannya memang bisa dibedakan (0/50 degenerate), tapi layer
+pertama membuang 98,6% separasinya.
+
+Jadi bukan *"encoder diabaikan"* melainkan **"encoder terlatih menuju representasi
+degenerate"**. Sasaran perbaikan bergeser dari **memaksa gradien masuk** — sudah masuk —
+ke **memaksa node berbeda satu sama lain**. Itu mengubah bukan cuma urutan, tapi kriteria
+memilih target auxiliary kalau PLAN-04 nanti dijalankan, dan gerbang masuk PLAN-04 itu
+sendiri (§0c).
 
 D2b (0/25) menambah alasan independen untuk PLAN-03 §2: satu-satunya fitur edge yang ada
 sekarang tidak terpakai sama sekali, jadi menambahkan `interference_coupling` harus

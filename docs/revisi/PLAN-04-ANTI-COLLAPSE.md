@@ -1,7 +1,8 @@
 # Fase 2b — Auxiliary Loss (KONDISIONAL)
 
 **Fase:** 2b
-**Prasyarat:** PLAN-01 D2 **terkonfirmasi** + PLAN-03 selesai
+**Prasyarat:** gerbang **§0c** (menggantikan §0 sejak 2026-08-25) — PLAN-03 §5 sudah
+memperbaiki representasi **tapi KPI tetap datar**
 **Keluaran:** GNN yang gradiennya tidak dipotong policy head
 **Estafet:** PLAN-05 (Fase 3)
 **Master:** PLAN-00-MASTER.md
@@ -76,6 +77,42 @@ masih diabaikan, auxiliary loss baru punya sasaran yang jelas.
 "encoder diabaikan" melainkan "encoder terlatih menuju representasi degenerate". Target
 auxiliary yang dipilih harus memaksa node **berbeda satu sama lain**, bukan sekadar
 memaksa gradien masuk — gradien sudah masuk.
+
+## 0c. GERBANG MASUK YANG BERLAKU — menggantikan syarat §0
+
+Ditambahkan 2026-08-25. §0 dan §0b **tidak dihapus**; keduanya jejak apa yang diyakini
+waktu itu. Yang menentukan apakah dokumen ini dijalankan adalah bagian ini.
+
+**Gerbang lama salah sasaran.** §0 mengunci keputusan ke satu pertanyaan — *apakah keluaran
+GNN dipakai* — dan §2 beralasan dari premis *gradiennya tidak bisa dipotong*. Dua
+diagnostik mengukur premis itu dan menemukannya tidak berlaku:
+
+| Diagnostik | Yang diukur | Hasil |
+|---|---|---|
+| D2c (`results/DIAG_GRAD_RATIO.md`) | apakah gradien sampai ke GNN | sampai, 2–6× lipat head per parameter; `rasio << 1` cuma di **3/20** seed |
+| D6 (`results/DIAG_INPUT_SEPARABILITY.md`) | apakah masukannya bisa dibedakan | bisa, **0/50** checkpoint degenerate; separasi hilang **di `conv1`** (rasio 0,0145) |
+
+Keduanya menunjuk arah yang sama: bukan *encoder diabaikan* melainkan **encoder terlatih
+menuju representasi degenerate**. Auxiliary loss yang mendorong lebih banyak gradien ke
+jalur yang sudah deras menyerang masalah yang tidak ada.
+
+**Gerbang yang berlaku.** Jalankan dokumen ini **hanya kalau** PLAN-03 §5 — atau §2/§7,
+kalau D6 nanti diulang dan arahnya berubah — sudah **memperbaiki representasi** tapi **KPI
+tetap datar**:
+
+| Sesudah §5 | Representasi (`rel_spread`, cosine) | KPI | Tindakan |
+|---|---|---|---|
+| a | membaik | membaik | **hentikan.** Masalahnya selesai, dokumen ini tidak diperlukan |
+| b | membaik | tetap datar | **jalankan dokumen ini.** Node sudah berbeda tapi head tetap tidak memakainya |
+| c | tidak membaik | apa pun | **jangan.** §5 yang belum benar; perbaiki §5, jangan tumpuk teknik kedua (§Larangan 4) |
+
+Diukur dengan skrip yang sama supaya pembandingnya setara:
+`python scripts/diag_input_separability.py` (representasi, angka pembanding di tabel §0c)
+dan `python scripts/diag_gnn_reliance.py` (KPI + D2a).
+
+**Kalau sampai jalur (b), target auxiliary dipilih dengan kriteria yang berubah:** ia harus
+memaksa node **berbeda satu sama lain**, bukan memaksa gradien masuk — gradien sudah masuk.
+Lihat catatan di akhir §0b.
 
 Mengimplementasikan auxiliary loss tanpa bukti collapse menambah kompleksitas untuk masalah yang mungkin tidak ada.
 
@@ -204,7 +241,9 @@ Analoginya sama dengan edge feature: perbaikan arsitektur proposed, bukan pelema
 
 ## 9. Larangan
 
-1. Jangan jalankan dokumen ini tanpa D2 terkonfirmasi
+1. Jangan jalankan dokumen ini sebelum gerbang **§0c** terpenuhi — yaitu PLAN-03 §5 sudah
+   dijalankan dan diukur, representasinya membaik, KPI-nya tidak. "D2 terkonfirmasi" saja
+   **tidak lagi cukup** sejak D2c dan D6 mengukur premis §2 dan menemukannya tidak berlaku
 2. Jangan kutip TC-GQN, CIB, TRR, QMIX-GNN, P-DGN, TD3-D-MA, "Graph-Enhanced Critic Learning" sebelum sumber aslinya diverifikasi
 3. Jangan pindahkan GNN ke critic saja (konflik K4)
 4. Jangan implementasikan lebih dari satu teknik anti-collapse sekaligus

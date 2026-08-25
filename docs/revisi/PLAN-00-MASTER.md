@@ -43,11 +43,12 @@
 > | Uji | Verdict | Akibat ke estafet |
 > |---|---|---|
 > | D1 equivariance | **equivariant**, kategoris — 7 arsitektur per-agen varians tepat 0, dua arsitektur terpusat sensitif penuh | MLP per-agen **juga** equivariant. Tesis Tingkat 2 diperkuat: sumbernya parameter sharing, bukan message passing |
-> | D2 collapse | **terkonfirmasi** — 41/50 checkpoint tak bergerak >1% saat pesan tetangga dinolkan; atribut edge 0/25 | **PLAN-04 dijalankan** sesudah PLAN-03 |
+> | D2 collapse | **terkonfirmasi** — 41/50 checkpoint tak bergerak >1% saat pesan tetangga dinolkan; atribut edge 0/25 | ~~PLAN-04 dijalankan sesudah PLAN-03~~ — **tidak lagi menggerbangi PLAN-04** sejak 2026-08-25, lihat baris D6 |
 > | D3 over-smoothing | **terkonfirmasi**, tak terbantahkan untuk `gat` — cosine embedding 1.0000 persis di 25/25 checkpoint | **PLAN-03 §5 dijalankan** |
 > | D4 kapasitas | **timpang, arah terbalik** — `ippo` 3.852 vs `gnn-*_gat` 37.580 | arm `ippo-scaled` tetap, perannya berubah |
 > | D2c aliran gradien | **hipotesis "jalur GNN tidak terlatih" tidak didukung** — `rasio << 1` cuma di 3/20 seed; di 13/20 backbone justru menerima gradien lebih besar per parameter daripada head | **menentukan urutan Fase 2: PLAN-03 §5 lebih dulu** |
 > | D5 collision storm | **tidak terkonfirmasi** — di dalam `gnn-mappo_gat`, episode greedy yang kolaps dan yang tidak tak terbedakan pada sinkroni | tidak ada yang ditulis di paper soal collision storm |
+> | D6 separabilitas input (2026-08-25) | **input tidak degenerate** — 0/50 checkpoint, dan 0/50 juga di kedua ambang sensitivitas; separasi hilang **di `conv1`** (rasio 0,0145 untuk `gat`, aktivasinya tidak bersalah) | **§5 tetap lebih dulu**, sambungannya harus melewati layer pertama; dan **gerbang PLAN-04 diganti** (PLAN-04 §0c) |
 >
 > **Peta estafet:** Fase 2 menjalankan **PLAN-03 (termasuk §5) lalu PLAN-04**, arm
 > `obs=strict` tidak ada, dan urutan §5 sebelum auxiliary loss kini punya dasar terukur
@@ -55,12 +56,22 @@
 > GNN mati cuma di 3/20 seed, jadi §5 menyasar kondisi yang hadir di mana-mana
 > (PLAN-04 §0b).
 >
-> **Gambaran mekanistik yang muncul dari D2c + D2 + D3 bersamaan, dan tidak diantisipasi
-> dokumen mana pun:** GNN **dilatih dengan baik** — gradien mengalir deras ke sana — tapi
-> keluarannya nyaris tidak dipakai dan embeddingnya kolaps sempurna. Bukan encoder yang
-> diabaikan, melainkan encoder yang terlatih menuju representasi degenerate. Itu mengubah
-> sasaran perbaikan: yang dibutuhkan bukan memaksa gradien masuk, melainkan memaksa node
-> berbeda satu sama lain.
+> **DIAGNOSIS DIBINGKAI ULANG — dari D2c + D2 + D3 + D6 bersamaan, dan tidak diantisipasi
+> dokumen mana pun:** GNN **dilatih dengan baik** — gradien mengalir deras ke sana — dan
+> **masukannya memang bisa dibedakan** (D6: 0/50 checkpoint degenerate, median 6 dari 8
+> kolom observasi bervariasi antar-node). Yang terjadi: layer pertama membuang 98,6%
+> separasi itu, keluarannya nyaris tidak dipakai, dan embeddingnya kolaps sempurna.
+>
+> Bukan *"encoder diabaikan"* melainkan **"encoder terlatih menuju representasi
+> degenerate"**. Sasaran perbaikan bergeser dari **memaksa gradien masuk** — sudah masuk —
+> ke **memaksa node berbeda satu sama lain**. Konsekuensinya ke gerbang: PLAN-04 §0c
+> menggantikan §0, dan §5 harus menyambung melewati layer pertama, bukan layer kedua saja.
+>
+> Satu umpan balik yang ikut terlihat: `prev_alloc` dan `prev_alloc_lag2` punya std
+> antar-node **0,0000 di 49/50 checkpoint** — dua dari delapan kolom observasi tidak
+> membawa identitas node karena tiap gNB memilih aksi yang sama. Keluaran policy yang
+> degenerate mengumpan balik jadi fitur node yang kosong identitas: sekaligus gejala kolaps
+> dan masukan bagi kolaps itu.
 >
 > Tidak ada verdict, ambang, definisi metrik, atau angka hasil v4 yang bergerak. Yang
 > bergerak adalah daftar pekerjaan Fase 2 dan status dua konflik.
@@ -128,8 +139,10 @@ Tanpa GPU training. Seluruhnya pada checkpoint v4 yang sudah ada. Perkiraan: 1�
 | Cosine similarity embedding | Over-smoothing? |
 | Hitung parameter 8 algoritma | Kapasitas timpang? |
 | Korelasi aksi greedy vs stokastik | Hipotesis collision storm |
+| Sebaran node per tahap (D6, 2026-08-25) | Di layer mana representasi kolaps? |
 
-**Gerbang keputusan:** hasil Fase 0 menentukan apakah PLAN-04 dijalankan.
+**Gerbang keputusan:** hasil Fase 0 menentukan **urutan** Fase 2 — dan sejak D2c dan D6,
+PLAN-04 tidak lagi digerbangi oleh D2 melainkan oleh hasil PLAN-03 §5 (PLAN-04 §0c).
 
 ### FASE 1 — Per-UE resilient constraint (wave v5)
 
@@ -142,7 +155,8 @@ Objective tidak diubah. Constraint kedua ditambahkan di atas infrastruktur prima
 ### FASE 2 — Arsitektur (wave v6)
 
 - **Selalu:** edge feature eksplisit (path loss, jarak, kopling interferensi) + GATv2
-- **Kondisional:** auxiliary loss, hanya kalau Fase 0 mengonfirmasi representation collapse
+- **Kondisional:** auxiliary loss, hanya kalau §5 sudah memperbaiki representasi **tapi KPI
+  tetap datar** (PLAN-04 §0c — menggantikan syarat "Fase 0 mengonfirmasi collapse")
 - **Kondisional:** perketat observasi (buang `neighbor_urllc_frac_mean`), lihat catatan konflik di bawah
 
 ### FASE 3 — HPO simetris (wave v7)
