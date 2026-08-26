@@ -1,7 +1,9 @@
 # Fase 2a — Edge Features & Backbone GNN (wave v6)
 
 **Fase:** 2a
-**Prasyarat:** PLAN-01 (D2, D3) dan PLAN-02 selesai
+**Prasyarat:** PLAN-01 (D2, D3, D6) selesai. **PLAN-02 bukan prasyarat** sejak 2026-08-26 —
+dokumen ini tidak memakai keluarannya, dan wave v5 menunggu keputusan titik operasi
+(PLAN-00, blok URUTAN EKSEKUSI DITUKAR)
 **Keluaran:** arsitektur GNN dengan informasi fisik pada edge; prasyarat untuk analisis atensi
 **Estafet:** PLAN-04 (kondisional, jika D2 konfirmasi collapse) → PLAN-05 (Fase 3)
 **Master:** PLAN-00-MASTER.md
@@ -127,6 +129,33 @@ JCPGNN-M, IC-GMRO, APS-GNN, "Dual-Graph MARL", angka UPCommons 24.59%, angka Gra
 
 ## 2. Edge feature eksplisit (inti dokumen ini)
 
+> ## KOREKSI 2026-08-26 — isi `edge_dim` dinyatakan eksplisit, dan D6 menambah satu argumen
+>
+> **Argumen tambahan dari D6.** `prev_alloc` dan `prev_alloc_lag2` punya std antar-node
+> **0,0000 di 49/50** checkpoint (`results/DIAG_INPUT_SEPARABILITY.md`) — tiap gNB memilih
+> aksi yang sama, jadi dua dari delapan kolom observasi tidak membawa identitas node sama
+> sekali. Observasi efektifnya **6 dimensi**, dan median "6 dari 8 kolom bervariasi" yang D6
+> laporkan **sudah termasuk** keduanya sebagai nol. Sumber informasi pembeda yang baru karena
+> itu harus datang dari **struktur graf**, bukan dari kolom node yang sudah jenuh. Itu
+> argumen untuk §2 yang tidak ada waktu dokumen ini ditulis.
+>
+> **Kedua kolom itu tidak dibuang.** Kalau §5 memperbaiki separasi dan lockstep pecah,
+> keduanya hidup lagi — nilainya nol karena policy-nya degenerate, bukan karena kolomnya
+> tidak berguna. Dicatat sebagai bukti umpan balik lockstep ke observasi, bukan sebagai
+> daftar pekerjaan.
+>
+> **Isi `edge_dim`, supaya arm terbaca sebagai "menambahkan kopling interferensi" dan bukan
+> sekadar "`edge_dim` naik":**
+>
+> | dim | v4 (`gat`, `edge_dim=1`) | v6 (`gatedge`, `edge_dim=2`) | asal |
+> |---|---|---|---|
+> | 0 | path loss dB gNB→gNB | **sama, tidak berubah** | `envs/channel_model.py:124`, fungsi posisi gNB saja |
+> | 1 | — | `interference_coupling` dB | daya interferer relatif terhadap serving link, di UE tujuan |
+>
+> `distance_norm` **tidak** ditambahkan: P3 di blok koreksi 2026-08-24 sudah mematikannya
+> (reparametrisasi bijektif dari path loss, nol informasi baru). Jadi **dua** fitur, bukan
+> tiga seperti tertulis di bawah.
+
 ### Kondisi sekarang
 Graf: 5 gNB sebagai node. Edge belum membawa fitur fisik. Ini kehilangan informasi yang paling relevan untuk koordinasi interferensi.
 
@@ -135,7 +164,7 @@ Graf: 5 gNB sebagai node. Edge belum membawa fitur fisik. Ini kehilangan informa
 ```python
 edge_attr[i,j] = [
     path_loss_db_norm,      # PL_ij, dinormalisasi
-    distance_norm,          # d_ij / area_size
+    distance_norm,          # d_ij / area_size    <- DICORET, lihat P3
     interference_coupling,  # I_ij, koefisien kopling co-slice
 ]
 ```
@@ -232,19 +261,37 @@ Cek konfigurasi sekarang sebelum mengubah apa pun.
 
 Jalankan hanya kalau PLAN-01 D3 mengonfirmasi over-smoothing.
 
-Pilih **satu** (jangan dua-duanya, supaya efek terisolasi):
+Pilih **satu** (jangan dua-duanya, supaya efek terisolasi).
 
-**Residual connection** — lebih murah, lebih mudah dijelaskan, mulai dari sini:
+**Yang dipilih (2026-08-26): residual yang menjangkau input.** Bukan residual antar-layer —
+D6 menutup bentuk itu. `x` sudah hilang di `conv1`, jadi sambungan yang berangkat dari `h`
+tidak punya apa pun untuk diselamatkan:
+
 ```python
-h_next = h + alpha * conv(h, edge_index, edge_attr)   # alpha = 0.1
+h1 = F.elu(self.conv1(x, edge_index, edge_attr=edge_attr))
+h1 = h1 + alpha * self.proj1(x)      # proyeksi: 8 -> hidden*heads
+h2 = self.conv2(h1, edge_index, edge_attr=edge_attr)
+h2 = h2 + alpha * self.proj2(x)      # proyeksi: 8 -> out_dim
 ```
 
-**Jumping Knowledge:**
+`alpha = 0.1` seperti tertulis sejak versi awal §5 — properti dokumen, bukan pilihan dari
+hasil. Proyeksi diperlukan karena dimensinya memang beda (8 → hidden·heads → 64); tanpa itu
+penjumlahannya tidak terdefinisi.
+
+**Jumping Knowledge** (`[x, h1, h2]`) adalah alternatif yang **tidak** diambil, dicatat
+supaya pilihannya bisa ditinjau:
+
 ```python
 from torch_geometric.nn import JumpingKnowledge
 jk = JumpingKnowledge(mode='lstm', channels=hidden_dim, num_layers=n_layers)
-h_final = jk([h1, h2, h3])
+h_final = jk([x_proj, h1, h2])
 ```
+
+Alasan tidak diambil: residual lebih murah (dua `nn.Linear` tanpa bias lawan satu LSTM), dan
+ia **uji langsung atas prediksi mekanistik D6** — `SAGEConv` menyimpan bobot root terpisah
+(`gnn/sage_backbone.py:19`) dan mempertahankan `rel_spread` 0,0348 lawan 0,0000 milik `gat`;
+residual pada `gat` menambahkan kembali persis sifat itu. Kalau `gatres` tidak mendekati
+`sage` pada `rel_spread`, prediksinya salah dan itu hasil yang dilaporkan.
 
 ---
 
@@ -322,10 +369,12 @@ Wajib dilaporkan eksplisit sebagai perubahan arsitektur. Hasil v4/v5 tetap jadi 
 
 1. Cek gerbang §0 (hasil D2, D3)
 2. Implementasi edge feature (§2) + uji verifikasi
-3. Ganti ke GATv2 (§3), nama varian baru
+3. ~~Ganti ke GATv2 (§3), nama varian baru~~ — **tidak ada pekerjaan tersisa** (P1: sudah
+   GATv2 sejak v1). Nama varian baru tetap wajib, tapi karena §5/§2, bukan karena §3
 4. Residual kalau D3 terkonfirmasi (§5)
-5. Pra-registrasi wave v6 dengan hipotesis eksplisit
-6. Wave v6: arm `edge+gatv2`, dan `obs=strict` sebagai arm terpisah (§7)
+5. Pra-registrasi wave v6 dengan hipotesis eksplisit — `docs/revisi/PREREG-V6.md`
+6. Wave v6: empat arm `gat` / `gatres` / `gatedge` / `gatres-edge`. ~~`obs=strict`~~ **tidak
+   ada** (P4: `neighbor_urllc_frac_mean` sudah dibuang di v3, §7 tidak menyisakan pekerjaan)
 7. Evaluasi dengan protokol sama (rliable IQM, Wilson CI, per keluarga)
 8. Bandingkan eksplisit: v4 (GAT tanpa edge) vs v5 vs v6
 

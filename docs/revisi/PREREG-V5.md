@@ -1,7 +1,9 @@
 # Pra-registrasi wave v5 — per-cell resilient constraint
 
-**Status:** metrik primer **DIKUNCI**. `f_min` **BELUM BEKU** — lihat §0. Wave tidak boleh
-dijalankan sebelum §0 diselesaikan manusia dan dicatat di ledger.
+**Status:** metrik primer **DIKUNCI**. `f_min` **BELUM BEKU**, dan §0 menjelaskan kenapa itu
+temuan tentang titik operasi, bukan kalibrasi yang gagal dijalankan. Wave v5 menunggu
+keputusan manusia atas titik operasi, dicatat di ledger lebih dulu. Estafet **tidak** menunggu
+wave ini — PLAN-03 jalan duluan (PLAN-00, blok 2026-08-26).
 
 **Sumber:** `docs/revisi/PLAN-02-RESILIENT-CELLEDGE.md` §9
 **Ditulis:** 2026-08-25, sebelum wave apa pun dijalankan
@@ -10,7 +12,7 @@ dijalankan sebelum §0 diselesaikan manusia dan dicatat di ledger.
 
 ---
 
-## 0. Yang memblokir wave ini
+## 0. Temuan: tidak ada `f_min` yang sekaligus feasible dan mengikat pada titik operasi v4
 
 Kalibrasi `f_min` (PLAN-02 §7) **tidak menghasilkan kandidat**, dan skripnya menolak
 memilih satu. Dua populasi diukur, hasil di `results/CALIBRATE_FMIN.md`:
@@ -24,13 +26,29 @@ Yang statis memang diperkirakan gagal: `delta` dikalibrasi terhadap policy **ter
 (lihat blok `cmdp` di config — lantai statis 12,22%, lantai terlatih ~5,5%), pelajaran yang
 sama dengan ronde 4 kalibrasi `delta` sendiri.
 
-Yang terlatih adalah **penghalang sungguhan**. Keluarga referensi tidak bisa memenuhi
-constraint dan menghindari kolaps cell-edge sekaligus — kondisi yang sama yang membuat
-proyek ini berstatus NOT DONE (Gate B3 gagal, C4 gagal untuk keluarga DQN). Mengkalibrasi
-lantai laju terhadap referensi yang dirinya sendiri kolaps tidak mungkin.
+### Ini hasil, bukan kegagalan implementasi
 
-**Satu godaan yang ditolak, dan alasannya perlu dibaca sebelum §0 diputuskan.** Aturan
-peringkat "eMBB rata-rata tertinggi di antara yang feasible", dijalankan atas seluruh
+Baris kedua tabel bukan `f_min` yang salah pilih — **dua constraint berebut PRB yang sama.**
+Bandwidth tetap: melindungi cell-edge eMBB berarti mengambil PRB dari URLLC, jadi menambah
+constraint kedua membuat yang pertama lebih sulit dipenuhi. Gate A ronde 6 lolos justru
+**karena** resilient constraint belum aktif — kelolosannya bukan bukti bahwa keduanya bisa
+hidup bersama pada titik operasi yang sama.
+
+Jadi temuannya, dan begitulah ia dilaporkan:
+
+> Pada titik operasi v4, tidak ada `f_min` yang sekaligus **feasible** (shortfall konvergen)
+> dan **mengikat** (μ steady-state > 0) bagi baseline referensi non-GNN.
+
+Bentuknya identik dengan temuan `delta` dulu — seluruh rentang yang bisa dijangkau, 1,6pp,
+duduk di bawah derau antar-seed 2,0pp, jadi tidak ada nilai yang memisahkan apa pun. Sama
+persis, cuma di sumbu berbeda: di sana rentangnya terlalu sempit untuk memisahkan, di sini
+ruang feasible-nya kosong. Itu yang membuatnya temuan tentang **task**, bukan kecelakaan
+kalibrasi. `scripts/calibrate_fmin.py` **tidak ditambal**: tidak ada ambang yang dilonggarkan
+dan tidak ada kandidat yang dikarang.
+
+### Godaan pertama yang ditolak — aturan peringkat
+
+Aturan peringkat "eMBB rata-rata tertinggi di antara yang feasible", dijalankan atas seluruh
 checkpoint, memilih **`gnn-mappo`** — yaitu menetapkan `f_min` dari distribusi yang bisa
 dicapai metode *proposed* sendiri, menanamkan keunggulannya ke dalam constraint. PLAN-02
 §Larangan 1 melarang persis itu, dan §7 langkah 3 menyebut referensinya non-GNN (`ippo`,
@@ -39,9 +57,38 @@ konsisten dengan Gate A). Pembatasan itu sekarang **dipaksakan di kode**
 Kandidat `gnn-mappo` juga bersandar pada **1 dari 10** run; batas minimum 3 run non-kolaps
 kini dinyatakan di muka supaya persentil tidak pernah berdiri di atas satu seed.
 
-**Keputusan yang dibutuhkan (manusia, dicatat di ledger sebelum apa pun dibekukan):**
-titik operasi yang digeser, atau keluarga referensi kalibrasi yang dideklarasikan ulang.
-Keduanya mengubah pembandingan dengan v4 dan tidak boleh diputuskan agent.
+### Godaan kedua yang ditolak — mengganti keluarga referensi
+
+Jalan keluar yang paling mudah dari §0 adalah mendeklarasikan ulang keluarga referensi
+kalibrasi ke keluarga yang kebetulan bisa lolos. **Ditolak, dan ditolak dengan alasan yang
+sama persis dengan godaan pertama:** memilih referensi berdasarkan siapa yang lolos adalah
+memilih berdasarkan **hasil**, bukan berdasarkan properti task. §Larangan 1 tidak
+membedakan apakah yang dipilih-berdasar-hasil itu nilai `f_min` atau keluarga yang
+mendefinisikannya. Keputusan 2026-08-26: **opsi ini tidak ada dalam daftar.**
+
+### Kalau titik operasi digeser, kriterianya a priori
+
+Satu-satunya jalan yang defensible, dan bentuknya wajib begini — properti task, nol nama
+algoritma:
+
+> Titik operasi dipilih sedemikian rupa sehingga baseline referensi non-GNN dapat memenuhi
+> kedua constraint (URLLC SLA dan minimum capacity) secara simultan dengan margin terukur.
+
+Bukan "supaya kalibrasi lolos". Jalur teknisnya: turunkan `lambda_arrival` atau naikkan
+`delta` sampai ada ruang, lalu kalibrasi `f_min` dengan protokol §7 yang **sudah ada**,
+tidak diubah.
+
+**Tidak dikerjakan sekarang** (keputusan 2026-08-26). Menggeser titik operasi membuat
+seluruh v4 tidak lagi sebanding, jadi ia keputusan manusia yang dicatat di ledger sebelum
+apa pun dibekukan. Sementara itu estafet lanjut lewat PLAN-03, yang tidak bergantung pada
+§0 ini sama sekali (PLAN-00, blok 2026-08-26).
+
+Satu alasan substantif untuk menunda, bukan sekadar menghindari kebuntuan: kalibrasi `f_min`
+mengukur **distribusi `embb_p5` yang bisa dicapai**, dan policy v4 lockstep — `prev_alloc`
+punya std antar-node 0,0000 di 49/50 checkpoint (`results/DIAG_INPUT_SEPARABILITY.md`).
+Distribusi itu berasal dari policy yang tidak berdiferensiasi. Untuk GNN arsitekturnya
+memang rusak; untuk `ippo` argumen ini tidak berlaku langsung, tapi tension dua-constraint
+mungkin terlihat berbeda sesudah policy bisa berdiferensiasi.
 
 ---
 

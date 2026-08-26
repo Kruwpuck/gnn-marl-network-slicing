@@ -142,19 +142,32 @@ Dua-duanya benar dan saling melengkapi.
 
 ---
 
-## 5. Kontribusi metodologis: tiga cacat protokol pembacaan
+## 5. Kontribusi metodologis: instrumen yang melaporkan sehat padahal salah
 
-Sekarang ada tiga instansi independen, semuanya menghasilkan **baris yang terlihat valid**:
+Sekarang ada **empat** instansi independen, semuanya menghasilkan **keluaran yang terlihat
+valid**. Tiga di jalur pembacaan hasil, satu di jalur verifikasi dokumen:
 
 | # | Cacat | Akibat |
 |---|---|---|
 | 1 | Greedy/argmax pada PPO | `gnn-mappo_gat` terbaca 16.77 vs `ippo` 68.06 → "proposed WORSE, CI terpisah" |
 | 2 | ε=1.0 pada zero-shot `central-dqn` | Model yang secara struktural CANNOT_RUN terbaca sebagai baris OK |
 | 3 | ε=1.0 pada collapse rate DQN | Seluruh nilai `embb_p5` = 0 terbaca sebagai kolaps cell-edge, padahal artefak aksi acak |
+| 4 | `citation_audit.py --update` mengunci ulang anchor ke baris yang **salah**, lalu exit 0 (2026-08-25) | Enam kutipan menunjuk kode tak berhubungan; dua di antaranya (`results/B3_DELAY_CENSORING.md`, `results/GATE_C.md`) sudah melenceng sebelum sesi itu dan **lolos audit setiap kali dijalankan** |
 
-Itu pola, bukan kebetulan. Beri subsection sendiri dengan kontrafaktualnya.
+Itu pola, bukan kebetulan. Beri subsection sendiri dengan kontrafaktualnya. Yang
+menyatukannya bukan "protokol pembacaan" melainkan bentuk yang lebih umum: **instrumen
+verifikasi yang melaporkan sehat sementara yang diverifikasinya salah.** Cacat #4
+memperlihatkan polanya berlaku di luar jalur hasil — `--update` mempercayai apa pun yang
+kebetulan ada di nomor baris itu, jadi tiap kali kode digeser ia mengganti kutipan yang benar
+dengan kutipan yang salah dan menyatakan audit lolos.
 
 **Kontrafaktual yang paling kuat:** tanpa perbaikan cacat #1, laporan akan menyimpulkan GNN kalah telak (16.77 vs 68.06, CI terpisah) — kesimpulan yang sepenuhnya artefak.
+
+**Kontrafaktual #4:** tanpa memeriksa tiap anchor terhadap baris aslinya, laporan menyatakan
+43 kutipan terverifikasi sementara enam menunjuk baris yang keliru — dan pemeriksaan itu
+harus manual, karena instrumennya sendiri yang rusak. Perbaikannya bukan menambah audit
+kedua di atas audit pertama: `--update` tidak boleh dipercaya untuk **memperbaiki** anchor,
+cuma untuk melaporkan bahwa anchor sudah bergeser.
 
 **Kaitkan dengan kritik simulator:** cacat ε=1.0 adalah instansi persis dari "ilusi throughput valid dari alokasi acak" yang dikritik di literatur simulator abstrak. Env v3 kamu sudah memakai packet-level queue dengan finite buffer dan deadline drop — jauh di atas simulator Shannon murni. Yang masih terbuka: HARQ retransmission dan control-plane delay tidak dimodelkan. Tulis sebagai keterbatasan eksplisit.
 
@@ -193,7 +206,11 @@ Spesifik-keluarga, dengan kontra-contoh DQN eksplisit:
 
 ### Bab tambahan dari fase-fase baru
 - **Bab kalibrasi:** protokol kalibrasi terhadap policy terlatih (dari Gate A), penjelasan mekanistik saturasi KPI
-- **Bab constraint:** per-UE resilient constraint (PLAN-02), hasil v5 vs v4
+- **Bab constraint:** per-**cell** resilient constraint (PLAN-02, unit dikoreksi di Q1), hasil
+  v5 vs v4 — **dan** temuan bahwa pada titik operasi v4 tidak ada `f_min` yang sekaligus
+  feasible dan mengikat bagi baseline referensi non-GNN, karena kedua constraint berebut PRB
+  yang sama. Itu hasil negatif yang sah dan dilaporkan penuh (PLAN-00 aturan 9), bukan bagian
+  yang dihilangkan karena wave-nya belum jalan. Angkanya di `PREREG-V5.md` §0
 - **Bab arsitektur:** edge feature + GATv2 (PLAN-03), hasil v6
 - **Bab HPO:** protokol simetris + equal parameter budget (PLAN-05), hasil v7
 - **Bab bukti mekanisme:** permutation test, atensi + ablasi kausal, tiga cacat readout

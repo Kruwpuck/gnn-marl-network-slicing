@@ -78,6 +78,48 @@
 
 ---
 
+> ## URUTAN EKSEKUSI DITUKAR 2026-08-26 — PLAN-03 duluan, PLAN-02 menunggu titik operasi
+>
+> **Alasannya proses, bukan hasil:** PLAN-02 terblokir kalibrasi `f_min`; PLAN-03 tidak
+> bergantung padanya. Urutan Fase 1 → Fase 2 ditetapkan sebelum dua hal diketahui — bahwa
+> `conv1` membuang 98,6% separasi (D6), dan bahwa kalibrasi `f_min` tidak menghasilkan
+> kandidat.
+>
+> **Nomor fase tidak diganti.** Mengganti nomornya memutus rujukan silang di enam dokumen.
+> Yang berubah cuma urutan eksekusinya:
+>
+> ```
+> Fase 0 (selesai) → Fase 2a PLAN-03 → Fase 1 PLAN-02 → Fase 2b PLAN-04 → Fase 3 → Fase 4
+>                       (sekarang)      (menunggu       (kondisional,
+>                                        titik operasi)  §0c)
+> ```
+>
+> **Kegagalan kalibrasi itu temuan, bukan hambatan.** Pada titik operasi v4 tidak ada `f_min`
+> yang sekaligus feasible dan mengikat bagi baseline referensi non-GNN. Bandwidth tetap: dua
+> constraint berebut PRB yang sama, dan Gate A ronde 6 lolos justru karena resilient
+> constraint belum aktif. Bentuknya identik dengan temuan `delta` (rentang 1,6pp di bawah
+> derau 2,0pp), cuma di sumbu berbeda. Detail dan angkanya di `PREREG-V5.md` §0 dan
+> `results/CALIBRATE_FMIN.md`; PLAN-02 Q5 mengikat dokumen itu.
+>
+> **Opsi "keluarga referensi dideklarasikan ulang" ditolak** — memilih keluarga yang
+> kebetulan lolos adalah memilih berdasarkan hasil, bentuk yang sama dengan godaan aturan
+> peringkat `gnn-mappo` yang sudah ditolak (PLAN-02 §Larangan 1, aturan lintas-fase 3).
+> Kalau titik operasi digeser, kriterianya **a priori** dan bebas nama algoritma; bentuknya
+> dikunci di `PREREG-V5.md` §0. Tidak dikerjakan sekarang — menggesernya membuat seluruh v4
+> tidak lagi sebanding, jadi itu keputusan manusia yang dicatat di ledger.
+>
+> **Satu alasan substantif untuk menunda, bukan sekadar menghindari kebuntuan.** Kalibrasi
+> `f_min` mengukur distribusi `embb_p5` yang bisa dicapai, dan policy v4 lockstep —
+> `prev_alloc` std antar-node 0,0000 di 49/50 checkpoint. Distribusi itu berasal dari policy
+> yang tidak berdiferensiasi. Untuk GNN arsitekturnya memang rusak; untuk `ippo` argumen ini
+> tidak berlaku langsung, tapi tension dua-constraint mungkin terlihat berbeda sesudah policy
+> bisa berdiferensiasi.
+>
+> Kode PLAN-02 tidak sia-sia dan tidak dibuang: terimplementasi, teruji, `mode: none`
+> bit-identik dengan v4. Ia menunggu titik operasi.
+
+---
+
 ## Cara membaca dokumen ini
 
 Ada enam rencana turunan. Masing-masing berdiri sendiri, tapi **urutannya mengikat**: keluaran satu fase jadi prasyarat fase berikutnya. Jangan lompat.
@@ -122,6 +164,11 @@ FASE 4  Bukti mekanisme & penulisan
 
 **PLAN-07-CMDP-NOTES.md** bukan fase — itu catatan referensi yang dipakai Fase 1 dan Fase 4.
 
+**Nomor fase di atas adalah struktur ketergantungan, bukan urutan eksekusi.** Sejak
+2026-08-26 urutannya Fase 0 → **Fase 2a (PLAN-03)** → Fase 1 (PLAN-02, menunggu titik
+operasi) → Fase 2b (PLAN-04) → Fase 3 → Fase 4. Alasannya di blok URUTAN EKSEKUSI DITUKAR di
+atas.
+
 ---
 
 ## Ringkasan tiap fase
@@ -144,7 +191,10 @@ Tanpa GPU training. Seluruhnya pada checkpoint v4 yang sudah ada. Perkiraan: 1�
 **Gerbang keputusan:** hasil Fase 0 menentukan **urutan** Fase 2 — dan sejak D2c dan D6,
 PLAN-04 tidak lagi digerbangi oleh D2 melainkan oleh hasil PLAN-03 §5 (PLAN-04 §0c).
 
-### FASE 1 — Per-UE resilient constraint (wave v5)
+### FASE 1 — Per-cell resilient constraint (wave v5) — kode selesai, wave menunggu
+
+Unitnya per-**gNB**, bukan per-UE (PLAN-02 Q1). Kode terimplementasi dan teruji; wave menunggu
+keputusan titik operasi (Q5, `PREREG-V5.md` §0). Dieksekusi **sesudah** Fase 2a.
 
 Perubahan paling didukung: dua jalur analisis independen menunjuk solusi yang sama.
 - Preseden empiris: resilient RRM (TSP 2023)
@@ -152,9 +202,16 @@ Perubahan paling didukung: dua jalur analisis independen menunjuk solusi yang sa
 
 Objective tidak diubah. Constraint kedua ditambahkan di atas infrastruktur primal-dual yang ada.
 
-### FASE 2 — Arsitektur (wave v6)
+### FASE 2 — Arsitektur (wave v6) — dikerjakan sekarang
 
-- **Selalu:** edge feature eksplisit (path loss, jarak, kopling interferensi) + GATv2
+Empat arm, ditetapkan 2026-08-26 (`PREREG-V6.md`): `gat` (v4, pembanding), `gatres`
+(residual menjangkau input), `gatedge` (`interference_coupling` sebagai kolom edge kedua),
+`gatres-edge` (keduanya). Arm gabungan ikut **karena dua mekanismenya diperkirakan
+berurutan, bukan paralel** — edge feature menambah informasi pembeda yang masuk ke `conv1`,
+dan `conv1` yang membuang 98,6% separasi itu; tanpa residual, informasi tambahannya tidak
+punya jalan keluar. Prediksi bahwa `gatedge` sendirian mungkin null dinyatakan di muka.
+
+- **Selalu:** edge feature eksplisit (path loss + kopling interferensi; `distance_norm` dicoret, P3) + GATv2
 - **Kondisional:** auxiliary loss, hanya kalau §5 sudah memperbaiki representasi **tapi KPI
   tetap datar** (PLAN-04 §0c — menggantikan syarat "Fase 0 mengonfirmasi collapse")
 - **Kondisional:** perketat observasi (buang `neighbor_urllc_frac_mean`), lihat catatan konflik di bawah

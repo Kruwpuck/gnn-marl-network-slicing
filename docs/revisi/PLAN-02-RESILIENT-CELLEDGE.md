@@ -1,9 +1,12 @@
 # Fase 1 — Per-UE Resilient Constraint (wave v5)
 
 **Fase:** 1
+**Status (2026-08-26):** kode **terimplementasi dan ter-commit**; wave v5 **menunggu keputusan
+titik operasi** (Q5 di blok koreksi, `PREREG-V5.md` §0). PLAN-03 dieksekusi lebih dulu — lihat
+PLAN-00 blok 2026-08-26.
 **Prasyarat:** PLAN-01 selesai (tidak ada gerbang yang memblokir — fase ini jalan apa pun hasil diagnostik)
 **Keluaran:** collapse rate baru, feasibility per-UE, checkpoint v5
-**Estafet:** PLAN-03 (Fase 2)
+**Estafet:** PLAN-03 (Fase 2) — dan sejak 2026-08-26 PLAN-03 tidak menunggu dokumen ini
 **Referensi:** PLAN-07-CMDP-NOTES.md
 **Master:** PLAN-00-MASTER.md
 
@@ -67,9 +70,22 @@
 > mengikat berbeda saat uji dibanding saat latih — persis klaim zero-shot yang §9 metrik 6
 > uji. μ tetap **per-gNB**; yang jadi rata-rata cuma reduksi ke skalar reward.
 >
-> **§7 belum menghasilkan `f_min`, dan itu memblokir wave.** Lihat `PREREG-V5.md` §0 dan
+> **Q5 — §7 tidak menghasilkan `f_min`, dan itu temuan tentang titik operasi.**
 > `results/CALIBRATE_FMIN.md`: tidak ada alokasi statis yang memenuhi `delta`, dan referensi
-> `ippo` melanggar sekaligus kolaps di 5/5 seed. Keputusan berikutnya milik manusia.
+> `ippo` melanggar (0,1013) sekaligus kolaps di 5/5 seed. Dibaca 2026-08-26 sebagai **hasil,
+> bukan kegagalan implementasi yang perlu diakali**: bandwidth tetap, jadi melindungi
+> cell-edge eMBB berarti mengambil PRB dari URLLC, dan constraint kedua membuat yang pertama
+> lebih sulit dipenuhi. Gate A ronde 6 lolos justru **karena** resilient constraint belum
+> aktif. Yang dilaporkan: *pada titik operasi v4, tidak ada `f_min` yang sekaligus feasible
+> dan mengikat bagi baseline referensi non-GNN* — bentuk yang sama dengan temuan `delta`
+> (rentang 1,6pp di bawah derau 2,0pp), di sumbu berbeda.
+>
+> Dua konsekuensi yang mengikat dokumen ini. Pertama, **mendeklarasikan ulang keluarga
+> referensi kalibrasi ditolak** — memilih keluarga yang kebetulan lolos adalah memilih
+> berdasarkan hasil, dan §Larangan 1 tidak membedakan apakah yang dipilih itu nilai `f_min`
+> atau keluarga yang mendefinisikannya. Kedua, kalau titik operasi digeser, kriterianya
+> **a priori** dan bebas nama algoritma; bentuknya dikunci di `PREREG-V5.md` §0. Wave v5
+> menunggu; estafet lanjut lewat PLAN-03 (PLAN-00, blok 2026-08-26).
 
 ---
 

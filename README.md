@@ -66,7 +66,12 @@ python scripts/diag_grad_ratio.py     # D2c gradient-norm ratio into the GNN
 python scripts/diag_collision.py      # D5 collision-storm hypothesis
 python scripts/diag_input_separability.py   # D6 which layer collapses the node representation
 
-# Fase 1 (docs/revisi/PLAN-02) -- per-gNB resilient constraint, wave v5
+# Fase 2a (docs/revisi/PLAN-03) -- edge coupling + residual, wave v6.  Runs BEFORE Fase 1
+# since 2026-08-26: PLAN-02 is waiting on an operating-point decision, PLAN-03 does not
+# depend on it (PLAN-00, "URUTAN EKSEKUSI DITUKAR").
+python scripts/run_wave.py --seeds 42,43 --algos gnn-mappo_gatres,gnn-mappo_gatres-edge
+
+# Fase 1 (docs/revisi/PLAN-02) -- per-gNB resilient constraint, wave v5.  Blocked: see below.
 python scripts/calibrate_fmin.py --sweep --checkpoints "results/logs/*_v4_seed4[2-6].pt"
 python scripts/run_wave.py --seeds 42,43 --floor-mode none --resilient learned
 ```
@@ -76,6 +81,13 @@ python scripts/run_wave.py --seeds 42,43 --floor-mode none --resilient learned
 to start until `resilient.f_min_mbps` is frozen in the config. As of 2026-08-25 it is not:
 `calibrate_fmin.py` finds no eligible candidate and says so rather than picking one -- see
 `docs/revisi/PREREG-V5.md` §0.
+
+That is recorded as a finding, not as an implementation problem to work around: with fixed
+bandwidth the two constraints compete for the same PRBs, so at the v4 operating point no
+`f_min` is simultaneously feasible and binding for the non-GNN reference baseline. Moving the
+operating point is a human decision with an a-priori criterion stated in PREREG-V5 §0;
+re-declaring the reference family is refused, since choosing the family that happens to pass
+is choosing by result. Wave v5 waits; wave v6 (PLAN-03) does not.
 
 `diag_grad_ratio.py` is the only diagnostic that trains: it resumes a v4 checkpoint for a
 few thousand steps to read gradients off the real training loop. It copies each checkpoint
