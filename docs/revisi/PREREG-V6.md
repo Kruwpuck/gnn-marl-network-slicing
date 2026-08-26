@@ -43,11 +43,45 @@ Prediksi tambahan yang bisa jatuh sendiri, dari D6 juga: `gatres` diperkirakan m
 menyimpan bobot root terpisah (`gnn/sage_backbone.py:19`) dan residual pada `gat`
 menambahkan kembali sifat itu. Kalau tidak mendekati, prediksinya salah dan dilaporkan salah.
 
+### Kenapa kolom edge menambah sesuatu meski turunannya sudah ada di node
+
+Keberatan yang paling wajar terhadap §2: SINR sudah ada di observasi node, dan kopling
+interferensi adalah salah satu bahan penyusunnya — jadi apa yang baru? Jawabannya bukan
+"besarannya bukan karangan", melainkan bentuk informasinya:
+
+> SINR pada observasi node adalah **agregat seluruh interferer** — satu penjumlahan yang
+> membuang identitas penyumbangnya. Kolom edge memberi **dekomposisi per-tetangga** dari
+> agregat yang sama: informasi yang secara matematis hilang di dalam penjumlahan itu. Agen
+> tahu "SINR saya jelek", tapi tanpa fitur edge tidak tahu "gara-gara tetangga mana".
+
+Penjumlahan itu bukan kiasan — `envs/network_slicing_env.py` menghitung interferensi sebagai
+`np.sum(interferer_mw[i] * embb_fracs)`, dan yang sampai ke observasi cuma hasil penjumlahannya
+lewat SINR. Koordinasi yang mensyaratkan "kurangi alokasi **terhadap tetangga tertentu**" tidak
+punya dasar informasi di observasi node, dan itulah yang message passing seharusnya sediakan.
+Kalimat ini juga masuk paper (PLAN-06 §7, bab arsitektur).
+
+### Prediksi lockstep — terukur, dan bebas KPI
+
+> Pada arm `gatres`, std antar-node `prev_alloc` dan `prev_alloc_lag2` **> 0** (ambang relatif
+> D6 `VARY_REL = 0.01`, **tidak diubah**) pada mayoritas checkpoint. Pembandingnya `gat` v4,
+> yang 0,0000 di **49/50** checkpoint. Kalau terpenuhi, observasi efektif naik dari 6 ke 8
+> dimensi.
+
+Dua sifat yang membuatnya berharga. **Bebas KPI:** ia mengukur perilaku, bukan hasil, jadi ia
+bisa terpenuhi meski throughput datar — dan kalau begitu, ia bukti mekanistik bahwa perbaikan
+arsitektur benar-benar mengubah perilaku policy, bukan cuma menggeser angka. **Nol kode baru:**
+`scripts/diag_input_separability.py` sudah melaporkan sebaran per kolom observasi pada tahap
+`input`, jadi prediksi ini terbaca dari laporan D6 yang memang sudah wajib diulang di §5.
+
+Bentuk gagalnya dicatat juga: lockstep pecah **tanpa** separasi embedding membaik berarti
+rantai kausal yang diasumsikan (§5 → separasi → lockstep pecah) salah arah, dan itu dilaporkan
+apa adanya.
+
 ## 2. Arm
 
 | Arm | `edge_dim` | residual | Isi |
 |---|---|---|---|
-| `gat` | 1 | tidak | v4, **pembanding**. Tidak dilatih ulang; angkanya yang sudah ada dipakai |
+| `gat` | 1 | tidak | v4, **pembanding**. **Bukan run baru** — checkpoint `_v4` yang sudah ada, lihat blok di bawah |
 | `gatres` | 1 | ya | residual menjangkau **input** pada kedua layer, `alpha = 0.1` |
 | `gatedge` | 2 | tidak | kolom edge kedua = `interference_coupling` |
 | `gatres-edge` | 2 | ya | keduanya |
@@ -63,6 +97,33 @@ Positif berarti interferer lebih kuat dari serving link di UE tujuan. Arah **pen
 `coupling[i→j] ≠ coupling[j→i]`, diuji di `tests/test_gnn_v6.py`. `distance_norm` **tidak**
 ditambahkan (PLAN-03 P3: reparametrisasi bijektif dari path loss, nol informasi baru), jadi
 dua fitur edge, bukan tiga.
+
+### `gat` bukan run baru — checkpoint v4 dipakai ulang
+
+Keputusan 2026-08-26: arm `gat` **tidak dilatih ulang**. Yang dipakai `gnn-mappo_gat_v4`
+(**20 seed**) dan `gnn-madqn_gat_v4` (**5 seed**), checkpoint wave v4 apa adanya. Menghemat
+~166 job-jam PPO plus arm DQN-nya, dan melatih ulang pembanding yang dinamikanya terbukti
+identik hanya menambah derau seed, bukan validitas.
+
+Syaratnya satu: **dinamika environment harus identik antara saat v4 dilatih dan sekarang.**
+Diperiksa, bukan diasumsikan:
+
+| Yang diperiksa | Hasil |
+|---|---|
+| **Uji numerik langsung** | Pohon di `c73de09` (keadaan kode saat wave v4) dan HEAD, config yang sama, 200 langkah dengan barisan aksi yang sama: `obs` (202×5×8), `reward`, `embb_thr_bps`, kolom path loss `edge_attr`, `edge_index`, dan himpunan kunci `info` **identik bit-per-bit** |
+| Kode env selama wave | Tersentuh terakhir `c73de09` (4 Agustus); wave v4 jalan 8–18 Agustus. Beku sepanjang wave |
+| Perubahan env sesudahnya | Dua. `b48dd79` — tiap baris yang menyentuh dinamika ada **di dalam** `if resilient_mode != "none"`, termasuk `_rate_window`, blok dual, kunci `info`, pencacah klip. `1a127f7` — `edge_attr` tidak pernah masuk `step()` |
+| Aliran RNG | Kolom kopling dihitung dari `_pl_matrix`, **nol undian acak**, jadi topologi per-episode tidak bergeser |
+| Blok config `env`/`cmdp`/`floor`/`buffer` | Tidak berubah sejak `aad4198` (6 Agustus), **sebelum** wave v4 |
+| Config sesudah v4 | `405d76f` menambah blok `agent:` (bit-identik dengan default yang digantikan, dijaga `tests/test_hparams_identity.py`); `de481aa` menambah `knn_k` (baseline `mlp-knn-ppo` saja) |
+| Titik operasi | Wave v4 = `floor.mode=none`, `delta=0.085`, `lambda_arrival=60000`, `urllc_max_bits=307200`, `dual_update_every=12500` — **persis** titik operasi wave v6 |
+
+Gerbangnya dinyatakan sebelum uji dijalankan: beda sekecil apa pun berarti `gat` dilatih ulang
+sebagai arm keempat, dan selisihnya dilaporkan sebagai temuan. Uji lolos, jadi jalur itu tidak
+terpakai.
+
+**Konsekuensi yang harus dijaga:** checkpoint `_v4` kini **pembanding aktif**, bukan arsip.
+Integritas artefaknya diperiksa sebelum dan sesudah tiap pekerjaan.
 
 **Environment identik untuk 8 algoritma dan keempat arm.** Env selalu memancarkan kedua kolom;
 yang membedakan arm adalah `edge_dim` backbone, yang meng-slice kolom pertama saja kalau
@@ -97,8 +158,11 @@ representasi membaik + KPI membaik → selesai; representasi tidak membaik → �
 
 ## 4. Seed
 
-PPO ≥ 20 seed. DQN sesuai anggaran device-jam, **jumlah seed sama untuk tiap arm** — tidak ada
-pengecualian per-arm. Aturan biaya yang sudah dibekukan berlaku. Wave dijalankan user di GPU.
+PPO 20 seed (42–61), DQN 5 seed (42–46) — **sama dengan wave v4, dan sama untuk tiap arm**;
+tidak ada pengecualian per-arm. Aturan biaya yang sudah dibekukan berlaku.
+
+Yang dilatih cuma **tiga** arm: `gatres`, `gatedge`, `gatres-edge`. `gat` memakai checkpoint v4
+(lihat §2), jadi wave ini 75 job, bukan 100.
 
 ## 5. Yang wajib dijalankan sesudah wave, sebelum klaim apa pun
 
@@ -136,3 +200,4 @@ pengecualian per-arm. Aturan biaya yang sudah dibekukan berlaku. Wave dijalankan
 | Checkpoint v4 masih bisa dimuat | `gnn-mappo_gat_floornone_seed42.pt` dimuat, embedding identik dengan jalur v4 |
 | Gate C1, harness lama tidak diubah | 9/9 (3 seed × 3 floor mode) |
 | `parse_run_name` memisahkan keempat arm | diuji; sebelum perbaikan, `gatres` **salah parse jadi tag** |
+| **Dinamika env identik dengan saat v4 dilatih** | pohon `c73de09` lawan HEAD, config sama, 200 langkah aksi sama: `obs`, `reward`, `embb_thr_bps`, kolom path loss, `edge_index`, kunci `info` **identik bit-per-bit** — ini yang menggerbangi pemakaian ulang `gat` |

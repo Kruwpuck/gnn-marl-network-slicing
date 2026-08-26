@@ -39,6 +39,12 @@
     "envs/channel_model.py:113": "Returns edge_index (2, E) and edge_attr (E, 1) path-loss in dB.",
     "gnn/gat_backbone.py:38": "self.conv1 = GATv2Conv("
   },
+  "docs/revisi/PREREG-V6.md": {
+    "envs/channel_model.py:124": "pl = self.compute_path_loss(d3d, d2d, los=True)",
+    "gnn/sage_backbone.py:19": "self.conv1 = SAGEConv(in_channels, hidden)",
+    "gnn/sage_backbone.py:20": "self.conv2 = SAGEConv(hidden, out_dim)",
+    "scripts/diag_gnn_reliance.py:113": "def shuffle_edge_attr(graph: dict, rng: np.random.Generator) -> dict:"
+  },
   "results/B3_DELAY_CENSORING.md": {
     "envs/network_slicing_env.py:396": "while fifo and (self._step_count - fifo[0][0]) > deadline_slots:"
   },

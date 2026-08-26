@@ -156,6 +156,25 @@ JCPGNN-M, IC-GMRO, APS-GNN, "Dual-Graph MARL", angka UPCommons 24.59%, angka Gra
 > `distance_norm` **tidak** ditambahkan: P3 di blok koreksi 2026-08-24 sudah mematikannya
 > (reparametrisasi bijektif dari path loss, nol informasi baru). Jadi **dua** fitur, bukan
 > tiga seperti tertulis di bawah.
+>
+> **Kenapa fitur ini menambah sesuatu meski turunannya sudah ada di node.** SINR pada
+> observasi node adalah **agregat seluruh interferer** — `np.sum(interferer_mw[i] *
+> embb_fracs)` — satu penjumlahan yang membuang identitas penyumbangnya. Kolom edge memberi
+> **dekomposisi per-tetangga** dari agregat yang sama: informasi yang secara matematis hilang
+> di dalam penjumlahan itu. Agen tahu "SINR saya jelek", tapi tanpa fitur edge tidak tahu
+> "gara-gara tetangga mana", padahal koordinasi yang berguna berbentuk "kurangi alokasi
+> terhadap tetangga tertentu".
+>
+> **Kenapa gerbangnya di model, bukan di config** (keputusan 2026-08-26, dicatat supaya bisa
+> ditinjau). Env **selalu** memancarkan kedua kolom dan backbone yang meng-slice
+> `edge_attr[:, :edge_dim]`; alternatifnya, flag `env.edge_features` per-arm, ditolak. Dua
+> alasan. (1) Perbedaan arm pindah dari config ke model, sehingga environment identik untuk 8
+> algoritma dan keempat arm dan aturan lintas-fase 1 dipenuhi **secara struktural**, bukan
+> lewat disiplin. (2) Flag per-arm membuka mode gagal baru: memasangkan config yang salah
+> dengan checkpoint saat evaluasi. Bentuknya persis keluarga cacat instrumen di PLAN-06 §5 —
+> **jalur yang menghasilkan angka terlihat valid** — karena config yang salah tidak error, ia
+> cuma memberi model fitur yang bukan fitur latihnya. Menutupnya di model berarti mode gagal
+> itu **tidak bisa terjadi**, bukan sekadar tidak boleh.
 
 ### Kondisi sekarang
 Graf: 5 gNB sebagai node. Edge belum membawa fitur fisik. Ini kehilangan informasi yang paling relevan untuk koordinasi interferensi.

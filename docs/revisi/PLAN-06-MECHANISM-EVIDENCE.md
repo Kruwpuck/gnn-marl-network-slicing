@@ -211,7 +211,11 @@ Spesifik-keluarga, dengan kontra-contoh DQN eksplisit:
   feasible dan mengikat bagi baseline referensi non-GNN, karena kedua constraint berebut PRB
   yang sama. Itu hasil negatif yang sah dan dilaporkan penuh (PLAN-00 aturan 9), bukan bagian
   yang dihilangkan karena wave-nya belum jalan. Angkanya di `PREREG-V5.md` §0
-- **Bab arsitektur:** edge feature + GATv2 (PLAN-03), hasil v6
+- **Bab arsitektur:** edge feature + GATv2 (PLAN-03), hasil v6. Argumen yang dipakai untuk
+  fitur edge: SINR pada observasi node adalah **agregat seluruh interferer**, satu penjumlahan
+  yang membuang identitas penyumbangnya; fitur edge memberi **dekomposisi per-tetangga** dari
+  agregat yang sama — informasi yang secara matematis hilang di dalam penjumlahan itu. Agen
+  tahu "SINR saya jelek", tanpa fitur edge tidak tahu "gara-gara tetangga mana"
 - **Bab HPO:** protokol simetris + equal parameter budget (PLAN-05), hasil v7
 - **Bab bukti mekanisme:** permutation test, atensi + ablasi kausal, tiga cacat readout
 - **Keterbatasan:** HARQ dan control-plane delay tidak dimodelkan; C4 keluarga DQN tidak terpenuhi; B3 gagal karena sensor deadline
