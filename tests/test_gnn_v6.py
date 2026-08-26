@@ -20,7 +20,8 @@ from agents.mlp_agent import knn_features                      # noqa: E402
 from envs.network_slicing_env import NetworkSlicingEnv         # noqa: E402
 from gnn import BACKBONES, GATBackbone                         # noqa: E402
 from scripts.diag_input_separability import rel_spread         # noqa: E402
-from scripts.rliable_report import parse_run_name              # noqa: E402
+from scripts.rliable_report import (                          # noqa: E402
+    MATCHED_BASELINES, parse_run_name, per_seed_means)
 
 N = 5
 
@@ -159,3 +160,30 @@ def test_every_arm_runs_at_a_different_topology(key):
 def test_parse_run_name_keeps_each_arm_separate(backbone):
     algo, tag, seed = parse_run_name(f"gnn-mappo_{backbone}_floornone_seed42")
     assert (algo, tag, seed) == (f"gnn-mappo_{backbone}", "_floornone", 42)
+
+
+@pytest.mark.parametrize("family,arm", [(f, a) for f in ("gnn-mappo", "gnn-madqn")
+                                        for a in ("gatres", "gatedge", "gatres-edge")])
+def test_every_v6_arm_has_a_report_section(family, arm):
+    """Found by the v6 smoke run: an unregistered arm produces no section and no error, so
+    the report exits 0 while silently omitting the whole wave."""
+    key = f"{family}_{arm}"
+    assert key in MATCHED_BASELINES, f"{key} would be missing from the rliable report"
+    _, baselines = MATCHED_BASELINES[key]
+    assert f"{family}_gat" in baselines, "PREREG-V6 names gat as THE comparator for the arms"
+
+
+def test_one_algorithm_may_not_pool_two_waves():
+    """The v6 report reads two tags at once (_v6 arms against the _v4 comparator). The hazard
+    that opens is one algorithm silently averaging runs from both waves, so it aborts."""
+    import pandas as pd
+    df = pd.DataFrame({
+        "algo_key": ["gnn-mappo_gat"] * 4,
+        "tag": ["_v4", "_v4", "_v6", "_v6"],
+        "seed_parsed": [42, 43, 42, 43],
+        "embb_p5_mbps": [1.0, 2.0, 3.0, 4.0],
+    })
+    with pytest.raises(SystemExit, match="more than one tag"):
+        per_seed_means(df, "gnn-mappo_gat", {"_v4", "_v6"}, "embb_p5_mbps")
+    one = per_seed_means(df, "gnn-mappo_gat", {"_v4"}, "embb_p5_mbps")
+    assert one is not None and one.shape == (2, 1)

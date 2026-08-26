@@ -38,6 +38,16 @@ MATCHED_BASELINES = {
     "gnn-mappo_sage": ("ppo", ["ippo", "central-ppo"]),
 }
 
+# v6 arms (docs/revisi/PLAN-03, PREREG-V6). Found by the v6 smoke run: without these entries
+# the report is still produced and still exits 0 -- the arms simply have no section at all.
+# That is the "instrument looks healthy while being wrong" failure this project keeps hitting
+# (PLAN-06 section 5), so the arms are registered rather than left to be noticed by eye.
+# Their v4 counterpart is included as a comparator because PREREG-V6 section 2 names `gat` as
+# THE comparator for these arms; families are still never pooled. Nothing above is changed.
+for _arm in ("gatres", "gatedge", "gatres-edge"):
+    MATCHED_BASELINES[f"gnn-madqn_{_arm}"] = ("dqn", ["idqn", "central-dqn", "gnn-madqn_gat"])
+    MATCHED_BASELINES[f"gnn-mappo_{_arm}"] = ("ppo", ["ippo", "central-ppo", "gnn-mappo_gat"])
+
 # (column, higher_is_better)
 KPIS = [
     ("timely_throughput_mbps", True),
@@ -102,10 +112,20 @@ def load_eval_dir(eval_dir: Path, suffix: str = "_eval") -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def per_seed_means(df: pd.DataFrame, algo_key: str, tag: str, kpi: str) -> np.ndarray | None:
-    sub = df[(df.algo_key == algo_key) & (df.tag == tag)]
+def per_seed_means(df: pd.DataFrame, algo_key: str, tags: set[str], kpi: str) -> np.ndarray | None:
+    """`tags` is a SET because a v6 arm (tag _v6) is compared against a comparator that was
+    never retrained (gat, tag _v4). Admitting several tags at once brings its own hazard --
+    pooling one algorithm's runs across two waves -- so that case raises instead of averaging
+    quietly. One algorithm still comes from exactly one wave.
+    """
+    sub = df[(df.algo_key == algo_key) & (df.tag.isin(tags))]
     if sub.empty:
         return None
+    used = sorted(sub.tag.unique())
+    if len(used) > 1:
+        raise SystemExit(
+            f"{algo_key} has eval data under more than one tag ({', '.join(used)}). "
+            f"Pooling runs from different waves would be silent -- name one tag for it.")
     seeds = sorted(sub.seed_parsed.unique())
     means = [sub[sub.seed_parsed == s][kpi].mean() for s in seeds]
     if len(means) < 2:
@@ -113,7 +133,7 @@ def per_seed_means(df: pd.DataFrame, algo_key: str, tag: str, kpi: str) -> np.nd
     return np.asarray(means, dtype=np.float64).reshape(-1, 1)  # (n_seeds, 1) — 1 degenerate "task"
 
 
-def compare(df: pd.DataFrame, proposed: str, baselines: list[str], tag: str, reps: int) -> list[str]:
+def compare(df: pd.DataFrame, proposed: str, baselines: list[str], tag: set[str], reps: int) -> list[str]:
     lines = []
     for kpi, higher_better in KPIS:
         score_dict = {}
@@ -195,7 +215,11 @@ def compare(df: pd.DataFrame, proposed: str, baselines: list[str], tag: str, rep
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--eval-dir", type=str, default="results/eval")
-    p.add_argument("--tag", type=str, default="", help="only report runs with this --tag suffix (default: main wave, tag='')")
+    p.add_argument("--tag", type=str, default="",
+                   help="only report runs with this --tag suffix (default: main wave, tag=''). "
+                        "Comma-separated for a wave whose comparator was not retrained, e.g. "
+                        "'_v6,_v4' -- the v6 arms sit under _v6 while gat stays under _v4. Any "
+                        "single algorithm still has to come from one tag, or the run aborts.")
     p.add_argument("--out", type=str, default="results/RLIABLE.md")
     p.add_argument("--reps", type=int, default=50_000)
     p.add_argument("--stochastic", action="store_true",
@@ -213,6 +237,7 @@ def main() -> None:
         "stochastic": "stochastic (P3 primary; for DQN this is the discarded epsilon=1.0 column)",
         "primary": "primary per family — sampled for PPO (P3), argmax for DQN (2026-08-16)",
     }[readout]
+    tags = {t.strip() for t in args.tag.split(",")}
     df = load_eval_dir(Path(args.eval_dir), suffix=suffix)
     lines = ["# rliable Report — IQM + Stratified Bootstrap 95% CI\n",
              f"Readout: `{readout_label}`.\n",
@@ -223,7 +248,7 @@ def main() -> None:
     for proposed, (family, baselines) in MATCHED_BASELINES.items():
         lines.append(f"\n## {proposed} vs {', '.join(baselines)} ({family.upper()} family)\n")
         try:
-            lines.extend(compare(df, proposed, baselines, args.tag, args.reps))
+            lines.extend(compare(df, proposed, baselines, tags, args.reps))
         except Exception as e:
             lines.append(f"ERROR building comparison: {e}")
 
