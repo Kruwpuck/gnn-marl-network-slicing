@@ -26,8 +26,8 @@
 > **Konflik K3 tidak sekuat yang ditulis.** K3 menunda analisis atensi sampai sesudah
 > Fase 2 dengan alasan atensi butuh edge feature dan tanpa itu korelasi rendah cuma
 > artefak. Tapi edge feature **sudah ada sejak awal**: `envs/channel_model.py:113`
-> mengembalikan path loss dB sebagai `edge_attr`, dan `gnn/gat_backbone.py:30` menyetel
-> `edge_dim=1` sehingga benar-benar dibaca. Prasyaratnya sudah terpenuhi, dan analisisnya
+> mengembalikan path loss dB sebagai `edge_attr`, dan `gnn/gat_backbone.py:38` menyetel
+> `edge_dim` (default 1, perilaku v4) sehingga benar-benar dibaca. Prasyaratnya sudah terpenuhi, dan analisisnya
 > memang sudah jalan. Yang belum ada cuma `interference_coupling` sebagai fitur kedua,
 > jadi K3 menyusut jadi: analisis boleh diulang sesudah fitur itu ditambahkan, bukan
 > analisis terlarang sebelum Fase 2.

@@ -14,7 +14,7 @@
 > terpisah. **Isu itu sudah tidak ada.** `neighbor_urllc_frac_mean` dibuang dari observasi
 > di v3, jauh sebelum dokumen ini ditulis: `envs/network_slicing_env.py:22` mencatat
 > penghapusannya beserta penggantinya (`prev_alloc_lag2`), dan `_get_obs()`
-> (`envs/network_slicing_env.py:537`) memang tidak memuatnya.
+> (`envs/network_slicing_env.py:552`) memang tidak memuatnya.
 >
 > Akibatnya: tidak ada pekerjaan observasi yang bisa bertabrakan dengan HPO, arm
 > `obs=strict` di PLAN-03 §7 hilang, dan konflik K2 selesai dengan sendirinya. §3.3 dan

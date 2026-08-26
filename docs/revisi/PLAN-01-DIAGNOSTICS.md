@@ -408,9 +408,9 @@ PLAN-03 §5 diurutkan lebih dulu atas dasar selisih itu. Premis di bawahnya: obs
 tempat yang salah dan §2 (edge feature) serta §7 (observasi) yang duluan.
 
 **Cosine tidak bisa menjawabnya, dan cosine ter-center juga tidak.** Kedelapan kolom
-observasi non-negatif (`envs/network_slicing_env.py:537`), jadi tiap vektor node duduk di
+observasi non-negatif (`envs/network_slicing_env.py:552`), jadi tiap vektor node duduk di
 ortan positif dan cosine terangkat karena konstruksi; `conv2` tidak punya aktivasi
-(`gnn/gat_backbone.py:52`), jadi embedding bebas bertanda. Membandingkan 0,910 dengan
+(`gnn/gat_backbone.py:75`), jadi embedding bebas bertanda. Membandingkan 0,910 dengan
 1,0000 membandingkan dua skala berbeda. Center-nya pun tidak menolong: mengurangi mean
 antar-node memaksa `Σᵢ vᵢ = 0`, jadi inner product rata-rata off-diagonal dipaksa negatif
 dengan lantai sekitar `−1/(n−1) = −0,25` untuk n=5 — nilai "≈1" mustahil muncul. Dipakai
@@ -442,7 +442,7 @@ Dua hal yang tidak diminta tapi keluar dari data yang sama:
    bobot root terpisah, jadi kontribusi diri tidak ikut terata-rata.
 
 **Umpan balik yang tidak diantisipasi dokumen mana pun:** `prev_alloc` dan
-`prev_alloc_lag2` (`envs/network_slicing_env.py:538`) punya std antar-node **0,0000** di
+`prev_alloc_lag2` (`envs/network_slicing_env.py:553`) punya std antar-node **0,0000** di
 49 dari 50 checkpoint. Dua dari delapan kolom observasi tidak membawa identitas node sama
 sekali — karena tiap gNB memilih **aksi yang sama**, yaitu lockstep yang D5 ukur sebagai
 `mode_share` 1,0000, sekarang terlihat di observasinya sendiri. Keluaran policy yang

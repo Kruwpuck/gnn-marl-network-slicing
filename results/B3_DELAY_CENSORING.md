@@ -7,7 +7,7 @@ The previous version of this file read the DQN family at epsilon=1.0, i.e. unifo
 **This does not change Gate B3.** The threshold stays >= 2 ms and B3 stays FAILED (measured range 1.01 ms, from `results\GATE_B_v4_primary.md`). This file only explains the mechanism.
 
 
-Deadline `slices.urllc.max_delay_ms` = 10.0 ms, slot = 1.0 ms, so a delivered packet's delay can only take **11 values** ({0, 1, ..., 10} ms) and nothing above 10 ms can ever be observed: `envs/network_slicing_env.py:381` pops over-age packets before service, so they are counted as drops, not as slow deliveries.
+Deadline `slices.urllc.max_delay_ms` = 10.0 ms, slot = 1.0 ms, so a delivered packet's delay can only take **11 values** ({0, 1, ..., 10} ms) and nothing above 10 ms can ever be observed: `envs/network_slicing_env.py:396` pops over-age packets before service, so they are counted as drops, not as slow deliveries.
 
 
 | algo | p99 (ms) | mass @ 10 ms | mass >= 9 ms | delivered | censored (drops) | late:ovf |

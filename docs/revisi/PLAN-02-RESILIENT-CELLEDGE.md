@@ -22,7 +22,7 @@ PLAN-00 blok 2026-08-26.
 > **Q1 — constraint per-UE di §3 tidak punya besaran untuk dipasangi. Unit jadi per-gNB.**
 > §3 menulis `E[r_u] ≥ f_min − z_u ∀u ∈ UE`. Environment tidak punya `r_u`:
 > SINR gNB dihitung dari **rata-rata** path loss atas 5 UE-nya
-> (`envs/network_slicing_env.py:327`), eMBB dilayani sebagai **satu antrean fluida per
+> (`envs/network_slicing_env.py:342`), eMBB dilayani sebagai **satu antrean fluida per
 > gNB**, dan `embb_thr_bps` panjangnya `n_gnb`. Posisi UE ada tapi dirata-rata sebelum satu
 > laju pun dihitung.
 >

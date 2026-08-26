@@ -19,7 +19,7 @@ dokumen ini tidak memakai keluarannya, dan wave v5 menunggu keputusan titik oper
 >
 > **P1 — §3 "ganti GAT → GATv2" sudah selesai sebelum dokumen ini ditulis.**
 > `gnn/gat_backbone.py:5` mengimpor `GATv2Conv`, dan benar-benar dipakai untuk kedua layer
-> (`gnn/gat_backbone.py:29,32`) — bukan sekadar diimpor. Tidak ada
+> (`gnn/gat_backbone.py:38,41`) — bukan sekadar diimpor. Tidak ada
 > penggantian, tidak ada varian baru `gnn-mappo_gatv2`, tidak ada penamaan ulang.
 > Konsekuensinya lebih besar dari §3 itu sendiri: **varian ini dinamai `gat` padahal
 > isinya GATv2 sejak v1.** Setiap kalimat paper yang menulis "GAT" untuk varian ini salah,
@@ -29,8 +29,9 @@ dokumen ini tidak memakai keluarannya, dan wave v5 menunggu keputusan titik oper
 > terminologi paper, bukan koreksi kode.
 >
 > **P2 — §2 "edge belum membawa fitur fisik" salah.** `envs/channel_model.py:113`
-> mengembalikan `edge_attr (E,1)` berisi path loss dB; `gnn/base_backbone.py:48`
-> menskalakannya `/100.0`; `gnn/gat_backbone.py:30,33` menyetel `edge_dim=1`. Uji wajib §2
+> mengembalikan `edge_attr (E,1)` berisi path loss dB; `gnn/base_backbone.py:50`
+> menskalakannya `/100.0`; `gnn/gat_backbone.py:38,41` menyetel `edge_dim` pada kedua layer
+> (sejak 2026-08-26 dari argumen konstruktor, dengan default 1 = perilaku v4). Uji wajib §2
 > ("`edge_dim` wajib diset, tanpa itu `edge_attr` diabaikan diam-diam") sudah lolos sejak
 > awal. Dari tiga fitur usulan, yang benar-benar belum ada **hanya
 > `interference_coupling`**.
@@ -49,7 +50,7 @@ dokumen ini tidak memakai keluarannya, dan wave v5 menunggu keputusan titik oper
 >
 > **P4 — §7 "buang `neighbor_urllc_frac_mean`" sudah dikerjakan di v3.**
 > `envs/network_slicing_env.py:22` mencatat penghapusannya beserta penggantinya
-> (`prev_alloc_lag2`), dan `_get_obs()` (`envs/network_slicing_env.py:537`) memang tidak
+> (`prev_alloc_lag2`), dan `_get_obs()` (`envs/network_slicing_env.py:552`) memang tidak
 > memuatnya. Satu-satunya
 > kemunculan nama itu di seluruh repo adalah catatan historis tersebut. Tiga akibat:
 > 1. **Arm `obs=strict` di wave v6 hilang seluruhnya.** §7 dan urutan eksekusi §10 poin 6

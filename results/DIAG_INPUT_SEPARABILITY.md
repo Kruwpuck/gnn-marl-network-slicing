@@ -2,7 +2,7 @@
 
 Checkpoints: `results/logs/gnn-*_v4_seed*.pt` (50 matched). State read after 50 policy steps, because `reset()` zeroes 7 of the 8 observation columns and every model would otherwise look identical at t=0.
 
-**Why not cosine.** The eight observation columns are all non-negative (`envs/network_slicing_env.py:537-539`), so every node vector sits in the positive orthant and cosine is lifted by construction; `conv2` has no activation (`gnn/gat_backbone.py:52`), so the embeddings are free to be signed. Comparing 0.910 against 1.0000 compares two different scales. Mean-centring does not fix it either: it forces `sum_i v_i = 0`, hence a negative mean off-diagonal inner product with a floor near `-1/(n-1) = -0.25` at n=5, so a value near 1 cannot occur. Two scale-free statistics are used instead. Raw cosine is kept alongside so the numbers stay continuous with the committed D3 table.
+**Why not cosine.** The eight observation columns are all non-negative (`envs/network_slicing_env.py:552-554`), so every node vector sits in the positive orthant and cosine is lifted by construction; `conv2` has no activation (`gnn/gat_backbone.py:75`), so the embeddings are free to be signed. Comparing 0.910 against 1.0000 compares two different scales. Mean-centring does not fix it either: it forces `sum_i v_i = 0`, hence a negative mean off-diagonal inner product with a floor near `-1/(n-1) = -0.25` at n=5, so a value near 1 cannot occur. Two scale-free statistics are used instead. Raw cosine is kept alongside so the numbers stay continuous with the committed D3 table.
 
 - `rel_spread` = `||X - mean_over_nodes(X)||_F / ||X||_F`. **0 means the nodes are identical.**
 - `eff_rank` = `exp(entropy of the normalised singular values)` of the centred matrix. **0.0 means exactly identical nodes** -- the centred matrix is all zeros and there is no varying direction. It cannot be confused with a real value; the smallest of those is 1.0.
@@ -56,7 +56,7 @@ Ratio of `rel_spread` between consecutive stages, per checkpoint, median. A rati
 
 ### Observation columns the policy itself flattened
 
-`prev_alloc_lag2`, `prev_alloc` vary in at most 5 of 50 checkpoints. These are the previous allocation and its lag (`envs/network_slicing_env.py:538`), so the reading is that every gNB picked the SAME action -- the same lockstep D5 measured as `mode_share` 1.0000, now visible in the observation itself. The policy's own degenerate output feeds back as node features that carry no node identity, which is a loop no document anticipated: it is both a symptom of the collapse and an input to it.
+`prev_alloc_lag2`, `prev_alloc` vary in at most 5 of 50 checkpoints. These are the previous allocation and its lag (`envs/network_slicing_env.py:553`), so the reading is that every gNB picked the SAME action -- the same lockstep D5 measured as `mode_share` 1.0000, now visible in the observation itself. The policy's own degenerate output feeds back as node features that carry no node identity, which is a loop no document anticipated: it is both a symptom of the collapse and an input to it.
 
 No checkpoint was skipped: every backbone matched exposed `conv1`/`conv2`.
 

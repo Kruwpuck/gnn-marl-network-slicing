@@ -26,7 +26,9 @@ class GNNBackbone(ABC, nn.Module):
         Args:
             x:          (N, F)   node feature matrix
             edge_index: (2, E)   directed edges
-            edge_attr:  (E, 1)   edge weights (path-loss / 100.0)
+            edge_attr:  (E, C)   edge features in dB / 100.0. Column 0 is gNB-to-gNB path
+                                 loss (v4); column 1 is interference coupling (PLAN-03).
+                                 A backbone reads the first `edge_dim` columns.
         Returns:
             node_embeddings: (N, output_dim)
         """

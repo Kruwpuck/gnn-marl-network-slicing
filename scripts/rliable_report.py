@@ -50,7 +50,12 @@ KPIS = [
 
 def parse_run_name(stem: str) -> tuple[str, str, int]:
     """'gnn-madqn_gat_floornone_seed42' -> ('gnn-madqn_gat', '_floornone', 42)."""
-    m = re.match(r"^(?P<algo>[a-z\-]+(?:_(?:gat|sage))?)(?P<tag>_[a-z0-9]+)?_seed(?P<seed>\d+)$", stem)
+    # Backbone names are listed longest-first: a v6 run like 'gnn-mappo_gatres_seed42' does
+    # not fail without them, it mis-parses silently -- 'gatres' matches the *tag* group, the
+    # algo reads as bare 'gnn-mappo', and three separate arms collapse into one row.
+    m = re.match(
+        r"^(?P<algo>[a-z\-]+(?:_(?:gatres-edge|gatres|gatedge|gat|sage))?)"
+        r"(?P<tag>_[a-z0-9]+)?_seed(?P<seed>\d+)$", stem)
     if not m:
         return stem, "", -1
     return m.group("algo"), (m.group("tag") or ""), int(m.group("seed"))

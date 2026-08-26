@@ -9,10 +9,10 @@ symptom in the wrong place and PLAN-03 sections 2 and 7 come first instead.
 
 Why the cosine numbers cannot answer that on their own:
 
-  * All eight observation columns are non-negative (envs/network_slicing_env.py:537-539:
+  * All eight observation columns are non-negative (envs/network_slicing_env.py:552-554:
     -pl/100, clipped SINR, log1p queues, an EWMA, allocation fractions). Every node vector
     sits in the positive orthant, so cosine is lifted BY CONSTRUCTION rather than by the
-    nodes being alike. `conv2` has no activation (gnn/gat_backbone.py:52), so the embeddings
+    nodes being alike. `conv2` has no activation (gnn/gat_backbone.py:75), so the embeddings
     are free to be signed. 0.910 against 1.0000 compares two different scales.
   * Mean-centering does not rescue it. Subtracting the across-node mean forces sum_i v_i = 0,
     hence sum_{i!=j} <v_i, v_j> = -sum_i ||v_i||^2 -- the mean off-diagonal inner product is
@@ -56,7 +56,7 @@ from scripts.diag_equivariance import warm_up
 from scripts.diag_gnn_reliance import load_gnn_agent, mean_offdiag_cosine
 from scripts.rliable_report import parse_run_name
 
-# Order fixed by envs/network_slicing_env.py:537-539. Named here so the per-column table
+# Order fixed by envs/network_slicing_env.py:552-554. Named here so the per-column table
 # says which observation went flat, not just "column 5".
 OBS_COLUMNS = ["ch_gain", "sinr_embb", "sinr_urllc", "q_embb",
                "urllc_backlog", "viol_ewma", "prev_alloc_lag2", "prev_alloc"]
@@ -193,9 +193,9 @@ def main() -> None:
         f"{args.warmup} policy steps, because `reset()` zeroes 7 of the 8 observation "
         "columns and every model would otherwise look identical at t=0.\n",
         "**Why not cosine.** The eight observation columns are all non-negative "
-        "(`envs/network_slicing_env.py:537-539`), so every node vector sits in the positive "
+        "(`envs/network_slicing_env.py:552-554`), so every node vector sits in the positive "
         "orthant and cosine is lifted by construction; `conv2` has no activation "
-        "(`gnn/gat_backbone.py:52`), so the embeddings are free to be signed. Comparing "
+        "(`gnn/gat_backbone.py:75`), so the embeddings are free to be signed. Comparing "
         "0.910 against 1.0000 compares two different scales. Mean-centring does not fix it "
         "either: it forces `sum_i v_i = 0`, hence a negative mean off-diagonal inner "
         "product with a floor near `-1/(n-1) = -0.25` at n=5, so a value near 1 cannot "
@@ -270,7 +270,7 @@ def main() -> None:
             "\n### Observation columns the policy itself flattened\n\n"
             + ", ".join(f"`{d}`" for d in dead)
             + f" vary in at most {n_ckpt // 10} of {n_ckpt} checkpoints. These are the "
-            "previous allocation and its lag (`envs/network_slicing_env.py:538`), so the "
+            "previous allocation and its lag (`envs/network_slicing_env.py:553`), so the "
             "reading is that every gNB picked the SAME action -- the same lockstep D5 "
             "measured as `mode_share` 1.0000, now visible in the observation itself. The "
             "policy's own degenerate output feeds back as node features that carry no node "

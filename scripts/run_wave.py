@@ -29,11 +29,17 @@ DQN_STEPS = 200_000
 PPO_STEPS = 1_000_000
 
 # algo -> (script, kind, extra_args_fn(backbone))
-PROPOSED_DQN = ["gnn-madqn_gat", "gnn-madqn_sage"]
-PROPOSED_PPO = ["gnn-mappo_gat", "gnn-mappo_sage"]
+PROPOSED_DQN_V4 = ["gnn-madqn_gat", "gnn-madqn_sage"]
+PROPOSED_PPO_V4 = ["gnn-mappo_gat", "gnn-mappo_sage"]
+# v6 arms (docs/revisi/PLAN-03, PREREG-V6). Runnable, but deliberately NOT in ALL_ALGOS: an
+# unflagged wave stays exactly the v4/v5 set, and the v6 arms are asked for by name via
+# --algos. Same seed count as every other arm -- no per-arm exception.
+V6_ARMS = ["gatres", "gatedge", "gatres-edge"]
+PROPOSED_DQN = PROPOSED_DQN_V4 + [f"gnn-madqn_{b}" for b in V6_ARMS]
+PROPOSED_PPO = PROPOSED_PPO_V4 + [f"gnn-mappo_{b}" for b in V6_ARMS]
 BASELINE_DQN = ["idqn", "central-dqn"]
 BASELINE_PPO = ["ippo", "central-ppo"]
-ALL_ALGOS = PROPOSED_DQN + PROPOSED_PPO + BASELINE_DQN + BASELINE_PPO
+ALL_ALGOS = PROPOSED_DQN_V4 + PROPOSED_PPO_V4 + BASELINE_DQN + BASELINE_PPO
 
 
 def make_variant_config(floor_mode: str, overrides: dict | None = None,

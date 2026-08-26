@@ -233,6 +233,21 @@ class NetworkSlicingEnv(gym.Env):
         self._edge_index, self._edge_attr = self.channel_model.build_interference_graph(
             self._gnb_positions
         )
+        # Second edge column (PLAN-03 section 2): how strong interferer `src` is at `dst`'s
+        # users, relative to dst's own serving link, in dB. Positive = the interferer beats
+        # the serving link. Column 0 stays exactly what v4 emitted -- gNB-to-gNB path loss --
+        # and a backbone with edge_dim=1 slices it off, so v4 checkpoints read the v4 feature
+        # unchanged. Computed here rather than in build_interference_graph because it needs
+        # per-UE path loss, which that function (gNB positions only) cannot see. Both columns
+        # are dB, so the /100.0 scaling in gnn/base_backbone.py applies to both as-is.
+        k = self.n_ue_per_gnb
+        serving_pl = np.array([self._pl_matrix[j, j * k:(j + 1) * k].mean()
+                               for j in range(self.n_gnb)])
+        coupling = np.array(
+            [[serving_pl[dst] - self._pl_matrix[src, dst * k:(dst + 1) * k].mean()]
+             for src, dst in zip(*self._edge_index)], dtype=np.float32
+        ).reshape(-1, 1)
+        self._edge_attr = np.hstack([self._edge_attr, coupling]).astype(np.float32)
 
         self._queue_embb = np.zeros(self.n_gnb, dtype=np.float32)
         self._urllc_fifo = [deque() for _ in range(self.n_gnb)]

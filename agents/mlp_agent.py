@@ -25,7 +25,9 @@ def knn_features(graph: dict, k: int) -> np.ndarray:
     """
     x = np.asarray(graph["x"], dtype=np.float32)
     ei = np.asarray(graph["edge_index"])
-    ea = np.asarray(graph["edge_attr"], dtype=np.float32).reshape(-1)
+    # Column 0 only: since PLAN-03 the env also carries an interference-coupling column, and
+    # this baseline ranks by path loss. Slicing keeps the ranking identical to v4.
+    ea = np.asarray(graph["edge_attr"], dtype=np.float32)[:, 0]
     n, f = x.shape
     assert f == OBS_FEATURES, f"expected {OBS_FEATURES} features per gNB, got {f}"
     out = np.zeros((n, f * (k + 1)), dtype=np.float32)
