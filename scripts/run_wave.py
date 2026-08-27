@@ -14,6 +14,8 @@ Usage:
 """
 from __future__ import annotations
 import argparse
+import atexit
+import os
 import subprocess
 import sys
 import time
@@ -87,6 +89,35 @@ def job_cmd(algo: str, seed: int, config_path: Path, tag: str) -> tuple[str, lis
     raise ValueError(f"unknown algo {algo}")
 
 
+def acquire_wave_lock(tag: str) -> Path:
+    """Refuse to start when another wave already holds this tag.
+
+    On 2026-08-26 a single launch produced two run_wave processes 9 ms apart, each with its
+    own pool, so every (algo, seed) pair had two writers on one metrics CSV and one
+    checkpoint -- with no warning and a zero exit code. O_EXCL is the point here: it is
+    atomic, so a check-then-create would have let both of those through.
+
+    Scope is per tag because what collides is files, and the tag decides the filenames; two
+    waves under different tags remain allowed (that is a GPU question, not a data one). A
+    lock left behind by a hard kill has to be deleted by hand -- the message names the pid
+    and argv of its holder so that is a decision, not a guess.
+    """
+    lock = ROOT / "results" / "logs" / f".wave{tag or '_main'}.lock"
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        raise SystemExit(
+            f"a wave with tag '{tag}' already holds {lock}\n"
+            f"{lock.read_text()}"
+            f"If that process is gone, delete the lock file and rerun.")
+    with os.fdopen(fd, "w") as f:
+        f.write(f"pid {os.getpid()} started {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"argv {' '.join(sys.argv[1:])}\n")
+    atexit.register(lambda: lock.unlink(missing_ok=True))
+    return lock
+
+
 def run_one(name: str, cmd: list[str], stdout_dir: Path) -> tuple[str, int]:
     log = stdout_dir / f"{name}.log"
     with open(log, "w", encoding="utf-8") as f:
@@ -121,6 +152,9 @@ def main() -> int:
     # collide with v4's -- the `none` arm is meant to be comparable to v4, not to overwrite it.
     if args.resilient != "none":
         tag += f"_res{args.resilient}"
+
+    lock = acquire_wave_lock(tag)
+    print(f"lock: {lock}")
 
     overrides = {}
     if args.n_gnb is not None:

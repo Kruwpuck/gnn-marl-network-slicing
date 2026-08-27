@@ -144,8 +144,9 @@ Dua-duanya benar dan saling melengkapi.
 
 ## 5. Kontribusi metodologis: instrumen yang melaporkan sehat padahal salah
 
-Sekarang ada **empat** instansi independen, semuanya menghasilkan **keluaran yang terlihat
-valid**. Tiga di jalur pembacaan hasil, satu di jalur verifikasi dokumen:
+Sekarang ada **tujuh** instansi independen, semuanya menghasilkan **keluaran yang terlihat
+valid**. Tiga di jalur pembacaan hasil, satu di jalur verifikasi dokumen, dua di jalur
+pelaporan hasil wave, satu di jalur orkestrasi job:
 
 | # | Cacat | Akibat |
 |---|---|---|
@@ -153,6 +154,9 @@ valid**. Tiga di jalur pembacaan hasil, satu di jalur verifikasi dokumen:
 | 2 | ε=1.0 pada zero-shot `central-dqn` | Model yang secara struktural CANNOT_RUN terbaca sebagai baris OK |
 | 3 | ε=1.0 pada collapse rate DQN | Seluruh nilai `embb_p5` = 0 terbaca sebagai kolaps cell-edge, padahal artefak aksi acak |
 | 4 | `citation_audit.py --update` mengunci ulang anchor ke baris yang **salah**, lalu exit 0 (2026-08-25) | Enam kutipan menunjuk kode tak berhubungan; dua di antaranya (`results/B3_DELAY_CENSORING.md`, `results/GATE_C.md`) sudah melenceng sebelum sesi itu dan **lolos audit setiap kali dijalankan** |
+| 5 | `parse_run_name` memotong nama arm di alternasi regex yang tidak terpanjang-dulu (2026-08-26) | `gatres` terbaca sebagai arm `gat` dengan sisanya jatuh ke tag — arm baru **menyamar jadi pembandingnya sendiri**, dan laporan tetap terbit |
+| 6 | `MATCHED_BASELINES` mengeraskan empat nama algo v4 (2026-08-26) | Ketiga arm v6 **tidak punya section sama sekali**; laporan exit 0 tanpa memuat wave yang baru saja dijalankan |
+| 7 | Satu perintah `run_wave.py` melahirkan **dua** proses identik, start terpaut 9 ms (2026-08-26) | Dua penulis per pasangan (arm, seed) atas CSV metrik dan checkpoint yang sama; nol peringatan, nol exit non-nol |
 
 Itu pola, bukan kebetulan. Beri subsection sendiri dengan kontrafaktualnya. Yang
 menyatukannya bukan "protokol pembacaan" melainkan bentuk yang lebih umum: **instrumen
@@ -168,6 +172,19 @@ dengan kutipan yang salah dan menyatakan audit lolos.
 harus manual, karena instrumennya sendiri yang rusak. Perbaikannya bukan menambah audit
 kedua di atas audit pertama: `--update` tidak boleh dipercaya untuk **memperbaiki** anchor,
 cuma untuk melaporkan bahwa anchor sudah bergeser.
+
+**Kontrafaktual #7:** artefak wave v6 selamat, tapi selamatnya kebetulan — `--resume` membuat
+kedua penulis berangkat dari checkpoint yang sama, jadi CSV-nya cuma punya satu inversi
+langkah di batas resume dan kedua belas checkpoint tetap dimuat utuh. Dua penulis yang tidak
+berbagi checkpoint akan menghasilkan CSV berselang-seling dan checkpoint terpotong — dan
+**nol cek sesudah-wave yang akan menangkapnya**, karena angkanya tetap terbaca valid. Ini juga
+satu-satunya dari tujuh yang ketahuannya bukan lewat instrumen mana pun melainkan lewat
+menghitung proses dengan tangan. Perbaikannya karena itu struktural, bukan disiplin operator:
+`acquire_wave_lock` di `scripts/run_wave.py:92` memakai `O_EXCL` yang atomik, sehingga dua
+proses yang berangkat terpaut 9 ms tidak bisa dua-duanya lolos — sedangkan pemeriksaan
+cek-lalu-buat justru akan meloloskan keduanya. Batasnya dinyatakan, bukan disembunyikan: kunci
+yang ditinggalkan proses yang dibunuh paksa harus dihapus manual, dan pesannya menyebut pid
+serta argv pemegangnya supaya penghapusan itu keputusan, bukan tebakan.
 
 **Kaitkan dengan kritik simulator:** cacat ε=1.0 adalah instansi persis dari "ilusi throughput valid dari alokasi acak" yang dikritik di literatur simulator abstrak. Env v3 kamu sudah memakai packet-level queue dengan finite buffer dan deadline drop — jauh di atas simulator Shannon murni. Yang masih terbuka: HARQ retransmission dan control-plane delay tidak dimodelkan. Tulis sebagai keterbatasan eksplisit.
 
