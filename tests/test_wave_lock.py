@@ -1,9 +1,9 @@
 """One wave per tag.
 
-On 2026-08-26 a single launch produced two run_wave processes 9 ms apart, each writing the
-same metrics CSVs and checkpoints, with no warning and a zero exit code. The artefacts
-survived only because --resume made both writers start from the same checkpoint. These two
-assertions are what stops that from being luck next time.
+The 2026-08-26 "double spawn" was a misreading: .venv\\Scripts\\python.exe is a launcher stub,
+so every venv call is two processes and a healthy wave already looks like two (PLAN-06 section
+5, fault 7). Two real launches under one tag remain possible and unguarded, which is what these
+assertions cover -- including that the guard releases, so it cannot become the next fault.
 """
 from __future__ import annotations
 import sys

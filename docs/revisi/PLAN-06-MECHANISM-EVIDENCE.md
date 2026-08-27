@@ -144,9 +144,10 @@ Dua-duanya benar dan saling melengkapi.
 
 ## 5. Kontribusi metodologis: instrumen yang melaporkan sehat padahal salah
 
-Sekarang ada **tujuh** instansi independen, semuanya menghasilkan **keluaran yang terlihat
-valid**. Tiga di jalur pembacaan hasil, satu di jalur verifikasi dokumen, dua di jalur
-pelaporan hasil wave, satu di jalur orkestrasi job:
+Sekarang ada **tujuh** instansi independen. Enam menghasilkan **keluaran yang terlihat valid**
+padahal salah — tiga di jalur pembacaan hasil, satu di jalur verifikasi dokumen, dua di jalur
+pelaporan hasil wave. Yang ketujuh arahnya terbalik: pengukuran yang melaporkan **sakit padahal
+sehat**, dan karena itu memicu tindakan destruktif:
 
 | # | Cacat | Akibat |
 |---|---|---|
@@ -156,7 +157,7 @@ pelaporan hasil wave, satu di jalur orkestrasi job:
 | 4 | `citation_audit.py --update` mengunci ulang anchor ke baris yang **salah**, lalu exit 0 (2026-08-25) | Enam kutipan menunjuk kode tak berhubungan; dua di antaranya (`results/B3_DELAY_CENSORING.md`, `results/GATE_C.md`) sudah melenceng sebelum sesi itu dan **lolos audit setiap kali dijalankan** |
 | 5 | `parse_run_name` memotong nama arm di alternasi regex yang tidak terpanjang-dulu (2026-08-26) | `gatres` terbaca sebagai arm `gat` dengan sisanya jatuh ke tag — arm baru **menyamar jadi pembandingnya sendiri**, dan laporan tetap terbit |
 | 6 | `MATCHED_BASELINES` mengeraskan empat nama algo v4 (2026-08-26) | Ketiga arm v6 **tidak punya section sama sekali**; laporan exit 0 tanpa memuat wave yang baru saja dijalankan |
-| 7 | Satu perintah `run_wave.py` melahirkan **dua** proses identik, start terpaut 9 ms (2026-08-26) | Dua penulis per pasangan (arm, seed) atas CSV metrik dan checkpoint yang sama; nol peringatan, nol exit non-nol |
+| 7 | Hitungan proses dibaca sebagai dua wave serentak, padahal `.venv\Scripts\python.exe` adalah **stub peluncur** yang menjalankan interpreter asli sebagai proses anak (2026-08-26, dikoreksi 2026-08-27) | Wave yang **sehat** dihentikan dan 4,2 jam latihan dibuang; insidennya sempat tercatat sebagai cacat orkestrasi yang tidak pernah terjadi |
 
 Itu pola, bukan kebetulan. Beri subsection sendiri dengan kontrafaktualnya. Yang
 menyatukannya bukan "protokol pembacaan" melainkan bentuk yang lebih umum: **instrumen
@@ -173,18 +174,38 @@ harus manual, karena instrumennya sendiri yang rusak. Perbaikannya bukan menamba
 kedua di atas audit pertama: `--update` tidak boleh dipercaya untuk **memperbaiki** anchor,
 cuma untuk melaporkan bahwa anchor sudah bergeser.
 
-**Kontrafaktual #7:** artefak wave v6 selamat, tapi selamatnya kebetulan — `--resume` membuat
-kedua penulis berangkat dari checkpoint yang sama, jadi CSV-nya cuma punya satu inversi
-langkah di batas resume dan kedua belas checkpoint tetap dimuat utuh. Dua penulis yang tidak
-berbagi checkpoint akan menghasilkan CSV berselang-seling dan checkpoint terpotong — dan
-**nol cek sesudah-wave yang akan menangkapnya**, karena angkanya tetap terbaca valid. Ini juga
-satu-satunya dari tujuh yang ketahuannya bukan lewat instrumen mana pun melainkan lewat
-menghitung proses dengan tangan. Perbaikannya karena itu struktural, bukan disiplin operator:
-`acquire_wave_lock` di `scripts/run_wave.py:92` memakai `O_EXCL` yang atomik, sehingga dua
-proses yang berangkat terpaut 9 ms tidak bisa dua-duanya lolos — sedangkan pemeriksaan
-cek-lalu-buat justru akan meloloskan keduanya. Batasnya dinyatakan, bukan disembunyikan: kunci
-yang ditinggalkan proses yang dibunuh paksa harus dihapus manual, dan pesannya menyebut pid
-serta argv pemegangnya supaya penghapusan itu keputusan, bukan tebakan.
+**Cacat #7 arahnya terbalik dari enam yang lain, dan itu justru yang membuatnya berharga.**
+Enam pertama adalah instrumen yang melaporkan **sehat padahal salah**; #7 adalah pengukuran
+yang melaporkan **sakit padahal sehat** — dan karena laporan "sakit" memicu tindakan
+destruktif, biayanya langsung: wave dimatikan, 4,2 jam latihan hilang, dan sebuah cacat
+orkestrasi tercatat di ledger padahal tidak pernah terjadi.
+
+**Yang sebenarnya terjadi, diukur ulang 2026-08-27 dari satu peluncuran tunggal:** 14 proses
+python, 7 di `.venv\Scripts\python.exe` dan 7 di `Python311\python.exe`. Proses `Python311`
+dengan argv identik itu **anak** dari proses `.venv`-nya, bukan saudaranya, dan yang benar-benar
+menjalankan `run_wave.py` adalah si anak (trainer-trainernya bergantung di sana). Sebabnya
+terbaca dari binernya: `.venv\Scripts\python.exe` berukuran 274.712 byte dengan hash berbeda
+dari `Python311\python.exe` yang 103.192 byte — ia stub peluncur, bukan salinan interpreter,
+jadi **tiap** pemanggilan venv memang selalu dua proses. Satu induk plus enam trainer = tujuh
+pasang = 14. Persis sidik jari yang 2026-08-26 dibaca sebagai "dua wave, start terpaut 9 ms":
+selisih 9 ms itu jarak stub memanggil anaknya, dan "4 proses per backbone" adalah 2 job × 2
+proses, bukan 2 penulis per job.
+
+**Kontrafaktualnya justru sudah terjadi:** artefak wave itu utuh (satu inversi langkah per CSV,
+tepat di batas resume; dua belas checkpoint dimuat penuh) — dan pemeriksaan artefak itulah yang
+sebenarnya sudah menjawab benar. Yang keliru adalah menomorduakan bukti artefak di bawah
+hitungan proses. Pelajarannya: **hitungan proses bukan instrumen integritas data.** Yang
+mengikat adalah nilai langkah duplikat, inversi di luar batas resume, dan checkpoint yang gagal
+dimuat; ketiganya bersih sejak awal.
+
+**Kuncinya tetap dipasang, tapi statusnya jujur:** `acquire_wave_lock` di
+`scripts/run_wave.py:92` menjaga mode gagal yang **belum pernah teramati** — dua peluncuran
+sungguhan, misalnya dari dua terminal, atas tag yang sama. `O_EXCL` atomik dipilih karena
+pemeriksaan cek-lalu-buat akan meloloskan dua proses yang berangkat berdekatan. Dua batas
+dinyatakan: kunci yang ditinggalkan proses yang dibunuh paksa harus dihapus manual (pesannya
+menyebut pid dan argv pemegangnya supaya itu keputusan, bukan tebakan), dan lingkupnya per-tag,
+sehingga wave PPO dan DQN dengan tag sama **tidak bisa jalan serentak** meski nama filenya
+berbeda — kebetulan sejalan dengan urutan PPO-dulu-baru-DQN yang memang dipakai.
 
 **Kaitkan dengan kritik simulator:** cacat ε=1.0 adalah instansi persis dari "ilusi throughput valid dari alokasi acak" yang dikritik di literatur simulator abstrak. Env v3 kamu sudah memakai packet-level queue dengan finite buffer dan deadline drop — jauh di atas simulator Shannon murni. Yang masih terbuka: HARQ retransmission dan control-plane delay tidak dimodelkan. Tulis sebagai keterbatasan eksplisit.
 

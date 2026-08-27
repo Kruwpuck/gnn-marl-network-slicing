@@ -92,10 +92,12 @@ def job_cmd(algo: str, seed: int, config_path: Path, tag: str) -> tuple[str, lis
 def acquire_wave_lock(tag: str) -> Path:
     """Refuse to start when another wave already holds this tag.
 
-    On 2026-08-26 a single launch produced two run_wave processes 9 ms apart, each with its
-    own pool, so every (algo, seed) pair had two writers on one metrics CSV and one
-    checkpoint -- with no warning and a zero exit code. O_EXCL is the point here: it is
-    atomic, so a check-then-create would have let both of those through.
+    This guards a mode that has NOT been observed: two genuine launches (two terminals, say)
+    under one tag. The 2026-08-26 "double spawn" that prompted it turned out to be a
+    misreading -- .venv\\Scripts\\python.exe is a launcher stub, so every venv invocation is
+    two processes, the second a child of the first (PLAN-06 section 5, fault 7). O_EXCL is
+    still the right primitive: it is atomic, so two launches milliseconds apart cannot both
+    pass, where a check-then-create would let both through.
 
     Scope is per tag because what collides is files, and the tag decides the filenames; two
     waves under different tags remain allowed (that is a GPU question, not a data one). A
