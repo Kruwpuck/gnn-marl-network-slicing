@@ -100,14 +100,20 @@ def strip_neighbours(graph: dict, attention: bool) -> dict:
     node's own features twice and understate the ablation.
     """
     n = np.asarray(graph["x"]).shape[0]
+    # Width is read off the incoming graph rather than fixed at 1: the v6 arms are built with
+    # edge_dim=2 (gnn/__init__.py) and GATv2Conv rejects a one-column edge_attr when it was
+    # constructed for two, so a hardcoded 1 turns D2a into a crash on exactly the arms it has
+    # to measure. GATBackbone slices edge_attr[:, :edge_dim] (gnn/gat_backbone.py:68), so an
+    # edge_dim=1 arm still sees what it saw in v4.
+    n_edge_feat = np.asarray(graph["edge_attr"]).shape[1]
     if attention:
         idx = np.arange(n, dtype=np.int64)
         return {"x": graph["x"],
                 "edge_index": np.stack([idx, idx]),
-                "edge_attr": np.zeros((n, 1), dtype=np.float32)}
+                "edge_attr": np.zeros((n, n_edge_feat), dtype=np.float32)}
     return {"x": graph["x"],
             "edge_index": np.zeros((2, 0), dtype=np.int64),
-            "edge_attr": np.zeros((0, 1), dtype=np.float32)}
+            "edge_attr": np.zeros((0, n_edge_feat), dtype=np.float32)}
 
 
 def shuffle_edge_attr(graph: dict, rng: np.random.Generator) -> dict:
@@ -169,7 +175,14 @@ def kpi_arms(env, agent, kind, backbone, backbone_name, episodes, greedy, seed_b
                 graph_transform(env, lambda g: strip_neighbours(g, attention)):
             ablated.append(run_episode(env, agent, kind, seed=eval_seed, greedy=greedy))
 
-        if backbone_name == "gat":
+        # Gated on the capability, not on the arm's name. `backbone_name == "gat"` was the v4
+        # spelling of "this backbone reads edge_attr"; under the v6 names (gatres, gatedge,
+        # gatres-edge) it silently stopped matching, and the two arms built with edge_dim=2 --
+        # the only reason this wave exists -- reported D2b as N/A while the report still exited 0.
+        # `edge_dim` is set by GATBackbone alone (gnn/gat_backbone.py:34) and is absent on both
+        # SAGEBackbone and GCNBackbone, so it separates exactly the backbones that read edge_attr.
+        # `add_self_loops` does not: GCNConv carries it too.
+        if getattr(backbone, "edge_dim", 0):
             rng = np.random.default_rng(eval_seed)
             torch.manual_seed(eval_seed)
             with graph_transform(env, lambda g: shuffle_edge_attr(g, rng)):
@@ -262,8 +275,10 @@ def main() -> None:
         "source labels within a destination group is a no-op. What is destroyed here is the "
         "edge-to-attribute pairing. On a complete graph D2b therefore tests sensitivity to "
         "edge *information*, not to *topology*.\n",
-        "`sage` rows are **N/A**, not zero: `SAGEConv` never reads `edge_attr`, so there is "
-        "nothing for this arm to perturb. Writing 0 would read as *the model ignored it*.\n",
+        "Rows for a backbone without `edge_dim` are **N/A**, not zero: `SAGEConv` and `GCNConv` "
+        "never read `edge_attr`, so there is nothing for those arms to perturb. Writing 0 would "
+        "read as *the model ignored it*. All four GATv2 arms (`gat`, `gatres`, `gatedge`, "
+        "`gatres-edge`) are measured.\n",
         "| algo | seed | backbone | readout | KPI | normal | D2a zeroed | D2b shuffled |",
         "|---|---|---|---|---|---|---|---|",
     ]
