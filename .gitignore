@@ -25,8 +25,12 @@ compass_artifact_*.md
 .DS_Store
 desktop.ini
 
-# Local mirror of docs/journey/ — contains plaintext SSH credentials, never commit
-JOURNEY/
+# Local mirror of docs/journey/ — contains plaintext SSH credentials, never commit.
+# Anchored to the repository root on purpose. Windows sets core.ignorecase=true, so an
+# unanchored JOURNEY/ also matched docs/journey/ and silently swallowed files 08-11: they
+# never appeared in git status and never entered the repo. The leading slash keeps the rule
+# armed for a root-level mirror without reaching the tracked docs/journey/ series.
+/JOURNEY/
 
 # Training artifacts (generalized: applies inside results/, results/v2_scalarized/,
 # results/v3_*/ archives, etc. — not just the live results/logs/ directory)
