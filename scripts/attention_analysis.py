@@ -81,6 +81,24 @@ def act(agent, kind: str, graph: dict, greedy: bool):
     return actions
 
 
+def build_pathloss_lookup(edge_index, edge_attr) -> dict[tuple[int, int], float]:
+    """(src, dst) -> path loss in dB, keyed by pair rather than position.
+
+    GATv2Conv adds self-loops by default, so the edge_index it returns is longer than the
+    one the env emitted and may be reordered; a positional pairing would silently misalign.
+
+    Only column 0 is read. The v6 arms carry a second edge column (interference coupling),
+    and flattening an (E,2) array gives 2E values that zip() pairs against E edges by
+    truncating -- every edge would take someone else's path loss and the correlation would
+    still print as a plausible number. Column 0 is the path loss this analysis is about, and
+    is the same column no matter how many the env emits (gnn/gat_backbone.py:68).
+    """
+    ei = np.asarray(edge_index)
+    ea = np.asarray(edge_attr)
+    pl = ea[:, 0] if ea.ndim == 2 else ea
+    return {(int(s), int(d)): float(v) for s, d, v in zip(ei[0], ei[1], pl)}
+
+
 def per_node_rho(alpha: list[float], pathloss: list[float], dst: list[int]) -> list[float]:
     """Spearman rho between attention and path-loss *within each receiving node's own
     neighbourhood*, one value per node per step.
@@ -122,12 +140,7 @@ def run_episode(env, agent, kind: str, backbone, seed: int, capture_attention: b
             edge_index2, alpha2 = attn_layers[1]  # layer 2: single head, no-concat -- most interpretable
             edge_index2 = edge_index2.cpu().numpy()
             alpha2 = alpha2.detach().cpu().numpy().reshape(-1)
-            raw_ei = np.asarray(graph["edge_index"])
-            raw_ea = np.asarray(graph["edge_attr"]).reshape(-1)
-            # lookup by (src,dst) pair, not position -- GATv2Conv adds self-loops by
-            # default so the returned edge_index is longer than the original and may
-            # reorder edges; self-loops (src==dst) have no physical path-loss, skip them
-            pathloss_lookup = {(int(s), int(d)): float(pl) for s, d, pl in zip(raw_ei[0], raw_ei[1], raw_ea)}
+            pathloss_lookup = build_pathloss_lookup(graph["edge_index"], graph["edge_attr"])
             step_alpha, step_pl, step_dst = [], [], []
             for k in range(edge_index2.shape[1]):
                 s, d = int(edge_index2[0, k]), int(edge_index2[1, k])
