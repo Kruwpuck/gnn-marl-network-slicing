@@ -62,3 +62,11 @@ paper/*.pdf
 # Loop eskalasi — log mentah besar; ledger + handoff + research TETAP di-commit
 runs/*/events.jsonl
 runs/*/transcripts/
+
+# Smoke and pilot rehearsals — bulk per-episode data whose only job was to prove the harness
+# runs before the real wave. The reports they produced are committed (ATTENTION_smoke.md,
+# RLIABLE_V6SMOKE.md, ZEROSHOT_v6_pilot.md); the raw rows behind them are not, matching how
+# the earlier smoke runs were already handled.
+results/eval_v6smoke/
+results/eval_zeroshot_v6_pilot/
+results/logs/*v6smoke*
