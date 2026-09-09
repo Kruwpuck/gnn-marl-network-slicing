@@ -1,4 +1,4 @@
-[← Status training v3](06_status-training-v3.md) | [Index](00_INDEX.md)
+[← Status training v3](06_status-training-v3.md) | [Index](00_INDEX.md) | [Rekalibrasi titik operasi →](08_rekalibrasi-titik-operasi.md)
 
 # 07 — Hasil Training & Evaluasi v3
 
@@ -273,4 +273,4 @@ python scripts/make_paper_figures.py
 
 ---
 
-[← Status training v3](06_status-training-v3.md) | [Index](00_INDEX.md)
+[← Status training v3](06_status-training-v3.md) | [Index](00_INDEX.md) | [Rekalibrasi titik operasi →](08_rekalibrasi-titik-operasi.md)

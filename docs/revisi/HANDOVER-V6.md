@@ -67,7 +67,7 @@ Dari PREREG-V6 §5, disalin bukan diringkas:
    pembanding `gat` dan seluruh baseline ada di `_v4`. Kalau satu algoritma punya data eval di
    lebih dari satu tag, `per_seed_means` menggagalkan run dengan `SystemExit`; itu disengaja,
    supaya dua wave tidak pernah dirata-ratakan diam-diam.
-3. **D2b diulang pada checkpoint v6** — `shuffle_edge_attr`, `scripts/diag_gnn_reliance.py:113`.
+3. **D2b diulang pada checkpoint v6** — `shuffle_edge_attr`, `scripts/diag_gnn_reliance.py:119`.
    Uji `allclose` di `tests/test_gnn_v6.py` membuktikan `edge_attr` mengubah keluaran
    **backbone**; itu bukan bukti policy memakainya. Pada v4, atribut edge tidak terpakai di
    **0/25** checkpoint, dan arm baru tidak boleh mengulang kondisi itu tanpa ketahuan.

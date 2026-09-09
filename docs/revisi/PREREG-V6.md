@@ -166,7 +166,7 @@ Yang dilatih cuma **tiga** arm: `gatres`, `gatedge`, `gatres-edge`. `gat` memaka
 
 ## 5. Yang wajib dijalankan sesudah wave, sebelum klaim apa pun
 
-- **D2b diulang pada checkpoint v6** (`shuffle_edge_attr`, `scripts/diag_gnn_reliance.py:113`).
+- **D2b diulang pada checkpoint v6** (`shuffle_edge_attr`, `scripts/diag_gnn_reliance.py:119`).
   Uji `allclose` di `tests/test_gnn_v6.py` membuktikan `edge_attr` berpengaruh pada **keluaran
   backbone**; itu **bukan** bukti policy memakainya (PLAN-03 §0). D2b menemukan atribut edge v4
   tidak terpakai di 0/25 checkpoint, dan arm baru tidak boleh mengulang kondisi itu tanpa
