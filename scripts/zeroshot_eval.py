@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import glob
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -113,6 +114,18 @@ def reference_rows(paths: list[Path], base_n: int, suffix: str) -> list[dict]:
         rows.append({"algo": algo, "arm": "reference", "n_gnb": base_n, "seed": seed,
                      "status": "OK", "reason": "", **summarise(pd.read_csv(csv), base_n)})
     return rows
+
+
+def wave_tag(checkpoints: str) -> str:
+    """Wave label read off the checkpoint glob, e.g. `..._v6_seed*.pt` -> `v6`.
+
+    The header used to say `wave v4` as a literal. Pointed at the v6 checkpoints it kept
+    saying v4, and a report that names the wrong wave is worse than one that names none:
+    every number under it is still correct, so nothing else looks wrong. When the glob does
+    not carry a tag the glob itself is printed rather than a guess.
+    """
+    m = re.search(r"_(v[0-9]+[a-z]*)_seed", checkpoints)
+    return m.group(1) if m else checkpoints
 
 
 def main() -> None:
@@ -212,7 +225,7 @@ def main() -> None:
 
     readout = readout_label(suffix)
     lines = [
-        "# Zero-shot topology transfer — wave v4\n",
+        f"# Zero-shot topology transfer — wave {wave_tag(args.checkpoints)}\n",
         f"Readout: `{readout}`. Episodes per checkpoint: {args.episodes}. "
         f"Trained at n_gnb={base_n}, area_size={base_area:.0f} m, floor.mode=`{floor_mode}` "
         f"(read from the config, not assumed).\n",
@@ -265,7 +278,7 @@ def main() -> None:
 
     lines.append(
         "\nCI and per-family comparison are not computed here. Point "
-        "`scripts/rliable_report.py --eval-dir results/eval_zeroshot_v4/<arm>/ngnb<N>` and "
+        f"`scripts/rliable_report.py --eval-dir {args.out_dir}/<arm>/ngnb<N>` and "
         "`scripts/stability_report.py` at these directories instead — they already do IQM + "
         "stratified bootstrap per budget family (C3) and Wilson collapse rate."
     )

@@ -75,3 +75,30 @@ def test_d2b_gate_covers_every_registered_backbone():
     from gnn import BACKBONES
 
     assert set(BACKBONES) == set(D2B_EXPECTED)
+
+
+# --- zero-shot wave label ----------------------------------------------------
+# scripts/zeroshot_eval.py printed "wave v4" as a literal in the report header. Pointed at the
+# v6 checkpoints it still said v4, and every number under that header was correct, so nothing
+# looked wrong. The label is now read off the checkpoint glob; pin that it tracks the glob.
+
+@pytest.mark.parametrize(
+    "glob_pattern,expected",
+    [
+        ("results/logs/gnn-*_v6_seed*.pt", "v6"),
+        ("results/logs/gnn-mappo_*_v6_seed*.pt", "v6"),
+        ("results/logs/*_v4_seed*.pt", "v4"),
+        ("results/logs/*_v6smoke_seed*.pt", "v6smoke"),
+    ],
+)
+def test_wave_tag_follows_the_checkpoint_glob(glob_pattern, expected):
+    from scripts.zeroshot_eval import wave_tag
+
+    assert wave_tag(glob_pattern) == expected
+
+
+def test_wave_tag_never_invents_a_wave():
+    """No tag in the glob means the glob is printed, not a guessed wave name."""
+    from scripts.zeroshot_eval import wave_tag
+
+    assert wave_tag("results/logs/some_checkpoint.pt") == "results/logs/some_checkpoint.pt"
