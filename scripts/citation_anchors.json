@@ -59,6 +59,12 @@
     "envs/network_slicing_env.py:554": "axis=1).astype(np.float32)",
     "gnn/gat_backbone.py:75": "h = self.conv2(h, edge_index, edge_attr=edge_attr)"
   },
+  "results/DIAG_INPUT_SEP_V6.md": {
+    "envs/network_slicing_env.py:552": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,",
+    "envs/network_slicing_env.py:553": "urllc_backlog_log, self._viol_ewma, self._prev_alloc_lag2, self._prev_alloc],",
+    "envs/network_slicing_env.py:554": "axis=1).astype(np.float32)",
+    "gnn/gat_backbone.py:75": "h = self.conv2(h, edge_index, edge_attr=edge_attr)"
+  },
   "results/DIAG_INPUT_SEP_V6SMOKE.md": {
     "envs/network_slicing_env.py:552": "return np.stack([ch_gain, sinr_embb_norm, sinr_urllc_norm, q_e,",
     "envs/network_slicing_env.py:553": "urllc_backlog_log, self._viol_ewma, self._prev_alloc_lag2, self._prev_alloc],",
