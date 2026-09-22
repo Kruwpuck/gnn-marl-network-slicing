@@ -1,4 +1,9 @@
 {
+  "README.md": {
+    "scripts/run_wave.py:152": "tag = args.tag if args.tag is not None else (\"\" if args.floor_mode == \"dynamic\" else f\"_floor{args.floor_mode}\")",
+    "scripts/run_wave.py:39": "V6_ARMS = [\"gatres\", \"gatedge\", \"gatres-edge\"]",
+    "scripts/run_wave.py:92": "def acquire_wave_lock(tag: str) -> Path:"
+  },
   "docs/revisi/HANDOVER-V6.md": {
     "scripts/diag_gnn_reliance.py:119": "def shuffle_edge_attr(graph: dict, rng: np.random.Generator) -> dict:",
     "scripts/run_wave.py:92": "def acquire_wave_lock(tag: str) -> Path:"

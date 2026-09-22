@@ -7,6 +7,9 @@ against centralised and per-agent baselines under a CMDP constraint on URLLC vio
 > gate passes. Gate B3 fails, C2 is partial, and C4 fails for the DQN family. This is a
 > recorded outcome, not a work-in-progress notice -- see `results/GATE_C.md`. Nothing in
 > `results/` should be read as a settled claim without reading the gate verdicts first.
+>
+> The v6 architecture arms have since been trained and reported -- their reports are the
+> `*_V6.md` files under `results/`. No gate verdict above moved as a result.
 
 ## Layout
 
@@ -25,6 +28,7 @@ against centralised and per-agent baselines under a CMDP constraint on URLLC vio
 | `results/` | generated reports and per-episode CSVs -- **authoritative for every number** |
 | `runs/` | escalation-loop ledger, append-only |
 | `docs/` | working rules and history; start at `docs/INDEX.md` |
+| `docs/revisi/` | the PLAN-00..07 revision plans, PREREG-V5/V6, and the v6 handover |
 | `handoff/` | done criteria (`goal1.md`) and paper structure |
 | `paper/` | LaTeX sources |
 
@@ -32,7 +36,8 @@ against centralised and per-agent baselines under a CMDP constraint on URLLC vio
 
 ```bash
 pip install -e .        # dependencies come from requirements.txt
-pytest -q               # 96 tests
+pytest -q               # the suite needs torch, torch-geometric, gymnasium and rliable;
+                        # without them most modules fail at collection, not at assert
 ```
 
 The editable install is what lets `scripts/` import `envs`, `agents`, and the rest from
@@ -55,6 +60,12 @@ python scripts/rliable_report.py   --eval-dir results/eval --out results/RLIABLE
 python scripts/stability_report.py
 python scripts/gate_b_report.py    --tag _v4 --readout primary
 
+# v6 reports.  rliable takes TWO tags: the arms are under _v6 while the gat comparator and
+# every baseline are under _v4.  If one algorithm has eval data under more than one tag,
+# per_seed_means exits with SystemExit rather than averaging two waves silently.
+python scripts/rliable_report.py   --tag "_v6,_v4" --out results/RLIABLE_V6.md
+python scripts/stability_report.py --tag _v6       --out results/STABILITY_V6.md
+
 # guards -- both exit non-zero on a problem
 python scripts/readout_audit.py     # every reported row traces to a readout file
 python scripts/citation_audit.py    # path:line evidence in the gate docs still points where it claims
@@ -66,10 +77,17 @@ python scripts/diag_grad_ratio.py     # D2c gradient-norm ratio into the GNN
 python scripts/diag_collision.py      # D5 collision-storm hypothesis
 python scripts/diag_input_separability.py   # D6 which layer collapses the node representation
 
-# Fase 2a (docs/revisi/PLAN-03) -- edge coupling + residual, wave v6.  Runs BEFORE Fase 1
+# Fase 2a (docs/revisi/PLAN-03) -- edge coupling + residual, wave v6.  Ran BEFORE Fase 1
 # since 2026-08-26: PLAN-02 is waiting on an operating-point decision, PLAN-03 does not
-# depend on it (PLAN-00, "URUTAN EKSEKUSI DITUKAR").
-python scripts/run_wave.py --seeds 42,43 --algos gnn-mappo_gatres,gnn-mappo_gatres-edge
+# depend on it (PLAN-00, "URUTAN EKSEKUSI DITUKAR").  The PPO wave finished 2026-08-30,
+# the DQN wave after it.  Three arms, not two -- V6_ARMS, scripts/run_wave.py:39.
+# Both flags below carry weight.  --floor-mode defaults to dynamic, which is not the frozen
+# operating point.  Without --tag the tag is derived from the floor mode instead
+# (_floornone here, scripts/run_wave.py:152), so the arms land under a tag the v6 reports
+# do not read.
+python scripts/run_wave.py --seeds 42,43,44,45,46 --floor-mode none --tag _v6 \
+    --max-parallel 6 \
+    --algos gnn-madqn_gatres,gnn-madqn_gatedge,gnn-madqn_gatres-edge
 
 # Fase 1 (docs/revisi/PLAN-02) -- per-gNB resilient constraint, wave v5.  Blocked: see below.
 python scripts/calibrate_fmin.py --sweep --checkpoints "results/logs/*_v4_seed4[2-6].pt"
@@ -96,7 +114,7 @@ to a scratch name first, so no v4 artifact is written -- verify with `md5sum` ov
 
 Training runs on GPU and is started by hand, not by an agent (`docs/HANDOVER.md` §11).
 
-## Two things that are easy to get wrong
+## Three things that are easy to get wrong
 
 **The primary readout differs by family.** Sampled for PPO (pre-registered as P3),
 argmax for DQN (human determination of 2026-08-16, after a pre-registered degeneracy
@@ -109,6 +127,14 @@ produced with `epsilon` missing from the checkpoint `state_dict`, making every
 non-greedy DQN readout uniform random. They are quarantined rather than deleted because
 the fault is itself material for the paper's methodology section. Do not read a number
 out of that directory.
+
+**The wave lockfile has two limits worth knowing before you decide it is broken.**
+`acquire_wave_lock` (`scripts/run_wave.py:92`) creates `results/logs/.wave<tag>.lock` with
+`os.O_EXCL`. A force-killed process or a machine that dies leaves the file behind; the
+refusal message names the holder's pid and argv, so deleting it is a decision rather than a
+guess, and there is no live-pid detection. Its scope is per tag, so a PPO and a DQN wave
+sharing one tag cannot run at the same time even though their output filenames differ.
+Covered by `tests/test_wave_lock.py`.
 
 ## Frozen operating point
 
@@ -128,3 +154,7 @@ floor.mode             none
 Read `docs/INDEX.md` first -- it says which document wins when two disagree. The short
 version: generated files under `results/` are authoritative for every number, and no
 result is ever retyped from memory into prose.
+
+Two handovers are live at the same time. `docs/HANDOVER.md` holds the Rev 2 track, Fase 0-2
+and the calibration; `docs/revisi/HANDOVER-V6.md` holds the v6 architecture track. Neither
+replaces the other.
