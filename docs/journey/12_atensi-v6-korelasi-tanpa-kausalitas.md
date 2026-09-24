@@ -174,6 +174,29 @@ Catatan hasil ini sudah dituliskan balik ke `docs/revisi/PLAN-06-MECHANISM-EVIDE
 
 ---
 
+## 8. Uji lanjutan — prediksi ditulis sebelum dijalankan
+
+Bagian ini di-commit **sebelum** ujinya dijalankan. Tanpa itu uji ini tidak punya daya falsifikasi: prediksi yang ditulis setelah melihat hasil selalu cocok.
+
+**Pertanyaannya:** kenapa ablasi inert. §5 menyarankan sebabnya keruntuhan separasi di `conv2` — apa pun yang ditimbang atensi di `conv1` tidak lagi punya jalan keluar ke kepala policy. Itu hipotesis penjelasan, dan ia bisa diuji dengan mengablasi satu layer pada satu waktu alih-alih keduanya sekaligus.
+
+**Yang diperkirakan:** kedua kondisi inert. Kalau keruntuhan `conv2` benar yang memutus jalurnya, meratakan atensi `conv1` saja tidak akan mengubah apa pun karena `conv2` tetap menghomogenkan keluarannya, dan meratakan `conv2` saja juga tidak karena yang ia terima sudah nyaris seragam.
+
+**Yang akan memfalsifikasi**, dinyatakan lengkap supaya tidak ada ruang menafsirkan belakangan:
+
+| Hasil | Bacaan yang mengikat |
+|---|---|
+| `conv1` inert **dan** `conv2` inert | Hipotesis didukung |
+| `conv1` berpengaruh, `conv2` tidak | **Hipotesis jatuh.** Kalau atensi `conv1` sampai ke keputusan, keruntuhan `conv2` bukan penjelasannya |
+| `conv2` berpengaruh, `conv1` tidak | Atensi terpakai, tapi hanya di layer terakhir. Verdict null §3 perlu **dipersempit**, bukan dicabut |
+| Keduanya berpengaruh padahal gabungannya tidak | Efeknya saling meniadakan; perlu penyelidikan terpisah sebelum klaim apa pun |
+
+**Yang tidak berubah apa pun hasilnya.** Ketiga temuan di §2 dan §3 tidak bergantung pada uji ini. Pembanding tetap salah file, keselarasan per-node tetap memburuk, dan ablasi gabungan tetap inert sejak v4. Uji per-layer menjelaskan sebab; ia tidak bisa membatalkan sebab-akibat yang sudah terukur.
+
+**Protokolnya:** flag `--ablate-layers {both,conv1,conv2}` pada `scripts/attention_analysis.py`, default `both` yang harus terbukti **bit-identik** dengan run `ATTENTION_V6.md` pada checkpoint yang sama sebelum kondisi baru dijalankan. Kalau tidak identik, ada yang berubah selain penambahan flag, dan itu dikejar dulu.
+
+---
+
 ## Data & artefak
 
 | Isi | File |
