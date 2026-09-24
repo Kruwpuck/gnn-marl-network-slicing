@@ -100,6 +100,33 @@ kpi_uniform = evaluate(model)
 
 **Tanpa ablasi ini, analisis atensi tidak boleh disebut bukti.**
 
+#### HASIL 2026-09-24 — ablasi dijalankan, verdict-nya null
+
+KPI stabil, jadi menurut kriteria di atas atensi **hanya dekorasi**. Diukur pada checkpoint
+hidup saja, karena yang mati tidak bisa mendegradasi:
+
+| | v4 `gat` | v6 (3 arm) |
+|---|---|---|
+| checkpoint hidup | 8 dari 10 | 60 dari 75 |
+| berubah persis nol | 1/8 | 29/60 |
+| t = mean/(sd/√n), `timely_throughput_mbps` | **−0,55** | **+0,48** |
+
+Kolom v4 yang menentukan: **atensi sudah tidak terpakai sebelum arm v6 ada.** Jadi ini bukan
+sesuatu yang dibawa PLAN-03, dan memperbaiki arm tidak akan menyentuhnya.
+
+**Konsekuensi untuk klaim paper — mengikat.** Klaim "GNN belajar koordinasi yang bermakna
+secara fisik" **tidak didukung** dan tidak boleh ditulis. Yang didukung data: atensi
+berkorelasi dengan struktur interferensi (per-node median rho −0,8000 di v4, −0,4000 di v6),
+tetapi policy tidak memanfaatkan korelasi itu. Bacaan itu konsisten dengan tiga temuan yang
+sudah berdiri — perilaku lockstep, over-smoothing yang dikonfirmasi D3/D6, dan KPI yang
+`COMPARABLE`. Rincian dan batasannya di
+[`docs/journey/12`](../journey/12_atensi-v6-korelasi-tanpa-kausalitas.md).
+
+Uji lanjutan yang belum dijalankan: ablasi per-layer (`conv1` saja, lalu `conv2` saja) untuk
+menguji hipotesis *kenapa* inert — apakah separasi yang runtuh di `conv2` membuat kualitas
+atensi di `conv1` tidak lagi punya jalan keluar. Itu hipotesis penjelasan; ia tidak mengubah
+verdict null di atas.
+
 ---
 
 ## 3. Graph perturbation test (opsional)
@@ -144,10 +171,10 @@ Dua-duanya benar dan saling melengkapi.
 
 ## 5. Kontribusi metodologis: instrumen yang melaporkan sehat padahal salah
 
-Sekarang ada **tujuh** instansi independen. Enam menghasilkan **keluaran yang terlihat valid**
+Sekarang ada **delapan** instansi independen. Tujuh menghasilkan **keluaran yang terlihat valid**
 padahal salah — tiga di jalur pembacaan hasil, satu di jalur verifikasi dokumen, dua di jalur
-pelaporan hasil wave. Yang ketujuh arahnya terbalik: pengukuran yang melaporkan **sakit padahal
-sehat**, dan karena itu memicu tindakan destruktif:
+pelaporan hasil wave, dan satu di **pemilihan pembanding**. Yang ketujuh arahnya terbalik:
+pengukuran yang melaporkan **sakit padahal sehat**, dan karena itu memicu tindakan destruktif:
 
 | # | Cacat | Akibat |
 |---|---|---|
@@ -158,6 +185,7 @@ sehat**, dan karena itu memicu tindakan destruktif:
 | 5 | `parse_run_name` memotong nama arm di alternasi regex yang tidak terpanjang-dulu (2026-08-26) | `gatres` terbaca sebagai arm `gat` dengan sisanya jatuh ke tag — arm baru **menyamar jadi pembandingnya sendiri**, dan laporan tetap terbit |
 | 6 | `MATCHED_BASELINES` mengeraskan empat nama algo v4 (2026-08-26) | Ketiga arm v6 **tidak punya section sama sekali**; laporan exit 0 tanpa memuat wave yang baru saja dijalankan |
 | 7 | Hitungan proses dibaca sebagai dua wave serentak, padahal `.venv\Scripts\python.exe` adalah **stub peluncur** yang menjalankan interpreter asli sebagai proses anak (2026-08-26, dikoreksi 2026-08-27) | Wave yang **sehat** dihentikan dan 4,2 jam latihan dibuang; insidennya sempat tercatat sebagai cacat orkestrasi yang tidak pernah terjadi |
+| 8 | Ablasi atensi v6 dibandingkan terhadap `results/ATTENTION.md` — laporan era **pra-v4** pada titik operasi lama (`delta` 0,12, buffer 40.960) — alih-alih `ATTENTION_v4_greedy.md` yang setara readout dan titik operasinya (2026-09-24) | Temuan terbaca **berlawanan arah**: dilaporkan "rho berkembang dari nol jadi terarah" padahal keselarasan per-node justru **turun** (mean −0,5146 → −0,2089, median −0,8000 → −0,4000). Satu-satunya instansi yang cacatnya bukan di kode melainkan di **pemilihan artefak pembanding** |
 
 Itu pola, bukan kebetulan. Beri subsection sendiri dengan kontrafaktualnya. Yang
 menyatukannya bukan "protokol pembacaan" melainkan bentuk yang lebih umum: **instrumen
@@ -165,6 +193,20 @@ verifikasi yang melaporkan sehat sementara yang diverifikasinya salah.** Cacat #
 memperlihatkan polanya berlaku di luar jalur hasil — `--update` mempercayai apa pun yang
 kebetulan ada di nomor baris itu, jadi tiap kali kode digeser ia mengganti kutipan yang benar
 dengan kutipan yang salah dan menyatakan audit lolos.
+
+**Cacat #8 memperluas polanya sekali lagi, dan ke tempat yang paling tidak nyaman: instrumennya
+benar, yang salah pemilihan pembandingnya.** Tujuh instansi pertama bisa diperbaiki dengan
+menambal kode. #8 tidak: `ATTENTION.md` dan `ATTENTION_v4_greedy.md` sama-sama laporan yang sah
+dan sama-sama di-generate dengan benar, dan nama keduanya tidak menyatakan titik operasi mana
+yang mereka ukur. Membandingkan yang salah menghasilkan kesimpulan yang terbalik arahnya tanpa
+satu pun angka yang keliru.
+
+**Kontrafaktual #8:** tanpa memeriksa readout dan titik operasi tiap laporan sebelum
+membandingkannya, temuan yang terbit akan berbunyi "fitur edge membuat atensi lebih selaras
+dengan interferensi" — padahal datanya menyatakan kebalikannya. Perbaikannya bukan audit
+tambahan melainkan aturan: **sebuah laporan hanya boleh dibandingkan dengan laporan yang
+menyatakan readout dan titik operasi yang sama di header-nya**, dan keduanya dikutip
+namanya saat perbandingan ditulis.
 
 **Kontrafaktual yang paling kuat:** tanpa perbaikan cacat #1, laporan akan menyimpulkan GNN kalah telak (16.77 vs 68.06, CI terpisah) — kesimpulan yang sepenuhnya artefak.
 

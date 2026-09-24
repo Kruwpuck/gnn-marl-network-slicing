@@ -20,7 +20,8 @@ Baca berurutan 01 → 11. Setiap file punya bagian **"Data & artefak"** di akhir
 | 08 | [`08_rekalibrasi-titik-operasi.md`](08_rekalibrasi-titik-operasi.md) | Rev 2 Fase 0–1, enam ronde Gate A, titik operasi dibekukan, protokol pembacaan P3 |
 | 09 | [`09_wave-v4-dan-cacat-pembacaan.md`](09_wave-v4-dan-cacat-pembacaan.md) | Wave v4 40 run, tiga cacat pembacaan dalam satu wave, Gate B3 & C4 gagal, perluasan ke 20 seed |
 | 10 | [`10_diagnostik-fase-0.md`](10_diagnostik-fase-0.md) | D1–D6 atas checkpoint v4: enam premis basi gugur, over-smoothing terkonfirmasi, `conv1` membuang 98,6% separasi |
-| 11 | [`11_v5-diblokir-dan-wave-v6.md`](11_v5-diblokir-dan-wave-v6.md) | **Berjalan**: `f_min` tanpa kandidat jadi temuan, wave v6 tiga arm arsitektur, cacat instrumen #5–#7 — nol KPI v6 dibaca |
+| 11 | [`11_v5-diblokir-dan-wave-v6.md`](11_v5-diblokir-dan-wave-v6.md) | `f_min` tanpa kandidat jadi temuan, wave v6 tiga arm arsitektur, cacat instrumen #5–#7 — ditutup sebelum KPI v6 dibaca |
+| 12 | [`12_atensi-v6-korelasi-tanpa-kausalitas.md`](12_atensi-v6-korelasi-tanpa-kausalitas.md) | **Hasil mekanisme v6**: ablasi atensi inert di v6 *dan* di v4, keselarasan per-node justru melemah, D2b & D6 sepakat — plus koreksi pembanding v4 |
 
 ## Timeline
 
