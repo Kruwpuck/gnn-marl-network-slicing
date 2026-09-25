@@ -29,7 +29,7 @@ judul tesis "Benchmarking PPO dan DQN...".
 |---|---|---|
 | T1 | Premis motivasi utama salah (batasan milik encoder terpusat, bukan MLP) | **DISETUJUI — BEKU** menunggu T8 |
 | T2 | Equivariance disajikan sebagai keunggulan khas GNN | TERBUKA |
-| T3 | Pertanyaan riset inti dilarang gerbang validitas sendiri | **DIJAWAB sebagian** — lihat §3: checkpoint @200K tidak ada, biaya 22,44 jam |
+| T3 | Pertanyaan riset inti dilarang gerbang validitas sendiri | **DIJAWAB sebagian** — lihat §3: checkpoint @200K tidak ada, biaya 22,44 jam; seleksi `_best.pt` di hasil v4/v6 diperiksa dan **nihil** |
 | T4 | "identical ... seed protocol" tidak lagi benar | TERBUKA |
 | T5 | Kontribusi 2 menjanjikan pemilihan tetangga yang tidak ada | TERBUKA |
 | T6 | Kontribusi 4 menjanjikan protokol yang membedakan, datanya tidak membedakan | TERBUKA |
@@ -214,11 +214,55 @@ dengan `step >= 200000` (step 200191 di semua run).
 2. **Pembacaan primer @200K: 22,44 jam** untuk 15 run latih ulang `--steps 200000`, lalu
    `scripts/evaluate_checkpoints.py` seperti biasa.
 
+### Pemeriksaan lanjutan: seluruh hasil v4/v6 **tidak** memakai `_best.pt` — DITUTUP
+
+Pertanyaan yang wajar muncul setelah alasan di atas: kalau seleksi checkpoint bergantung-data
+ditolak untuk T3, apakah hasil v4/v6 yang sudah dilaporkan justru mengandungnya? Diperiksa
+2026-09-25 dengan grep, nol GPU. **Tidak.**
+
+Empat skrip yang menghasilkan angka laporan semuanya membaca `results/logs/*.pt` — model
+**langkah terakhir** yang ditulis `_save_model` setelah loop training selesai, bukan dari
+`results/checkpoints/` sama sekali:
+
+| skrip | sumber checkpoint |
+|---|---|
+| `scripts/evaluate_checkpoints.py:254` | `results/logs/*.pt` |
+| `scripts/attention_analysis.py:193` | `results/logs/gnn-*_gat_v4_seed*.pt` |
+| `scripts/diag_gnn_reliance.py:212` | `results/logs/gnn-*_v4_seed4*.pt` |
+| `scripts/zeroshot_eval.py:133` | `results/logs/*_v4_seed*.pt` |
+
+Satu pengecualian, dan ia tetap bukan `_best.pt`: `scripts/diag_grad_ratio.py:131` membaca
+`results/checkpoints/{run}_last.pt`, karena D3 melanjutkan training untuk mengukur gradien dan
+hanya file checkpoint yang membawa state optimizer dan nomor langkah.
+
+`_best.pt` muncul tepat sekali di seluruh `scripts/`, dan itu sebuah `unlink`:
+`scripts/diag_grad_ratio.py:162` membersihkan artefak scratch supaya run berikutnya tidak bisa
+resume dari state yang sudah dimodifikasi D2c.
+
+Yang menjadikan ini tertutup, bukan sekadar kebetulan: alasannya sudah dipikirkan waktu itu dan
+ditulis di generator laporan sendiri — `scripts/analyze_results.py:452` menyatakan `_best.pt`
+**tidak dipakai untuk eval di bawah CMDP**, karena reward turun seiring lambda naik sehingga
+"best" menyesatkan.
+
 ### Rekomendasi
 
 Pra-registrasi ditulis **hanya setelah T8 diputuskan**. Kalau papernya jadi benchmarking study,
 perbandingan anggaran-setara ini adalah cara sah mencabut batasan C3, dan 22,44 jam murah untuk
 itu. Kalau papernya tetap dokumen protokol, pra-registrasinya mubazir.
+
+### Rancangan yang harus dipakai saat pra-registrasi ditulis (ditetapkan 2026-09-25)
+
+Jangan melatih run dengan `total_steps=200_000`. Jadwal apa pun yang bergantung pada total
+langkah — peluruhan epsilon, anil learning rate, ritme dual update — akan berbeda dari run 1M,
+jadi hasilnya bukan "PPO pada 200K langkah" melainkan "PPO dari kurikulum yang berbeda". Itu
+mengganti satu confound dengan confound lain.
+
+Yang setara: **config 1M persis, seed sama, snapshot bertanda di langkah 200K, lalu berhenti.**
+
+Verifikasinya melekat dan murah: cocokkan metrik yang di-log pada step 200K terhadap CSV v6 yang
+sudah ada (`results/logs/gnn-mappo_*_v6_seed4[2-6].csv`, baris `step=200191`). Cocok berarti
+snapshot itu sah sebagai titik 200K dari run 1M yang sama. Tidak cocok berarti training tidak
+deterministik — dan itu sendiri temuan yang wajib dilaporkan, bukan gangguan yang ditambal.
 
 ---
 
