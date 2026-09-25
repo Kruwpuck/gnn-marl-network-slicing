@@ -209,9 +209,38 @@ Dijalankan 2026-09-24, 75 checkpoint per kondisi, protokol identik §3. Angka di
 
 `sla_satisfaction_pct` bergerak sejalan: t 0,42 / 0,39 / 1,71.
 
-**Prediksi §8 terpenuhi: kedua kondisi tunggal inert.** Tidak ada cabang falsifikasi yang terpicu — `conv1` tidak berpengaruh sementara `conv2` tidak, dan `conv2` sendirian juga tidak.
+**Prediksi §8 terpenuhi, tapi kedua kondisi tidak sama bentuknya.** Nol cabang falsifikasi terpicu. Bedanya harus dinyatakan, bukan diratakan jadi satu kata:
 
-### Dua hal yang lebih tajam dari sekadar "keduanya inert"
+- **`conv2` inert.** 31/60 berubah persis nol, dan yang bergerak pun bergerak seragam kecil (sd 0,364).
+- **`conv1` tidak berpengaruh secara konsisten** — bukan inert. 31 dari 60 checkpoint punya efek non-nol, sd 2,95 Mbps, ke dua arah. Ada efek; yang tidak ada adalah polanya.
+
+Pembedaan ini menentukan langkah lanjutan, jadi bukan soal gaya. "Inert" berarti tidak ada yang bisa dikejar. "Tidak konsisten" berarti ada sesuatu yang bergerak dan pertanyaannya apakah ia berpola — dan §9.1 menjawab: tidak.
+
+Tabel prediksi §8 memakai kata "inert" untuk kedua kondisi. **Kata itu sengaja dibiarkan apa adanya**; ia pra-registrasi yang di-commit sebelum ujinya jalan, dan menyuntingnya sekarang berarti menulis ulang prediksi setelah melihat hasil. Cabang falsifikasinya berbunyi "`conv1` berpengaruh", dan efek tersebar dua arah tanpa pola bukan itu — jadi prediksinya bertahan, dan koreksi katanya hidup di sini, bukan di sana.
+
+### 9.1 Sebaran 31 checkpoint conv1 non-inert — tersebar, bukan mengumpul
+
+Kalau efek besar mengumpul di satu arm atau di satu status seed, "tidak konsisten" akan jadi kesimpulan sementara yang menunggu penjelasan. Ia tidak mengumpul.
+
+| arm | non-inert | mean abs d | max abs d |
+|---|---|---|---|
+| `gnn-madqn_gatedge` | 4/5 | 0,793 | 1,603 |
+| `gnn-madqn_gatres` | 5/5 | 1,680 | 3,401 |
+| `gnn-madqn_gatres-edge` | 5/5 | 0,868 | 2,478 |
+| `gnn-mappo_gatedge` | 8/16 | 2,408 | 6,349 |
+| `gnn-mappo_gatres` | 4/15 | 6,521 | 13,920 |
+| `gnn-mappo_gatres-edge` | 5/14 | 4,331 | 9,395 |
+
+- **Keenam arm terwakili.** Tidak ada arm yang bersih, tidak ada arm yang menyetir.
+- **Konsentrasi rendah.** Checkpoint terbesar menyumbang 16,8% dari total besaran efek, tiga teratas 36,2%, sepuluh teratas 76,0%. Efek yang berpola akan jauh lebih terpusat dari ini.
+- **Dua arah.** Terbesar −13,920 (`gnn-mappo_gatres` seed 45), kedua +9,395 (`gnn-mappo_gatres-edge` seed 53). Ablasi sama seringnya menolong dan merugikan.
+- **Status kolaps tidak memisahkan.** Seed kolaps 5/12 non-inert, tidak kolaps 26/48 — 42% lawan 54%, beda yang tenggelam di n sekecil ini.
+
+Satu pola nyata memang muncul, dan bentuknya bukan "conv1 berpengaruh" melainkan dua ragam ketidakkonsistenan: **DQN hampir selalu bergerak sedikit** (14/15 non-inert, mean abs d 0,79–1,68), **PPO jarang bergerak tapi besar** (17/45 non-inert, mean abs d 2,41–6,52). Itu sejalan dengan mekanisme argmax lawan sampling, bukan dengan atensi yang terpakai.
+
+**Kesimpulan akhir: tidak konsisten.** Bukan "ada efek yang belum terdeteksi".
+
+### Dua hal yang lebih tajam dari sekadar "conv1 lemah, conv2 inert"
 
 **`conv1` sendirian mereproduksi ablasi penuh.** Mean +0,174 lawan +0,194, jumlah inert sama persis 29/60, pembagian tanda sama persis 18 rugi lawan 13 untung. Artinya seluruh efek ablasi penuh — yang memang kecil — berasal dari `conv1`, dan `conv2` nyaris tidak menyumbang apa-apa.
 

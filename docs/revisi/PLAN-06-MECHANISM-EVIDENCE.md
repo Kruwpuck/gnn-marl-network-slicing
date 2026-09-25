@@ -123,8 +123,13 @@ sudah berdiri — perilaku lockstep, over-smoothing yang dikonfirmasi D3/D6, dan
 [`docs/journey/12`](../journey/12_atensi-v6-korelasi-tanpa-kausalitas.md).
 
 **Ablasi per-layer dijalankan 2026-09-24, prediksinya di-commit lebih dulu** (`86c5af2`).
-Keduanya inert, jadi hipotesis penjelasannya bertahan: pada `timely_throughput_mbps` atas 60
-checkpoint hidup, `conv1` t = 0,46 dan `conv2` t = 1,73.
+Hipotesis penjelasannya bertahan, tapi kedua kondisi tidak sama bentuknya dan pembedaannya
+mengikat untuk penulisan: pada `timely_throughput_mbps` atas 60 checkpoint hidup, **`conv2`
+inert** (31/60 berubah persis nol, sd 0,364, t = 1,73) sementara **`conv1` tidak berpengaruh
+secara konsisten** (t = 0,46; 31/60 punya efek non-nol dengan sd 2,95 ke dua arah). Jangan tulis
+`conv1` sebagai inert — ada efek, yang tidak ada polanya. Sebarannya menyentuh keenam arm,
+konsentrasinya rendah (checkpoint terbesar 16,8% dari total besaran efek), dan status kolaps
+seed tidak memisahkannya.
 
 Dua rincian yang layak dibawa ke paper. `conv1` sendirian **mereproduksi ablasi penuh** (mean
 +0,174 lawan +0,194, inert 29/60 sama persis) — jadi efek yang sedikit itu seluruhnya milik
