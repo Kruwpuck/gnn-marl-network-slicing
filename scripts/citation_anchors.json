@@ -8,6 +8,17 @@
     "scripts/diag_gnn_reliance.py:119": "def shuffle_edge_attr(graph: dict, rng: np.random.Generator) -> dict:",
     "scripts/run_wave.py:92": "def acquire_wave_lock(tag: str) -> Path:"
   },
+  "docs/revisi/PAPER-CLAIM-AUDIT.md": {
+    "envs/network_slicing_env.py:522": "r_obj = (self.w1 * min(float(embb_thr_bps.mean() / t_ref), 5.0)",
+    "envs/network_slicing_env.py:525": "r = r_obj - self.w2 * urllc_violation_rate",
+    "envs/network_slicing_env.py:97": "self.w1 = float(cfg[\"reward\"][\"w1\"])",
+    "envs/network_slicing_env.py:99": "self.w4 = float(cfg[\"reward\"][\"w4\"])",
+    "scripts/run_wave.py:71": "common = [\"--seed\", str(seed), \"--resume\", \"--ckpt-interval\", \"25000\",",
+    "training/metrics_logger.py:216": "self.last_path = self.dir / f\"{run_name}_last.pt\"",
+    "training/metrics_logger.py:217": "self.best_path = self.dir / f\"{run_name}_best.pt\"",
+    "training/metrics_logger.py:225": "def save(self, state: dict, ma_reward: float | None = None) -> None:",
+    "training/metrics_logger.py:229": "self._atomic_save(state, self.best_path)"
+  },
   "docs/revisi/PLAN-00-MASTER.md": {
     "envs/channel_model.py:113": "Returns edge_index (2, E) and edge_attr (E, 1) path-loss in dB.",
     "envs/network_slicing_env.py:22": "(neighbor_urllc_frac_mean), which leaked global state to every agent including",
