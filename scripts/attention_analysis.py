@@ -44,11 +44,25 @@ from scripts.rliable_report import parse_run_name
 ABLATION_KPIS = ["embb_p5_mbps", "timely_throughput_mbps", "sla_satisfaction_pct"]
 
 
+ABLATE_LAYER_CHOICES = ["both", "conv1", "conv2"]
+ABLATED_LAYER_PHRASE = {"both": "both GATv2Conv layers",
+                        "conv1": "the first GATv2Conv layer only (conv2 left intact)",
+                        "conv2": "the second GATv2Conv layer only (conv1 left intact)"}
+
+
 @contextmanager
-def uniform_attention(backbone):
-    """Zero the learned `att` param of both GATv2Conv layers -> softmax degenerates
-    to uniform over each node's neighbors. Restores original weights on exit."""
-    convs = [backbone.conv1, backbone.conv2]
+def uniform_attention(backbone, layers: str = "both"):
+    """Zero the learned `att` param of the selected GATv2Conv layers -> softmax degenerates
+    to uniform over each node's neighbors. Restores original weights on exit.
+
+    `layers` picks which layer is flattened. "both" is the original behaviour and the default,
+    so an unflagged run is unchanged. The single-layer settings separate two explanations of an
+    inert ablation: attention that is never used at all, versus attention whose output is
+    homogenised downstream before the policy head reads it (D6 measures that collapse at conv2).
+    """
+    convs = {"both": [backbone.conv1, backbone.conv2],
+             "conv1": [backbone.conv1],
+             "conv2": [backbone.conv2]}[layers]
     saved = [c.att.data.clone() for c in convs]
     for c in convs:
         c.att.data.zero_()
@@ -124,7 +138,7 @@ def per_node_rho(alpha: list[float], pathloss: list[float], dst: list[int]) -> l
 
 
 def run_episode(env, agent, kind: str, backbone, seed: int, capture_attention: bool,
-                uniform: bool, greedy: bool) -> dict:
+                uniform: bool, greedy: bool, ablate_layers: str = "both") -> dict:
     obs, info = env.reset(seed=seed)
     done = False
     embb_bps: list[float] = []
@@ -156,7 +170,7 @@ def run_episode(env, agent, kind: str, backbone, seed: int, capture_attention: b
             node_rhos.extend(per_node_rho(step_alpha, step_pl, step_dst))
 
         if uniform:
-            with uniform_attention(backbone):
+            with uniform_attention(backbone, ablate_layers):
                 actions = act(agent, kind, graph, greedy)
         else:
             actions = act(agent, kind, graph, greedy)
@@ -182,6 +196,11 @@ def main() -> None:
                    help="e.g. configs/generated/floor_none_area_size1000.0_n_gnb20.yaml to "
                         "test the mechanism where node degree is 19 instead of 4")
     p.add_argument("--out", type=str, default="results/ATTENTION_v4.md")
+    p.add_argument("--ablate-layers", type=str, default="both", choices=ABLATE_LAYER_CHOICES,
+                   help="which GATv2Conv layer's attention to flatten. 'both' reproduces the "
+                        "original ablation and is the default. Single-layer settings test "
+                        "whether an inert ablation means attention is unused, or means its "
+                        "output is homogenised downstream before the policy head sees it.")
     p.add_argument("--stochastic", action="store_true",
                    help="sample actions instead of taking the argmax -- P3 primary readout. "
                         "The ablation measures a KPI, so it inherits the same protocol as "
@@ -223,7 +242,7 @@ def main() -> None:
             torch.manual_seed(eval_seed)
             normal.append(eval_episode(env, agent, kind, seed=eval_seed, greedy=greedy))
             torch.manual_seed(eval_seed)
-            with uniform_attention(backbone):
+            with uniform_attention(backbone, args.ablate_layers):
                 uniform.append(eval_episode(env, agent, kind, seed=eval_seed, greedy=greedy))
         env.close()
 
@@ -267,10 +286,10 @@ def main() -> None:
         "means more attention on lower path-loss, i.e. on the stronger interferer -- the "
         "direction the mechanism story predicts.\n",
         "**Causal ablation** (mandatory): attention forced uniform over neighbors (zero "
-        "the learned `att` parameter of both GATv2Conv layers -> softmax degenerates to "
-        "1/degree). Both arms draw the same action noise (`torch.manual_seed` per episode) "
-        "so the difference is the ablation, not sampling luck. Correlation alone would be "
-        "decoration without this.\n",
+        f"the learned `att` parameter of {ABLATED_LAYER_PHRASE[args.ablate_layers]} -> softmax "
+        "degenerates to 1/degree). Both arms draw the same action noise "
+        "(`torch.manual_seed` per episode) so the difference is the ablation, not sampling "
+        "luck. Correlation alone would be decoration without this.\n",
         "Reported on three KPIs, not on `embb_p5_mbps` alone: at this operating point most "
         "checkpoints already sit at the cell-edge floor, and a KPI pinned near zero cannot "
         "degrade however much the ablation changes. `timely_throughput_mbps` and "

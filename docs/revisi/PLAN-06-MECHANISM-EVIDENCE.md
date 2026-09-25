@@ -122,10 +122,19 @@ sudah berdiri — perilaku lockstep, over-smoothing yang dikonfirmasi D3/D6, dan
 `COMPARABLE`. Rincian dan batasannya di
 [`docs/journey/12`](../journey/12_atensi-v6-korelasi-tanpa-kausalitas.md).
 
-Uji lanjutan yang belum dijalankan: ablasi per-layer (`conv1` saja, lalu `conv2` saja) untuk
-menguji hipotesis *kenapa* inert — apakah separasi yang runtuh di `conv2` membuat kualitas
-atensi di `conv1` tidak lagi punya jalan keluar. Itu hipotesis penjelasan; ia tidak mengubah
-verdict null di atas.
+**Ablasi per-layer dijalankan 2026-09-24, prediksinya di-commit lebih dulu** (`86c5af2`).
+Keduanya inert, jadi hipotesis penjelasannya bertahan: pada `timely_throughput_mbps` atas 60
+checkpoint hidup, `conv1` t = 0,46 dan `conv2` t = 1,73.
+
+Dua rincian yang layak dibawa ke paper. `conv1` sendirian **mereproduksi ablasi penuh** (mean
++0,174 lawan +0,194, inert 29/60 sama persis) — jadi efek yang sedikit itu seluruhnya milik
+`conv1`. Dan sebaran efek `conv2` **runtuh delapan setengah kali** (sd 0,364 lawan 3,105), persis
+yang diharapkan kalau masukannya sudah seragam sebelum ia menimbang.
+
+Jebakan bacaan: t terbesar justru milik `conv2`, tapi itu karena penyebutnya mengecil, bukan
+pembilangnya membesar — mean 0,081 Mbps di atas basis ~65 Mbps adalah 0,12%. Jangan ditulis
+sebagai "conv2 paling berpengaruh". Rincian di
+[`docs/journey/12`](../journey/12_atensi-v6-korelasi-tanpa-kausalitas.md) §9.
 
 ---
 

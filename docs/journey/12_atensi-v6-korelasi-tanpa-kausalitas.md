@@ -197,11 +197,49 @@ Bagian ini di-commit **sebelum** ujinya dijalankan. Tanpa itu uji ini tidak puny
 
 ---
 
+## 9. Hasil uji per-layer — prediksi terpenuhi
+
+Dijalankan 2026-09-24, 75 checkpoint per kondisi, protokol identik §3. Angka di bawah `timely_throughput_mbps`, checkpoint hidup saja.
+
+| kondisi | n | inert | mean | sd | t | rugi | untung |
+|---|---|---|---|---|---|---|---|
+| `both` (§3) | 60 | 29/60 | +0,194 | 3,105 | 0,48 | 18 | 13 |
+| `conv1` saja | 60 | 29/60 | +0,174 | 2,952 | 0,46 | 18 | 13 |
+| `conv2` saja | 60 | 31/60 | +0,081 | 0,364 | 1,73 | 17 | 12 |
+
+`sla_satisfaction_pct` bergerak sejalan: t 0,42 / 0,39 / 1,71.
+
+**Prediksi §8 terpenuhi: kedua kondisi tunggal inert.** Tidak ada cabang falsifikasi yang terpicu — `conv1` tidak berpengaruh sementara `conv2` tidak, dan `conv2` sendirian juga tidak.
+
+### Dua hal yang lebih tajam dari sekadar "keduanya inert"
+
+**`conv1` sendirian mereproduksi ablasi penuh.** Mean +0,174 lawan +0,194, jumlah inert sama persis 29/60, pembagian tanda sama persis 18 rugi lawan 13 untung. Artinya seluruh efek ablasi penuh — yang memang kecil — berasal dari `conv1`, dan `conv2` nyaris tidak menyumbang apa-apa.
+
+**Efek `conv2` satu orde lebih kecil, dan sebaran perubahannya runtuh.** Mean 0,081 lawan 0,194, tapi yang lebih menunjuk adalah sd: **0,364 lawan 3,105**, delapan setengah kali lebih sempit. Meratakan `conv2` menghasilkan perubahan yang kecil *dan seragam kecil*; meratakan `conv1` sesekali melempar satu-dua checkpoint jauh.
+
+Itu persis yang diramalkan hipotesis. `conv2` menerima masukan yang sudah nyaris seragam (§5: `rel_spread` 0,0003–0,0070), jadi menimbang ulang masukan seragam memang tidak bisa mengubah banyak. `conv1` masih menerima masukan yang terbedakan (0,16–0,37), jadi meratakannya sesekali cukup untuk membalik argmax — dan ekor gemuk itulah yang membuat sd-nya delapan kali lebih lebar.
+
+### Jebakan bacaan yang harus dinyatakan
+
+Nilai t terbesar di seluruh tabel ini justru milik `conv2` (1,73). Itu **bukan** tanda atensi `conv2` terpakai. t naik karena penyebutnya mengecil, bukan karena pembilangnya membesar: mean 0,081 Mbps di atas basis ~65 Mbps adalah **0,12%**. Membacanya sebagai "conv2 paling berpengaruh" akan membalik arti datanya sendiri.
+
+Nol kondisi mendekati ambang konvensional mana pun; yang tertinggi 1,75 di tingkat per-kelompok.
+
+### Verifikasi yang menyertai
+
+- **Gerbang bit-identik lolos sebelum kondisi baru dijalankan.** `--ablate-layers both` pada 3 checkpoint menghasilkan 27 angka yang cocok persis sampai 6 desimal dengan baris yang sama di `ATTENTION_V6.md`. Jadi flag baru tidak mengubah apa pun selain memilih layer.
+- **Aritmetika edge mengonfirmasi `--episodes 10`**, yang sebelumnya hanya turunan: run verifikasi melaporkan 120.000 edge = 3 ckpt × 10 ep × 200 langkah × 20 edge.
+- **Statistik korelasi identik di ketiga laporan** (Pearson −0,1548, Spearman −0,2044, mean rho −0,2089, 3.000.000 edge). Jalur penangkapan atensi memang tidak boleh tersentuh ablasi, dan angka yang sama persis membuktikannya.
+
+---
+
 ## Data & artefak
 
 | Isi | File |
 |---|---|
 | Korelasi + ablasi atensi v6, 75 checkpoint | `results/ATTENTION_V6.md` |
+| Ablasi `conv1` saja | `results/ATTENTION_V6_conv1.md` |
+| Ablasi `conv2` saja | `results/ATTENTION_V6_conv2.md` |
 | Pembanding v4 setara (readout greedy, arm `gat`) | `results/ATTENTION_v4_greedy.md` |
 | Laporan era pra-v4, **bukan** pembanding sah | `results/ATTENTION.md` |
 | D2a/D2b/D3 pada checkpoint v6 | `results/DIAG_GNN_RELIANCE_V6.md` |
