@@ -304,7 +304,7 @@ Semua pekerjaan yang butuh torch/gymnasium/rliable **harus** jalan di PC lab —
 - Host, user, password, dan path proyek remote: lihat `JOURNEY/HANDOFF.md` §"Akses remote" (sengaja tidak diulang di sini karena dokumen ini bisa ikut ter-commit ke repo publik).
 - Selalu pakai `.venv\Scripts\python.exe` di remote.
 - Driver paramiko di scratchpad session: `ssh_run.py`, `ssh_sftp_put.py`, `ssh_sftp_get.py`, `ssh_cat.py`.
-- **Transfer selama sesi Rev 2 memakai SFTP mentah, bukan git.** Konsekuensinya: remote masih di commit `cf3af5a` sementara file-file terbaru sudah ada di sana lewat SFTP. Jangan `git checkout`/`git pull` di remote tanpa cek — bisa menimpa file yang belum ter-commit di mana pun.
+- **Sejak 2026-09-26 sinkronisasi memakai git, bukan SFTP mentah.** PC lab adalah working copy utama (lihat §11), jadi `git fetch` + `git merge --ff-only` di lab adalah alur normal, bukan sesuatu yang perlu dihindari. SFTP tetap dipakai hanya untuk file yang belum ter-commit di mana pun — dan file semacam itu harus segera di-commit di lab, bukan dibiarkan hidup di luar git. Catatan lama bahwa remote tertahan di `cf3af5a` sudah kedaluwarsa: lab di-fast-forward ke `55c9aac` pada 2026-09-26.
 - **Training GPU dijalankan sendiri oleh user di terminal remote**, bukan lewat SSH agent — supaya tetap jalan setelah session ditutup. Cek dulu GPU tidak sedang dipakai training lain.
 
 ---
@@ -330,7 +330,8 @@ Python 3.11.9 · PyTorch 2.4.1+cu124 · PyTorch Geometric 2.8.0 · Gymnasium 1.1
 ## 11. Aturan kerja (session-standing)
 
 - **Git:** jangan `git add -A`. Selalu cek `git status`, stage file spesifik. Commit hanya kalau diminta.
-- **Push:** user yang push sendiri. Agent tidak pernah push.
+- **Working copy utama: PC lab, berlaku 2026-09-26.** Semua penulisan dan commit terjadi di lab. Laptop (D:) hanya untuk membaca — jangan commit apa pun dari sana. Alasannya di ledger entri 2026-09-26: repo laptop berada di folder sinkron Google Drive, dan Drive menyuntikkan `desktop.ini` ke dalam `.git` tiga kali dalam satu sesi, tiap kali mematikan `git fetch` dengan `fatal: bad object refs/desktop.ini`.
+- **Push:** dilakukan dari lab, fast-forward only, nol `--force` dalam bentuk apa pun. Aturan lama "user yang push sendiri, agent tidak pernah push" dicabut untuk jalur lab oleh otorisasi 2026-09-26; ia tetap berlaku di mana pun selain lab.
 - **Identitas commit:** `-c user.name=Habb -c user.email=ihabhasanainakmal0409@gmail.com`.
 - **Angka hasil:** selalu salin dari file report yang di-generate, jangan ketik ulang dari ingatan.
 - **Jangan paksa hasil cocok dengan tabel referensi.** Kalau beda, investigasi ke data mentah lalu laporkan apa adanya (aturan §2 panduan).
