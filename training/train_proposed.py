@@ -132,7 +132,10 @@ def train_gnn_dqn(backbone_name, steps, seed, log_path, ckpt_interval, resume,
 
 
 def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume,
-                   config_path, run_name) -> None:
+                   config_path, run_name, stop_at=None) -> None:
+    # stop_at ends the loop early without touching `steps`, the budget the run was
+    # configured with -- the equal-budget snapshot of docs/revisi/PREREG-T3.md.
+    stop = min(steps, stop_at) if stop_at else steps
     np.random.seed(seed)
     env = make_env(seed, config_path)
     n_gnb = env.n_gnb
@@ -155,7 +158,7 @@ def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume,
     ep_reward = 0.0
     t0 = time.time()
 
-    for step in range(start_step, steps):
+    for step in range(start_step, stop):
         actions, log_probs, values = agent.act(graph)
         next_obs, reward, terminated, truncated, next_info = env.step(actions)
         done = terminated or truncated
@@ -192,12 +195,12 @@ def train_gnn_ppo(backbone_name, steps, seed, log_path, ckpt_interval, resume,
             _save_ckpt(ckpt, agent, env, step, ep_count, logger, run_name,
                        algo="gnn-mappo", backbone=backbone_name, seed=seed)
 
-    _save_ckpt(ckpt, agent, env, steps, ep_count, logger, run_name,
+    _save_ckpt(ckpt, agent, env, stop, ep_count, logger, run_name,
                algo="gnn-mappo", backbone=backbone_name, seed=seed)
     logger.close()
     env.close()
     _save_model(log_path, agent, algo="gnn-mappo", backbone=backbone_name,
-                steps=steps, seed=seed)
+                steps=stop, budget_steps=steps, seed=seed)
     print(f"[gnn-mappo/{backbone_name}] done -> {log_path}")
 
 
@@ -246,7 +249,12 @@ if __name__ == "__main__":
     parser.add_argument("--tag", type=str, default="",
                          help="suffix for run_name/log/checkpoint, e.g. _floornone, "
                               "so ablation variants don't collide with the main wave")
+    parser.add_argument("--stop-at", type=int, default=None,
+                         help="gnn-mappo only: stop after this many steps while --steps stays the "
+                              "configured budget (docs/revisi/PREREG-T3.md)")
     args = parser.parse_args()
+    if args.stop_at is not None and args.algo != "gnn-mappo":
+        parser.error("--stop-at is implemented for gnn-mappo only")
 
     run_name = f"{args.algo}_{args.backbone}{args.tag}_seed{args.seed}"
 
@@ -259,4 +267,4 @@ if __name__ == "__main__":
                       args.ckpt_interval, args.resume, args.config, run_name)
     else:
         train_gnn_ppo(args.backbone, args.steps, args.seed, log_path,
-                      args.ckpt_interval, args.resume, args.config, run_name)
+                      args.ckpt_interval, args.resume, args.config, run_name, args.stop_at)
