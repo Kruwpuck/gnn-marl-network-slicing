@@ -330,8 +330,8 @@ Python 3.11.9 · PyTorch 2.4.1+cu124 · PyTorch Geometric 2.8.0 · Gymnasium 1.1
 ## 11. Aturan kerja (session-standing)
 
 - **Git:** jangan `git add -A`. Selalu cek `git status`, stage file spesifik. Commit hanya kalau diminta.
-- **Working copy utama: PC lab, berlaku 2026-09-26.** Semua penulisan dan commit terjadi di lab. Laptop (D:) hanya untuk membaca — jangan commit apa pun dari sana. Alasannya di ledger entri 2026-09-26: repo laptop berada di folder sinkron Google Drive, dan Drive menyuntikkan `desktop.ini` ke dalam `.git` tiga kali dalam satu sesi, tiap kali mematikan `git fetch` dengan `fatal: bad object refs/desktop.ini`.
-- **Push:** dilakukan dari lab, fast-forward only, nol `--force` dalam bentuk apa pun. Aturan lama "user yang push sendiri, agent tidak pernah push" dicabut untuk jalur lab oleh otorisasi 2026-09-26; ia tetap berlaku di mana pun selain lab.
+- **Working copy utama: laptop (D:), berlaku 2026-10-01, atas perintah user.** Menggantikan aturan 2026-09-26 (PC lab). Data dan checkpoint disalin dari salinan lab di `F:\Documents\Lung Cancer\gnn-marl-network-slicing` dengan verifikasi md5; commit lab `11e4348` di-fetch dari sana dan di-push dari laptop. Env laptop dibangun `scripts/setup_env.ps1` dari `requirements-lock.txt` ke `%USERPROFILE%\.venvs\gnn-marl`, di luar folder repo. **Risiko yang masih berdiri:** repo ada di folder sinkron Google Drive, dan Drive menyuntikkan `desktop.ini` ke dalam `.git` yang mematikan `git fetch` dengan `fatal: bad object refs/desktop.ini`. Sebelum fetch/push: `find .git -name desktop.ini -delete`.
+- **Push:** dari working copy utama, fast-forward only, nol `--force` dalam bentuk apa pun.
 - **Identitas commit:** `-c user.name=Habb -c user.email=ihabhasanainakmal0409@gmail.com`.
 - **Angka hasil:** selalu salin dari file report yang di-generate, jangan ketik ulang dari ingatan.
 - **Jangan paksa hasil cocok dengan tabel referensi.** Kalau beda, investigasi ke data mentah lalu laporkan apa adanya (aturan §2 panduan).

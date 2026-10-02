@@ -34,11 +34,16 @@ against centralised and per-agent baselines under a CMDP constraint on URLLC vio
 
 ## Setup
 
-```bash
-pip install -e .        # dependencies come from requirements.txt
-pytest -q               # the suite needs torch, torch-geometric, gymnasium and rliable;
-                        # without them most modules fail at collection, not at assert
+```powershell
+# Windows, needs uv: Python 3.11.9 + requirements-lock.txt (torch 2.4.1+cu124) into
+# %USERPROFILE%\.venvs\gnn-marl, then an editable install of this repo
+powershell -ExecutionPolicy Bypass -File scripts\setup_env.ps1
+# imports + CUDA, pytest, Gate C1, citation audit, short GPU training, one v6 eval
+powershell -ExecutionPolicy Bypass -File scripts\smoke.ps1
 ```
+
+`requirements-lock.txt` is the exact package set of the lab venv that last passed the
+suite; `requirements.txt` is the loose spec it satisfies.
 
 The editable install is what lets `scripts/` import `envs`, `agents`, and the rest from
 any working directory. Several scripts still carry a `sys.path.insert` line from before

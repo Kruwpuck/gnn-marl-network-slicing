@@ -8,6 +8,6 @@ pyyaml==6.0.2
 pytest==8.3.0
 matplotlib>=3.8
 pandas>=2.0
-rliable>=2.1.0
+rliable==1.2.0
 absl-py>=1.4
-arch>=6.2
+arch>=6.2,<8
